@@ -6,7 +6,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard, BedDouble, CalendarCheck, Users, UserCog,
   BarChart3, MessageSquare, ExternalLink, DollarSign,
-  Package, Warehouse, Brush, Clock, UtensilsCrossed, ChevronDown, ChevronRight
+  Package, Warehouse, Brush, Clock, UtensilsCrossed, ChevronDown, ChevronRight, FileEdit
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -19,6 +19,7 @@ interface NavItem {
 
 const nav: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { label: 'Contenido', href: '/admin/contenido', icon: FileEdit },
   { label: 'Habitaciones', href: '/admin/habitaciones', icon: BedDouble },
   { label: 'Reservas', href: '/admin/reservas', icon: CalendarCheck },
   { label: 'Clientes', href: '/admin/clientes', icon: Users },
