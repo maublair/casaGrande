@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { Users, ArrowRight, Star } from 'lucide-react';
 import { getRooms, WpRoom } from '@/lib/wp';
 
-export default function RoomsSection() {
-  const [roomTypes, setRoomTypes] = useState<WpRoom[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function RoomsSection({ initialRooms }: { initialRooms?: WpRoom[] }) {
+  const [roomTypes, setRoomTypes] = useState<WpRoom[]>(initialRooms || []);
+  const [loading, setLoading] = useState(!initialRooms || initialRooms.length === 0);
 
   useEffect(() => {
     getRooms().then((data) => {
-      setRoomTypes(data);
+      if (data.length) setRoomTypes(data);
       setLoading(false);
     });
   }, []);

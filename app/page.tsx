@@ -8,8 +8,10 @@ import GallerySection from '@/components/hotel/GallerySection';
 import ContactSection from '@/components/hotel/ContactSection';
 import Footer from '@/components/hotel/Footer';
 import ChatWidget from '@/components/hotel/ChatWidget';
+import { getRooms } from '@/lib/wp';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const rooms = await getRooms();
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
@@ -39,7 +41,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <RoomsSection />
+      <RoomsSection initialRooms={rooms} />
       <ServicesSection />
       <HistorySection />
       <GallerySection />
