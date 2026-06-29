@@ -3,15 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Users, ArrowRight, Star } from 'lucide-react';
-import { supabase, RoomType } from '@/lib/supabase';
+import { getRooms, WpRoom } from '@/lib/wp';
 
 export default function RoomsSection() {
-  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+  const [roomTypes, setRoomTypes] = useState<WpRoom[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('room_types').select('*').order('base_price').then(({ data }) => {
-      if (data) setRoomTypes(data);
+    getRooms().then((data) => {
+      setRoomTypes(data);
       setLoading(false);
     });
   }, []);

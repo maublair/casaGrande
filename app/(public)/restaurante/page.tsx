@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Salad, Sandwich, Soup, UtensilsCrossed, CakeSlice, GlassWater, Plus, ShoppingCart, X, CheckCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getMenu } from '@/lib/wp';
 
 interface MenuCategory {
   id: string;
@@ -52,12 +52,9 @@ export default function RestaurantePage() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: cats }, { data: menuItems }] = await Promise.all([
-        supabase.from('menu_categories').select('*').eq('is_active', true).order('display_order'),
-        supabase.from('menu_items').select('*').eq('is_available', true).order('display_order'),
-      ]);
-      setCategories(cats || []);
-      setItems(menuItems || []);
+      const dishes = await getMenu();
+      setCategories([]);
+      setItems(dishes as unknown as MenuItem[]);
       setLoading(false);
     }
     load();

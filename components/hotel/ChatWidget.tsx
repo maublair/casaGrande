@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Minimize2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getRooms, getSettings, createReservation } from '@/lib/wp';
 
 interface Option { label: string; value: string }
 interface Message {
@@ -60,8 +60,7 @@ export default function ChatWidget() {
         'Hola! Soy el asistente del Hotel Boutique Casagrande. Puedo mostrarte habitaciones, informarte sobre servicios y ayudarte a reservar al instante. ¿Que deseas hacer?',
         MENU_OPTIONS
       );
-      supabase.from('hotel_settings').select('value').eq('key', 'contact_whatsapp').single()
-        .then(({ data }) => { if (data?.value) setWaNumber(data.value.replace(/\D/g, '') || WA_DEFAULT); });
+      getSettings().then((s) => { if (s.contact_whatsapp) setWaNumber(s.contact_whatsapp.replace(/\D/g, '') || WA_DEFAULT); });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -75,28 +74,17 @@ export default function ChatWidget() {
     persist('user', content);
   }
 
-  async function ensureConversation() {
-    if (conversationId) return conversationId;
-    const { data } = await supabase.from('chat_conversations')
-      .insert({ status: 'active', channel: 'web', intent: 'asistente_web' }).select('id').single();
-    if (data) { setConversationId(data.id); return data.id as string; }
-    return null;
-  }
-  async function persist(role: string, content: string) {
-    const id = await ensureConversation();
-    if (id) await supabase.from('chat_messages').insert({ conversation_id: id, role, content });
-  }
+  async function ensureConversation() { return conversationId; }
+  // Sin backend de chat en WordPress headless: no se persiste el historial.
+  async function persist(_role: string, _content: string) { /* no-op */ }
 
   async function think(ms = 500) { setIsTyping(true); await new Promise(r => setTimeout(r, ms)); setIsTyping(false); }
 
   // ---- Habitaciones disponibles (con conteo) ----
   async function loadRooms(minCapacity = 0): Promise<(RoomTypeRow & { available: number })[]> {
-    const { data: types } = await supabase.from('room_types').select('id,name,description,base_price,capacity').order('base_price');
-    const { data: rooms } = await supabase.from('rooms').select('room_type_id,status').eq('status', 'available');
-    const counts: Record<string, number> = {};
-    (rooms || []).forEach(r => { counts[r.room_type_id] = (counts[r.room_type_id] || 0) + 1; });
-    return (types || [])
-      .map(t => ({ ...t, available: counts[t.id] || 0 }))
+    const rooms = await getRooms();
+    return rooms
+      .map(t => ({ id: t.id, name: t.name, description: t.description, base_price: t.base_price, capacity: t.capacity, available: t.available || 0 }))
       .filter(t => t.capacity >= minCapacity);
   }
 
@@ -253,33 +241,18 @@ export default function ChatWidget() {
     userSay('Si, confirmar');
     setIsTyping(true);
     try {
-      const [first, ...rest] = (draft.name || 'Huesped Web').split(' ');
-      const last = rest.join(' ') || '-';
-      const { data: customer } = await supabase.from('customers')
-        .insert({ first_name: first, last_name: last, email: draft.email, phone: draft.phone, tags: ['chatbot'] })
-        .select('id').single();
-
-      const { data: room } = await supabase.from('rooms')
-        .select('id').eq('room_type_id', draft.roomTypeId).eq('status', 'available').limit(1).single();
-
-      const { data: reservation, error } = await supabase.from('reservations')
-        .insert({
-          customer_id: customer?.id ?? null,
-          room_id: room?.id ?? null,
-          check_in: draft.checkIn, check_out: draft.checkOut,
-          adults: draft.adults || 1, children: 0,
-          status: 'pending', total_amount: draft.total || 0, source: 'web',
-          special_requests: 'Reserva creada por el asistente web',
-        })
-        .select('reservation_code').single();
-
-      if (error) throw error;
-      if (room?.id) await supabase.from('rooms').update({ status: 'reserved' }).eq('id', room.id);
-      if (conversationId) await supabase.from('chat_conversations').update({
-        visitor_name: draft.name, visitor_email: draft.email, visitor_phone: draft.phone,
-        intent: 'reserva', status: 'resolved', resolution_notes: `Reserva ${reservation?.reservation_code}`,
-      }).eq('id', conversationId);
-
+      const reservation = await createReservation({
+        name: draft.name || 'Huesped Web',
+        email: draft.email,
+        phone: draft.phone,
+        room: draft.roomTypeName,
+        check_in: draft.checkIn,
+        check_out: draft.checkOut,
+        adults: draft.adults || 1,
+        total: draft.total || 0,
+        notes: 'Reserva creada por el asistente web',
+      });
+      if (!reservation?.reservation_code) throw new Error('No se pudo registrar');
       setIsTyping(false);
       setStep('done');
       botSay(

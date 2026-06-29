@@ -1,9 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  output: 'export',
+  trailingSlash: true,
+  eslint: { ignoreDuringBuilds: true },
   images: { unoptimized: true },
 };
 

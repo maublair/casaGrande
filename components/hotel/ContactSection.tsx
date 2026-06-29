@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Phone, Mail, MapPin, Clock, MessageCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { sendContact } from '@/lib/wp';
 
 export default function ContactSection() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
@@ -12,19 +12,7 @@ export default function ContactSection() {
     e.preventDefault();
     setStatus('sending');
     try {
-      const { data: conv } = await supabase
-        .from('chat_conversations')
-        .insert({ visitor_name: form.name, visitor_email: form.email, visitor_phone: form.phone, status: 'active', channel: 'web', intent: 'contact_form' })
-        .select('id')
-        .single();
-
-      if (conv) {
-        await supabase.from('chat_messages').insert({
-          conversation_id: conv.id,
-          role: 'user',
-          content: form.message,
-        });
-      }
+      await sendContact({ name: form.name, email: form.email, phone: form.phone, message: form.message });
       setStatus('sent');
       setForm({ name: '', email: '', phone: '', message: '' });
     } catch {

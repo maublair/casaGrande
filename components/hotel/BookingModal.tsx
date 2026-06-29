@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { X, ChevronRight, User, Mail, Phone, FileText, Utensils, MessageSquare } from 'lucide-react';
-import { supabase, RoomType, Room } from '@/lib/supabase';
+import { createReservation } from '@/lib/wp';
+import type { RoomType, Room } from '@/lib/supabase';
 
 interface BookingModalProps {
   roomType: RoomType;
@@ -38,83 +39,19 @@ export default function BookingModal({ roomType, rooms, checkIn, checkOut, adult
     setLoading(true);
     setError('');
     try {
-      // Upsert customer
-      let customerId: string | null = null;
-      if (form.email) {
-        const { data: existing } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('email', form.email)
-          .maybeSingle();
-
-        if (existing) {
-          customerId = existing.id;
-          await supabase.from('customers').update({
-            first_name: form.firstName,
-            last_name: form.lastName,
-            phone: form.phone,
-            document_type: form.docType,
-            document_number: form.docNumber,
-            nationality: form.nationality,
-            updated_at: new Date().toISOString(),
-          }).eq('id', customerId);
-        } else {
-          const { data: newCustomer } = await supabase
-            .from('customers')
-            .insert({
-              first_name: form.firstName,
-              last_name: form.lastName,
-              email: form.email,
-              phone: form.phone,
-              document_type: form.docType,
-              document_number: form.docNumber,
-              nationality: form.nationality,
-            })
-            .select('id')
-            .single();
-          if (newCustomer) customerId = newCustomer.id;
-        }
-      }
-
-      // Pick first available room of this type
-      const room = rooms[0];
-
-      // Create reservation
-      const { data: reservation, error: resError } = await supabase
-        .from('reservations')
-        .insert({
-          customer_id: customerId,
-          room_id: room?.id || null,
-          check_in: checkIn,
-          check_out: checkOut,
-          adults,
-          children,
-          status: 'confirmed',
-          total_amount: total,
-          paid_amount: 0,
-          source: 'web',
-          breakfast_included: form.breakfast,
-          special_requests: form.specialRequests || null,
-        })
-        .select('reservation_code')
-        .single();
-
-      if (resError) throw resError;
-
-      // Update room status
-      if (room) {
-        await supabase.from('rooms').update({ status: 'reserved' }).eq('id', room.id);
-      }
-
-      // Update customer stats
-      if (customerId) {
-        const { data: cust } = await supabase.from('customers').select('total_stays, total_spent').eq('id', customerId).maybeSingle();
-        if (cust) {
-          await supabase.from('customers').update({ total_stays: cust.total_stays + 1, total_spent: cust.total_spent + total }).eq('id', customerId);
-        }
-      }
-
-      onSuccess(reservation.reservation_code);
+      const res = await createReservation({
+        name: `${form.firstName} ${form.lastName}`.trim(),
+        email: form.email,
+        phone: form.phone,
+        room: roomType.name,
+        check_in: checkIn,
+        check_out: checkOut,
+        adults,
+        total,
+        notes: [form.specialRequests, form.breakfast ? 'Con desayuno' : '', `${form.docType} ${form.docNumber}`.trim()].filter(Boolean).join(' | '),
+      });
+      if (!res?.reservation_code) throw new Error('No se pudo crear la reserva.');
+      onSuccess(res.reservation_code);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al crear la reserva. Intentalo nuevamente.');
     } finally {

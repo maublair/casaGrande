@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { BedDouble, Users, Star, Wifi, Car, Coffee, Waves, ChevronRight, ArrowRight } from 'lucide-react';
-import { supabase, RoomType } from '@/lib/supabase';
+import { getRooms } from '@/lib/wp';
+import type { RoomType } from '@/lib/supabase';
 interface Room { id: string; status: string; room_type_id: string; }
 type RoomTypeWithRooms = RoomType & { rooms: Room[] };
 
@@ -25,16 +26,13 @@ export default function HabitacionesPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: types } = await supabase.from('room_types').select('*').order('base_price');
-      const { data: rooms } = await supabase.from('rooms').select('*').eq('is_active', true);
-      if (types) {
-        const merged = types.map((t, i) => ({
-          ...t,
-          images: t.images?.length ? t.images : [fallbackImages[i % fallbackImages.length]],
-          rooms: (rooms || []).filter(r => r.room_type_id === t.id),
-        }));
-        setRoomTypes(merged);
-      }
+      const types = await getRooms();
+      const merged = types.map((t, i) => ({
+        ...t,
+        images: t.images?.length ? t.images : [fallbackImages[i % fallbackImages.length]],
+        rooms: new Array(t.available || 0).fill(0),
+      })) as unknown as RoomTypeWithRooms[];
+      setRoomTypes(merged);
       setLoading(false);
     }
     load();
