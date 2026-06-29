@@ -49,9 +49,9 @@ export default function ContactSection() {
           {/* Info */}
           <div className="space-y-6">
             {[
-              { icon: Phone, title: 'Telefono', lines: ['+51 1 234-5678', '+51 987 654 321 (WhatsApp)'] },
-              { icon: Mail, title: 'Email', lines: ['reservas@hotelcasagrande.pe', 'info@hotelcasagrande.pe'] },
-              { icon: MapPin, title: 'Ubicacion', lines: ['Av. Javier Prado Este 1150', 'San Isidro, Lima, Peru'] },
+              { icon: Phone, title: 'Telefono', lines: ['(054) 214000', '+51 942 330 137 (WhatsApp)'] },
+              { icon: Mail, title: 'Email', lines: ['reservas@hotelcasagrande.pe'] },
+              { icon: MapPin, title: 'Ubicacion', lines: ['Av. Luna Pizarro 202, Vallecito', 'Arequipa, Peru'] },
               { icon: Clock, title: 'Horario de Atencion', lines: ['Recepcion: 24 horas, 7 dias', 'Check-in: 2:00 PM | Check-out: 12:00 PM'] },
             ].map(item => (
               <div key={item.title} className="flex gap-4">
@@ -66,7 +66,7 @@ export default function ContactSection() {
             ))}
 
             <a
-              href="https://wa.me/51987654321"
+              href="https://wa.me/51942330137"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-4 rounded-xl transition-all mt-4 w-fit"
