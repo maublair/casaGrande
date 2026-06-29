@@ -8,7 +8,6 @@ import GallerySection from '@/components/hotel/GallerySection';
 import ContactSection from '@/components/hotel/ContactSection';
 import Footer from '@/components/hotel/Footer';
 import ChatWidget from '@/components/hotel/ChatWidget';
-import ParchmentScroll from '@/components/hotel/ParchmentScroll';
 
 export default function HomePage() {
   return (
@@ -40,21 +39,11 @@ export default function HomePage() {
         </div>
       </div>
 
-      <ParchmentScroll>
-        <RoomsSection />
-      </ParchmentScroll>
-      <ParchmentScroll>
-        <ServicesSection />
-      </ParchmentScroll>
-      <ParchmentScroll>
-        <HistorySection />
-      </ParchmentScroll>
-      <ParchmentScroll>
-        <GallerySection />
-      </ParchmentScroll>
-      <ParchmentScroll>
-        <ContactSection />
-      </ParchmentScroll>
+      <RoomsSection />
+      <ServicesSection />
+      <HistorySection />
+      <GallerySection />
+      <ContactSection />
       <Footer />
       <ChatWidget />
     </main>
