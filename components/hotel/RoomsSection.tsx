@@ -39,9 +39,9 @@ export default function RoomsSection() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-14">
-          <p className="text-olive-DEFAULT text-xs font-medium tracking-[0.4em] uppercase mb-3">Nuestras Habitaciones</p>
-          <h2 className="font-serif text-4xl sm:text-5xl text-navy-DEFAULT mb-4">
-            Espacios Disenados para el <span className="italic text-gold-DEFAULT">Descanso</span>
+          <p className="text-olive text-xs font-medium tracking-[0.4em] uppercase mb-3">Nuestras Habitaciones</p>
+          <h2 className="font-serif text-4xl sm:text-5xl text-navy mb-4">
+            Espacios Disenados para el <span className="italic text-gold">Descanso</span>
           </h2>
           <p className="text-gray-500 max-w-2xl mx-auto leading-relaxed">
             Cada habitacion es un refugio cuidadosamente decorado que combina el estilo boutique con las comodidades modernas.
@@ -62,12 +62,12 @@ export default function RoomsSection() {
                   alt={room.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-navy-DEFAULT text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-navy text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   {room.capacity} {room.capacity === 1 ? 'persona' : 'personas'}
                 </div>
                 {i >= 3 && (
-                  <div className="absolute top-3 left-3 bg-gold-DEFAULT text-white text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <div className="absolute top-3 left-3 bg-gold text-white text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
                     <Star className="w-3 h-3 fill-current" />
                     Premium
                   </div>
@@ -76,7 +76,7 @@ export default function RoomsSection() {
 
               {/* Content */}
               <div className="p-5">
-                <h3 className="font-serif text-xl text-navy-DEFAULT mb-2">{room.name}</h3>
+                <h3 className="font-serif text-xl text-navy mb-2">{room.name}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">{room.description}</p>
 
                 {/* Amenities */}
@@ -96,14 +96,14 @@ export default function RoomsSection() {
                 <div className="flex items-end justify-between">
                   <div>
                     <span className="text-xs text-gray-400">Desde</span>
-                    <p className="text-2xl font-bold text-navy-DEFAULT">
+                    <p className="text-2xl font-bold text-navy">
                       S/ {room.base_price.toFixed(0)}
                       <span className="text-sm font-normal text-gray-400">/noche</span>
                     </p>
                   </div>
                   <Link
                     href={`/habitaciones?tipo=${encodeURIComponent(room.name)}`}
-                    className="flex items-center gap-1.5 text-gold-DEFAULT hover:text-gold-700 text-sm font-semibold group/btn transition-colors"
+                    className="flex items-center gap-1.5 text-gold hover:text-gold-700 text-sm font-semibold group/btn transition-colors"
                   >
                     Reservar
                     <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -117,7 +117,7 @@ export default function RoomsSection() {
         <div className="text-center mt-10">
           <Link
             href="/habitaciones"
-            className="inline-flex items-center gap-2 border-2 border-navy-DEFAULT text-navy-DEFAULT hover:bg-navy-DEFAULT hover:text-white font-semibold px-8 py-3.5 rounded-lg transition-all"
+            className="inline-flex items-center gap-2 border-2 border-navy text-navy hover:bg-navy hover:text-white font-semibold px-8 py-3.5 rounded-lg transition-all"
           >
             Ver todas las habitaciones
             <ArrowRight className="w-4 h-4" />

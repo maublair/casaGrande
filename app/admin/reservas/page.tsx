@@ -75,7 +75,7 @@ export default function ReservasAdmin() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" /> Nueva Reserva
         </button>
@@ -138,7 +138,7 @@ export default function ReservasAdmin() {
                     <td className="px-4 py-3.5">
                       <button
                         onClick={() => setDetail(r)}
-                        className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy-DEFAULT rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy rounded-lg transition-colors"
                       >
                         <Eye className="w-4 h-4" />
                       </button>

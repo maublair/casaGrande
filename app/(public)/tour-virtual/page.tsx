@@ -226,7 +226,7 @@ export default function TourVirtualPage() {
             <button
               onClick={() => setViewMode('gallery')}
               className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
-                viewMode === 'gallery' ? 'bg-navy-DEFAULT text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                viewMode === 'gallery' ? 'bg-navy text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <Eye className="w-4 h-4" /> Tour Guiado
@@ -234,7 +234,7 @@ export default function TourVirtualPage() {
             <button
               onClick={() => setViewMode('matterport')}
               className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
-                viewMode === 'matterport' ? 'bg-navy-DEFAULT text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                viewMode === 'matterport' ? 'bg-navy text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <Box className="w-4 h-4" /> Tour 3D Matterport
@@ -257,8 +257,8 @@ export default function TourVirtualPage() {
             {!fullscreen && (
               <div className="mt-4 flex items-center justify-between bg-cream rounded-2xl p-5 border border-gray-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-navy-DEFAULT/10 rounded-xl flex items-center justify-center">
-                    <Box className="w-5 h-5 text-navy-DEFAULT" />
+                  <div className="w-10 h-10 bg-navy/10 rounded-xl flex items-center justify-center">
+                    <Box className="w-5 h-5 text-navy" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-800">Tour 3D Matterport</h3>
@@ -269,7 +269,7 @@ export default function TourVirtualPage() {
                   href="https://my.matterport.com/show?play=1&lang=es&m=eFRTosPYLJq"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-navy-DEFAULT hover:text-navy-600 text-sm font-semibold"
+                  className="flex items-center gap-2 text-navy hover:text-navy-600 text-sm font-semibold"
                 >
                   Abrir en pestana nueva <ExternalLink className="w-4 h-4" />
                 </a>
@@ -334,11 +334,11 @@ export default function TourVirtualPage() {
                     >
                       <div className="relative w-12 h-12 flex items-center justify-center">
                         <div className="hotspot-ring" />
-                        <div className="absolute inset-0 w-10 h-10 m-auto bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:bg-gold-DEFAULT transition-all duration-300 group-hover:scale-110">
+                        <div className="absolute inset-0 w-10 h-10 m-auto bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:bg-gold transition-all duration-300 group-hover:scale-110">
                           {target ? (
-                            <Eye className="w-5 h-5 text-navy-DEFAULT group-hover:text-white" />
+                            <Eye className="w-5 h-5 text-navy group-hover:text-white" />
                           ) : (
-                            <ArrowRight className="w-5 h-5 text-navy-DEFAULT group-hover:text-white" />
+                            <ArrowRight className="w-5 h-5 text-navy group-hover:text-white" />
                           )}
                         </div>
                       </div>
@@ -381,7 +381,7 @@ export default function TourVirtualPage() {
                   <div className="flex items-end justify-between">
                     <div className="max-w-lg">
                       <div className="flex items-center gap-2 mb-1.5">
-                        <span className="bg-gold-DEFAULT text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-widest">360°</span>
+                        <span className="bg-gold text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-widest">360°</span>
                         <p className="text-gold-300 text-xs font-semibold uppercase tracking-widest">{currentScene.category}</p>
                       </div>
                       <h2 className="font-serif text-2xl md:text-3xl text-white font-light">{currentScene.name}</h2>
@@ -407,7 +407,7 @@ export default function TourVirtualPage() {
                   {categories.map(cat => (
                     <button key={cat} onClick={() => setFilterCat(cat)}
                       className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                        filterCat === cat ? 'bg-navy-DEFAULT text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        filterCat === cat ? 'bg-navy text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}>
                       {cat}
                       <span className="ml-1.5 text-xs opacity-60">
@@ -424,19 +424,19 @@ export default function TourVirtualPage() {
                     return (
                       <button key={scene.id} onClick={() => goToScene(scene)}
                         className={`relative rounded-xl overflow-hidden group text-left transition-all ${
-                          isActive ? 'ring-2 ring-gold-DEFAULT shadow-lg scale-[1.03]' : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-gray-200'
+                          isActive ? 'ring-2 ring-gold shadow-lg scale-[1.03]' : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-gray-200'
                         }`}>
                         <div className="h-20 sm:h-24 relative">
                           <img src={scene.image} alt={scene.name}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                          <div className={`absolute inset-0 transition-colors ${isActive ? 'bg-gold-DEFAULT/20' : 'bg-black/30 group-hover:bg-black/15'}`} />
+                          <div className={`absolute inset-0 transition-colors ${isActive ? 'bg-gold/20' : 'bg-black/30 group-hover:bg-black/15'}`} />
                           {isActive && (
-                            <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-gold-DEFAULT rounded-full flex items-center justify-center shadow-md">
+                            <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-gold rounded-full flex items-center justify-center shadow-md">
                               <Eye className="w-3 h-3 text-white" />
                             </div>
                           )}
                           <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-white/80 rounded-md flex items-center justify-center backdrop-blur-sm">
-                            <Icon className="w-3.5 h-3.5 text-navy-DEFAULT" />
+                            <Icon className="w-3.5 h-3.5 text-navy" />
                           </div>
                         </div>
                         <div className="bg-white p-2">
@@ -455,8 +455,8 @@ export default function TourVirtualPage() {
                     { icon: Box, title: 'Tour 3D Matterport', body: 'Activa el modo Tour 3D para recorrer el hotel con tecnologia Matterport en una experiencia inmersiva real.' },
                   ].map(card => (
                     <div key={card.title} className="flex gap-4 p-5 bg-cream rounded-2xl border border-gray-100">
-                      <div className="w-10 h-10 bg-navy-DEFAULT/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <card.icon className="w-5 h-5 text-navy-DEFAULT" />
+                      <div className="w-10 h-10 bg-navy/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <card.icon className="w-5 h-5 text-navy" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-800 mb-1">{card.title}</h3>
@@ -466,11 +466,11 @@ export default function TourVirtualPage() {
                   ))}
                 </div>
 
-                <div className="text-center mt-6 bg-navy-DEFAULT rounded-2xl p-10">
+                <div className="text-center mt-6 bg-navy rounded-2xl p-10">
                   <h3 className="font-serif text-3xl text-white font-light mb-3">Te gusto lo que viste?</h3>
                   <p className="text-white/60 mb-6 max-w-lg mx-auto">Reserva ahora y vive la experiencia Casagrande en persona. Confirmacion inmediata.</p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Link href="/#reservar" className="bg-gold-DEFAULT hover:bg-gold-600 text-white font-semibold px-8 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl">
+                    <Link href="/#reservar" className="bg-gold hover:bg-gold-600 text-navy-900 font-semibold px-8 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl">
                       Reservar Ahora
                     </Link>
                     <Link href="/habitaciones" className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold px-8 py-3.5 rounded-xl transition-all backdrop-blur-sm">

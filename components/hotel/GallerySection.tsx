@@ -21,9 +21,9 @@ export default function GallerySection() {
     <section id="galeria" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
-          <p className="text-olive-DEFAULT text-xs font-medium tracking-[0.4em] uppercase mb-3">Galeria</p>
-          <h2 className="font-serif text-4xl sm:text-5xl text-navy-DEFAULT">
-            Descubre Nuestra <span className="italic text-gold-DEFAULT">Esencia</span>
+          <p className="text-olive text-xs font-medium tracking-[0.4em] uppercase mb-3">Galeria</p>
+          <h2 className="font-serif text-4xl sm:text-5xl text-navy">
+            Descubre Nuestra <span className="italic text-gold">Esencia</span>
           </h2>
         </div>
 

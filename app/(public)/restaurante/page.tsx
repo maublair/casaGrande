@@ -118,7 +118,7 @@ export default function RestaurantePage() {
             onClick={() => setActiveCategory('all')}
             className={`flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
               activeCategory === 'all'
-                ? 'bg-navy-DEFAULT text-white shadow-md'
+                ? 'bg-navy text-white shadow-md'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -132,7 +132,7 @@ export default function RestaurantePage() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
                   activeCategory === cat.id
-                    ? 'bg-navy-DEFAULT text-white shadow-md'
+                    ? 'bg-navy text-white shadow-md'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -167,7 +167,7 @@ export default function RestaurantePage() {
                   <div key={cat.id} className="mb-12">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 bg-navy-50 rounded-xl flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-navy-DEFAULT" />
+                        <Icon className="w-5 h-5 text-navy" />
                       </div>
                       <h2 className="font-serif text-2xl text-gray-900 font-light">{cat.name}</h2>
                       <div className="flex-1 h-px bg-gray-100" />
@@ -218,7 +218,7 @@ export default function RestaurantePage() {
                   <div className="flex items-center gap-2">
                     <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg text-lg font-bold text-gray-700 flex items-center justify-center">−</button>
                     <span className="w-6 text-center font-semibold text-gray-900">{item.qty}</span>
-                    <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 bg-navy-DEFAULT hover:bg-navy-700 rounded-lg text-white flex items-center justify-center">
+                    <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 bg-navy hover:bg-navy-700 rounded-lg text-white flex items-center justify-center">
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
@@ -283,7 +283,7 @@ function MenuGrid({ items, catName, onAdd, cart }: {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               {item.is_featured && (
-                <span className="absolute top-3 left-3 bg-gold-DEFAULT text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                <span className="absolute top-3 left-3 bg-gold text-white text-xs font-semibold px-2.5 py-1 rounded-full">
                   Recomendado
                 </span>
               )}
@@ -294,13 +294,13 @@ function MenuGrid({ items, catName, onAdd, cart }: {
                 <p className="text-gray-500 text-xs mt-1 line-clamp-2">{item.description}</p>
               )}
               <div className="flex items-center justify-between mt-4">
-                <p className="text-navy-DEFAULT font-bold text-lg">S/ {item.price.toFixed(2)}</p>
+                <p className="text-navy font-bold text-lg">S/ {item.price.toFixed(2)}</p>
                 <button
                   onClick={() => onAdd(item)}
                   className={`flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl transition-all ${
                     inCart
                       ? 'bg-olive-600 text-white'
-                      : 'bg-navy-DEFAULT hover:bg-navy-700 text-white'
+                      : 'bg-navy hover:bg-navy-700 text-white'
                   }`}
                 >
                   {inCart ? `x${inCart.qty}` : <Plus className="w-4 h-4" />}

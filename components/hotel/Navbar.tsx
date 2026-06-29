@@ -52,10 +52,10 @@ export default function Navbar() {
                   active
                     ? transparent
                       ? 'text-gold-300 bg-white/10'
-                      : 'text-navy-DEFAULT bg-navy-50'
+                      : 'text-navy bg-navy-50'
                     : transparent
                     ? 'text-white/90 hover:text-white hover:bg-white/10'
-                    : 'text-gray-700 hover:text-navy-DEFAULT hover:bg-gray-50'
+                    : 'text-gray-700 hover:text-navy hover:bg-gray-50'
                 }`}
               >
                 {link.label}
@@ -68,7 +68,7 @@ export default function Navbar() {
           <a
             href="tel:54214000"
             className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-              transparent ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-navy-DEFAULT'
+              transparent ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-navy'
             }`}
           >
             <Phone className="w-4 h-4" />
@@ -77,7 +77,7 @@ export default function Navbar() {
           <Link
             href="/login"
             className={`hidden sm:flex items-center gap-1.5 text-sm font-medium transition-colors ${
-              transparent ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-navy-DEFAULT'
+              transparent ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-navy'
             }`}
           >
             <Lock className="w-4 h-4" />
@@ -85,7 +85,7 @@ export default function Navbar() {
           </Link>
           <Link
             href="/#reservar"
-            className="bg-gold-DEFAULT hover:bg-gold-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md"
+            className="bg-gold hover:bg-gold-600 text-navy-900 text-sm font-semibold px-5 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md"
           >
             Reservar
           </Link>
@@ -112,8 +112,8 @@ export default function Navbar() {
                 onClick={() => setOpen(false)}
                 className={`py-3 px-3 rounded-lg font-medium text-sm transition-colors ${
                   pathname === link.href
-                    ? 'text-navy-DEFAULT bg-navy-50'
-                    : 'text-gray-700 hover:text-navy-DEFAULT hover:bg-gray-50'
+                    ? 'text-navy bg-navy-50'
+                    : 'text-gray-700 hover:text-navy hover:bg-gray-50'
                 }`}
               >
                 {link.label}
@@ -129,7 +129,7 @@ export default function Navbar() {
               <Link
                 href="/#reservar"
                 onClick={() => setOpen(false)}
-                className="bg-gold-DEFAULT text-white text-center font-semibold py-3 rounded-lg hover:bg-gold-600 transition-colors"
+                className="bg-gold text-navy-900 text-center font-semibold py-3 rounded-lg hover:bg-gold-600 transition-colors"
               >
                 Reservar Ahora
               </Link>

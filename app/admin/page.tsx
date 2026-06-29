@@ -216,14 +216,14 @@ export default function AdminDashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <UserCog className="w-5 h-5 text-navy-DEFAULT" />
+              <UserCog className="w-5 h-5 text-navy" />
               <h2 className="font-semibold text-gray-800 text-lg">Gestion de Personal</h2>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/admin/personal" className="text-sm text-navy-DEFAULT hover:underline font-medium flex items-center gap-1">
+              <Link href="/admin/personal" className="text-sm text-navy hover:underline font-medium flex items-center gap-1">
                 Ver personal <ChevronRight className="w-4 h-4" />
               </Link>
-              <Link href="/admin/horarios" className="text-sm text-navy-DEFAULT hover:underline font-medium flex items-center gap-1">
+              <Link href="/admin/horarios" className="text-sm text-navy hover:underline font-medium flex items-center gap-1">
                 Ver horarios <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
@@ -234,11 +234,11 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <div className="w-10 h-10 bg-navy-50 rounded-lg flex items-center justify-center">
-                  <UserCog className="w-5 h-5 text-navy-DEFAULT" />
+                  <UserCog className="w-5 h-5 text-navy" />
                 </div>
                 <span className="text-xs text-gray-400">Activos</span>
               </div>
-              <p className="text-2xl font-bold text-navy-DEFAULT">{staffStats.activeStaff}</p>
+              <p className="text-2xl font-bold text-navy">{staffStats.activeStaff}</p>
               <p className="text-xs text-gray-500 mt-1">Personal Activo</p>
             </div>
             <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
@@ -278,7 +278,7 @@ export default function AdminDashboard() {
             {/* By department */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Users className="w-4 h-4 text-navy-DEFAULT" />
+                <Users className="w-4 h-4 text-navy" />
                 Personal por Departamento
               </h3>
               <div className="space-y-3">
@@ -293,7 +293,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-navy-DEFAULT rounded-full transition-all duration-500"
+                          className="h-full bg-navy rounded-full transition-all duration-500"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -310,10 +310,10 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                  <CalendarClock className="w-4 h-4 text-navy-DEFAULT" />
+                  <CalendarClock className="w-4 h-4 text-navy" />
                   Turnos de Hoy
                 </h3>
-                <Link href="/admin/horarios" className="text-sm text-navy-DEFAULT hover:underline font-medium">Ver todos</Link>
+                <Link href="/admin/horarios" className="text-sm text-navy hover:underline font-medium">Ver todos</Link>
               </div>
               <div className="max-h-72 overflow-y-auto">
                 {staffStats.todaySchedules.length > 0 ? (
@@ -323,7 +323,7 @@ export default function AdminDashboard() {
                       return (
                         <div key={s.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-navy-50 rounded-full flex items-center justify-center text-navy-DEFAULT text-xs font-bold">
+                            <div className="w-8 h-8 bg-navy-50 rounded-full flex items-center justify-center text-navy text-xs font-bold">
                               {s.staff_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                             </div>
                             <div>
@@ -352,12 +352,12 @@ export default function AdminDashboard() {
           {/* Quick links */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Link href="/admin/personal" className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-navy-200 transition-all group">
-              <UserCog className="w-5 h-5 text-navy-DEFAULT mb-2 group-hover:scale-110 transition-transform" />
+              <UserCog className="w-5 h-5 text-navy mb-2 group-hover:scale-110 transition-transform" />
               <p className="text-sm font-semibold text-gray-800">Registrar Personal</p>
               <p className="text-xs text-gray-400 mt-0.5">Altas, bajas, edicion</p>
             </Link>
             <Link href="/admin/horarios" className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-navy-200 transition-all group">
-              <CalendarClock className="w-5 h-5 text-navy-DEFAULT mb-2 group-hover:scale-110 transition-transform" />
+              <CalendarClock className="w-5 h-5 text-navy mb-2 group-hover:scale-110 transition-transform" />
               <p className="text-sm font-semibold text-gray-800">Asignar Horarios</p>
               <p className="text-xs text-gray-400 mt-0.5">Turnos semanales</p>
             </Link>
@@ -379,7 +379,7 @@ export default function AdminDashboard() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-800">Reservas Recientes</h2>
-          <Link href="/admin/reservas" className="text-sm text-navy-DEFAULT hover:underline font-medium">Ver todas</Link>
+          <Link href="/admin/reservas" className="text-sm text-navy hover:underline font-medium">Ver todas</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

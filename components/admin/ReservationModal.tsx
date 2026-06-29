@@ -141,7 +141,7 @@ export default function ReservationModal({ onClose, onSave }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="bf" checked={form.breakfast_included} onChange={e => setForm(f => ({ ...f, breakfast_included: e.target.checked }))} className="w-4 h-4 accent-navy-DEFAULT" />
+            <input type="checkbox" id="bf" checked={form.breakfast_included} onChange={e => setForm(f => ({ ...f, breakfast_included: e.target.checked }))} className="w-4 h-4 accent-navy" />
             <label htmlFor="bf" className="text-sm text-gray-600 cursor-pointer">Desayuno incluido (+S/ 35/persona/noche)</label>
           </div>
           <div>
@@ -152,14 +152,14 @@ export default function ReservationModal({ onClose, onSave }: Props) {
           {calcTotal() > 0 && (
             <div className="bg-navy-50 rounded-lg p-3 text-sm flex justify-between items-center">
               <span className="text-gray-600">Total estimado:</span>
-              <span className="font-bold text-navy-DEFAULT text-base">S/ {calcTotal().toFixed(0)}</span>
+              <span className="font-bold text-navy text-base">S/ {calcTotal().toFixed(0)}</span>
             </div>
           )}
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 border-2 border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:border-gray-300 transition-colors">Cancelar</button>
-            <button type="submit" disabled={loading} className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
+            <button type="submit" disabled={loading} className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
               {loading ? 'Guardando...' : 'Crear Reserva'}
             </button>
           </div>

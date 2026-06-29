@@ -49,7 +49,7 @@ export default function HistorySection() {
               </div>
             </div>
             {/* Floating badge */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gold-DEFAULT text-white px-6 py-3 rounded-xl shadow-xl text-center">
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gold text-navy-900 px-6 py-3 rounded-xl shadow-xl text-center">
               <p className="text-xs tracking-widest uppercase font-medium opacity-80">Fundado en</p>
               <p className="font-serif text-2xl font-semibold leading-tight">2003</p>
             </div>
@@ -57,12 +57,12 @@ export default function HistorySection() {
 
           {/* Text content */}
           <div>
-            <p className="text-olive-DEFAULT text-xs font-medium tracking-[0.4em] uppercase mb-4">
+            <p className="text-olive text-xs font-medium tracking-[0.4em] uppercase mb-4">
               Nuestra Historia
             </p>
-            <h2 className="font-serif text-4xl sm:text-5xl text-navy-DEFAULT leading-tight mb-6">
+            <h2 className="font-serif text-4xl sm:text-5xl text-navy leading-tight mb-6">
               Mas de Dos Decadas de{' '}
-              <span className="italic text-gold-DEFAULT">Hospitalidad</span>
+              <span className="italic text-gold">Hospitalidad</span>
             </h2>
             <div className="space-y-4 text-gray-600 leading-relaxed text-[15px]">
               <p>
@@ -84,10 +84,10 @@ export default function HistorySection() {
                   className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-100 shadow-sm"
                 >
                   <div className="w-10 h-10 bg-navy-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <stat.icon className="w-5 h-5 text-navy-DEFAULT" />
+                    <stat.icon className="w-5 h-5 text-navy" />
                   </div>
                   <div>
-                    <p className="font-bold text-navy-DEFAULT text-xl leading-none">{stat.value}</p>
+                    <p className="font-bold text-navy text-xl leading-none">{stat.value}</p>
                     <p className="text-gray-500 text-xs mt-0.5">{stat.label}</p>
                   </div>
                 </div>

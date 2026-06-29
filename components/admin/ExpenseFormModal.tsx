@@ -97,7 +97,7 @@ export default function ExpenseFormModal({ onClose, onSave }: Props) {
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 border-2 border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:border-gray-300 transition-colors">Cancelar</button>
-            <button type="submit" disabled={loading} className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
+            <button type="submit" disabled={loading} className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
               {loading ? 'Guardando...' : 'Guardar Gasto'}
             </button>
           </div>

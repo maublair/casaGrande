@@ -102,7 +102,7 @@ export default function HorariosPage() {
             <button onClick={prevWeek} className="p-2 hover:bg-gray-50 rounded-lg transition-colors">
               <ChevronLeft className="w-4 h-4 text-gray-500" />
             </button>
-            <button onClick={goToday} className="px-3 py-1.5 text-xs font-semibold text-navy-DEFAULT hover:bg-navy-50 rounded-lg transition-colors">
+            <button onClick={goToday} className="px-3 py-1.5 text-xs font-semibold text-navy hover:bg-navy-50 rounded-lg transition-colors">
               Hoy
             </button>
             <button onClick={nextWeek} className="p-2 hover:bg-gray-50 rounded-lg transition-colors">
@@ -111,7 +111,7 @@ export default function HorariosPage() {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" /> Agregar Turno
           </button>
@@ -126,8 +126,8 @@ export default function HorariosPage() {
             const isToday = date === today;
             return (
               <div key={date} className={`p-3 text-center border-l border-gray-50 ${isToday ? 'bg-navy-50' : ''}`}>
-                <p className={`text-xs font-semibold ${isToday ? 'text-navy-DEFAULT' : 'text-gray-400'}`}>{dayNames[i]}</p>
-                <p className={`text-sm font-bold mt-0.5 ${isToday ? 'text-navy-DEFAULT' : 'text-gray-700'}`}>
+                <p className={`text-xs font-semibold ${isToday ? 'text-navy' : 'text-gray-400'}`}>{dayNames[i]}</p>
+                <p className={`text-sm font-bold mt-0.5 ${isToday ? 'text-navy' : 'text-gray-700'}`}>
                   {new Date(date + 'T12:00:00').getDate()}
                 </p>
               </div>
@@ -149,7 +149,7 @@ export default function HorariosPage() {
             {staffList.map(person => (
               <div key={person.id} className="grid grid-cols-8 min-h-[52px]">
                 <div className="p-3 flex items-center gap-2.5 border-r border-gray-50">
-                  <div className="w-8 h-8 rounded-full bg-navy-50 flex items-center justify-center text-navy-DEFAULT font-semibold text-xs flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-navy-50 flex items-center justify-center text-navy font-semibold text-xs flex-shrink-0">
                     {person.first_name[0]}{person.last_name[0]}
                   </div>
                   <div className="min-w-0">
@@ -209,7 +209,7 @@ export default function HorariosPage() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Empleado</label>
                 <select value={form.staff_id} onChange={e => setForm(f => ({ ...f, staff_id: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
                   <option value="">Seleccionar...</option>
                   {staffList.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name} — {s.role}</option>)}
                 </select>
@@ -218,12 +218,12 @@ export default function HorariosPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fecha</label>
                   <input type="date" value={form.work_date} onChange={e => setForm(f => ({ ...f, work_date: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Turno</label>
                   <select value={form.shift} onChange={e => setForm(f => ({ ...f, shift: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
                     {Object.entries(shiftConfig).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
                   </select>
                 </div>
@@ -231,14 +231,14 @@ export default function HorariosPage() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Notas</label>
                 <input type="text" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
                   placeholder="Observaciones opcionales..." />
               </div>
             </div>
             <div className="flex gap-3 px-6 pb-6">
               <button onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50">Cancelar</button>
               <button onClick={saveSchedule} disabled={!form.staff_id || !form.work_date}
-                className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
                 Guardar
               </button>
             </div>

@@ -94,11 +94,11 @@ export default function FinanzasAdmin() {
         <div className={`rounded-2xl p-5 border shadow-sm ${profit >= 0 ? 'bg-navy-50 border-navy-100' : 'bg-red-50 border-red-100'}`}>
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${profit >= 0 ? 'bg-navy-100' : 'bg-red-100'}`}>
-              <DollarSign className={`w-5 h-5 ${profit >= 0 ? 'text-navy-DEFAULT' : 'text-red-600'}`} />
+              <DollarSign className={`w-5 h-5 ${profit >= 0 ? 'text-navy' : 'text-red-600'}`} />
             </div>
             <span className="text-sm font-medium text-gray-500">Utilidad Neta</span>
           </div>
-          <p className={`text-2xl font-bold ${profit >= 0 ? 'text-navy-DEFAULT' : 'text-red-600'}`}>
+          <p className={`text-2xl font-bold ${profit >= 0 ? 'text-navy' : 'text-red-600'}`}>
             {profit >= 0 ? '+' : ''}S/ {profit.toLocaleString()}
           </p>
           {revenue > 0 && (
@@ -124,7 +124,7 @@ export default function FinanzasAdmin() {
                   </div>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-navy-DEFAULT rounded-full transition-all" style={{ width: `${totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0}%` }} />
+                  <div className="h-full bg-navy rounded-full transition-all" style={{ width: `${totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0}%` }} />
                 </div>
               </div>
             ))}
@@ -141,7 +141,7 @@ export default function FinanzasAdmin() {
           </h3>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-3 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-3 py-2 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" /> Nuevo Gasto
           </button>

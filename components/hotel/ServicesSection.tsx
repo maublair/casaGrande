@@ -16,9 +16,9 @@ export default function ServicesSection() {
     <section id="servicios" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-14">
-          <p className="text-olive-DEFAULT text-xs font-medium tracking-[0.4em] uppercase mb-3">Servicios & Comodidades</p>
-          <h2 className="font-serif text-4xl sm:text-5xl text-navy-DEFAULT mb-4">
-            Todo lo que <span className="italic text-gold-DEFAULT">Necesitas</span>
+          <p className="text-olive text-xs font-medium tracking-[0.4em] uppercase mb-3">Servicios & Comodidades</p>
+          <h2 className="font-serif text-4xl sm:text-5xl text-navy mb-4">
+            Todo lo que <span className="italic text-gold">Necesitas</span>
           </h2>
           <p className="text-gray-500 max-w-xl mx-auto">
             Cada detalle pensado para hacer de tu estancia una experiencia memorable.
@@ -31,10 +31,10 @@ export default function ServicesSection() {
               key={service.title}
               className="group p-6 rounded-2xl border border-gray-100 hover:border-navy-200 hover:bg-navy-50/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
-              <div className="w-12 h-12 bg-navy-50 group-hover:bg-navy-DEFAULT rounded-xl flex items-center justify-center mb-4 transition-colors">
-                <service.icon className="w-6 h-6 text-navy-DEFAULT group-hover:text-white transition-colors" />
+              <div className="w-12 h-12 bg-navy-50 group-hover:bg-navy rounded-xl flex items-center justify-center mb-4 transition-colors">
+                <service.icon className="w-6 h-6 text-navy group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-semibold text-navy-DEFAULT text-base mb-2">{service.title}</h3>
+              <h3 className="font-semibold text-navy text-base mb-2">{service.title}</h3>
               <p className="text-gray-500 text-sm leading-relaxed">{service.desc}</p>
             </div>
           ))}
@@ -46,7 +46,7 @@ export default function ServicesSection() {
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: 'url(https://deykard.com/uploads/imagenes/hotel-casagrande-5.jpg)' }}
           />
-          <div className="absolute inset-0 bg-navy-DEFAULT/70" />
+          <div className="absolute inset-0 bg-navy/70" />
           <div className="relative py-14 px-8 sm:px-16 text-center text-white">
             <p className="text-gold-300 text-xs tracking-[0.4em] uppercase mb-3">Eventos Especiales</p>
             <h3 className="font-serif text-3xl sm:text-4xl text-white mb-4">
@@ -57,7 +57,7 @@ export default function ServicesSection() {
             </p>
             <a
               href="#contacto"
-              className="inline-flex items-center gap-2 bg-gold-DEFAULT hover:bg-gold-600 text-white font-semibold px-8 py-3.5 rounded-lg transition-all"
+              className="inline-flex items-center gap-2 bg-gold hover:bg-gold-600 text-navy-900 font-semibold px-8 py-3.5 rounded-lg transition-all"
             >
               Solicitar Cotizacion
             </a>

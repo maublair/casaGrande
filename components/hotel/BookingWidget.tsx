@@ -93,7 +93,7 @@ export default function BookingWidget() {
         <div className="flex flex-col justify-end">
           <button
             type="submit"
-            className="flex items-center justify-center gap-2 bg-gold-DEFAULT hover:bg-gold-600 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm hover:shadow-md active:scale-[0.98] w-full"
+            className="flex items-center justify-center gap-2 bg-gold hover:bg-gold-600 text-navy-900 font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm hover:shadow-md active:scale-[0.98] w-full"
           >
             <Search className="w-4 h-4" />
             Buscar

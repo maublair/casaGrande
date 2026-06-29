@@ -111,7 +111,7 @@ export default function AlmacenPage() {
           <p className="text-sm text-gray-500 mt-0.5">Control de stock y movimientos</p>
         </div>
         <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
+          className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
           <Plus className="w-4 h-4" /> Nuevo Insumo
         </button>
       </div>
@@ -119,9 +119,9 @@ export default function AlmacenPage() {
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total insumos', value: items.length, icon: Package, cls: 'bg-navy-50 text-navy-DEFAULT' },
+          { label: 'Total insumos', value: items.length, icon: Package, cls: 'bg-navy-50 text-navy' },
           { label: 'Alertas de stock', value: alertCount, icon: AlertTriangle, cls: alertCount > 0 ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-400' },
-          { label: 'Categorias', value: categories.length, icon: Package, cls: 'bg-olive-50 text-olive-DEFAULT' },
+          { label: 'Categorias', value: categories.length, icon: Package, cls: 'bg-olive-50 text-olive' },
           { label: 'Sin stock', value: items.filter(i => i.current_stock <= 0).length, icon: TrendingDown, cls: 'bg-orange-50 text-orange-600' },
         ].map(card => (
           <div key={card.label} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
@@ -141,10 +141,10 @@ export default function AlmacenPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" placeholder="Buscar insumo, proveedor, SKU..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
         </div>
         <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 bg-white">
+          className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 bg-white">
           <option value="">Todas las categorias</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -211,7 +211,7 @@ export default function AlmacenPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <button onClick={() => setShowMovForm(item)}
-                          className="flex items-center gap-1 text-xs text-navy-DEFAULT hover:bg-navy-50 px-2.5 py-1.5 rounded-lg transition-colors font-medium">
+                          className="flex items-center gap-1 text-xs text-navy hover:bg-navy-50 px-2.5 py-1.5 rounded-lg transition-colors font-medium">
                           <TrendingUp className="w-3.5 h-3.5" /> Movimiento
                         </button>
                       </td>
@@ -241,7 +241,7 @@ export default function AlmacenPage() {
                   {(['entrada', 'salida', 'ajuste'] as const).map(t => (
                     <button key={t} onClick={() => setMovForm(f => ({ ...f, type: t }))}
                       className={`py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
-                        movForm.type === t ? 'bg-navy-DEFAULT text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        movForm.type === t ? 'bg-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}>
                       {t}
                     </button>
@@ -255,19 +255,19 @@ export default function AlmacenPage() {
                 </label>
                 <input type="number" min="0" step="0.01" value={movForm.quantity}
                   onChange={e => setMovForm(f => ({ ...f, quantity: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Notas</label>
                 <input type="text" value={movForm.notes} onChange={e => setMovForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
                   placeholder="Motivo del movimiento..." />
               </div>
             </div>
             <div className="flex gap-3 px-5 pb-5">
               <button onClick={() => setShowMovForm(null)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50">Cancelar</button>
               <button onClick={saveMovement} disabled={!movForm.quantity}
-                className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
                 Confirmar
               </button>
             </div>
@@ -288,12 +288,12 @@ export default function AlmacenPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nombre *</label>
                   <input type="text" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Categoria</label>
                   <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
                     <option value="">Sin categoria</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -303,29 +303,29 @@ export default function AlmacenPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Unidad</label>
                   <input type="text" value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Stock actual</label>
                   <input type="number" min="0" value={form.current_stock} onChange={e => setForm(f => ({ ...f, current_stock: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Stock minimo</label>
                   <input type="number" min="0" value={form.min_stock} onChange={e => setForm(f => ({ ...f, min_stock: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Costo unitario (S/)</label>
                   <input type="number" min="0" step="0.01" value={form.unit_cost} onChange={e => setForm(f => ({ ...f, unit_cost: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Proveedor</label>
                   <input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -333,19 +333,19 @@ export default function AlmacenPage() {
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Ubicacion</label>
                   <input type="text" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
                     placeholder="Ej: Almacen 1, Estante A"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">SKU</label>
                   <input type="text" value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
               </div>
             </div>
             <div className="flex gap-3 px-6 pb-6">
               <button onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50">Cancelar</button>
               <button onClick={saveItem} disabled={!form.name}
-                className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
                 Guardar
               </button>
             </div>

@@ -101,7 +101,7 @@ export default function ChatAdmin() {
             >
               <div className="flex items-start gap-2.5">
                 <div className="w-8 h-8 bg-navy-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <User className="w-4 h-4 text-navy-DEFAULT" />
+                  <User className="w-4 h-4 text-navy" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
@@ -158,8 +158,8 @@ export default function ChatAdmin() {
                 )}
                 <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user' ? 'bg-white border border-gray-100 text-gray-800 rounded-bl-sm shadow-sm' :
-                  msg.role === 'assistant' ? 'bg-navy-DEFAULT text-white rounded-br-sm' :
-                  'bg-olive-DEFAULT text-white rounded-br-sm'
+                  msg.role === 'assistant' ? 'bg-navy text-white rounded-br-sm' :
+                  'bg-olive text-white rounded-br-sm'
                 }`}>
                   {msg.role !== 'user' && (
                     <p className="text-xs opacity-60 mb-1 flex items-center gap-1">
@@ -170,7 +170,7 @@ export default function ChatAdmin() {
                 </div>
                 {msg.role !== 'user' && (
                   <div className="w-7 h-7 rounded-full bg-navy-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    {msg.role === 'assistant' ? <Bot className="w-3.5 h-3.5 text-navy-DEFAULT" /> : <User className="w-3.5 h-3.5 text-navy-DEFAULT" />}
+                    {msg.role === 'assistant' ? <Bot className="w-3.5 h-3.5 text-navy" /> : <User className="w-3.5 h-3.5 text-navy" />}
                   </div>
                 )}
               </div>
@@ -185,7 +185,7 @@ export default function ChatAdmin() {
               placeholder="Responder como staff..."
               className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-300"
             />
-            <button type="submit" disabled={!reply.trim()} className="bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-40 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors">
+            <button type="submit" disabled={!reply.trim()} className="bg-navy hover:bg-navy-700 disabled:opacity-40 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors">
               Enviar
             </button>
           </form>

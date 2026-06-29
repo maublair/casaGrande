@@ -56,10 +56,10 @@ export default function HabitacionesAdmin() {
             key={key}
             onClick={() => setFilter(filter === key ? 'all' : key)}
             className={`p-4 rounded-xl border-2 text-left transition-all ${
-              filter === key ? 'border-navy-DEFAULT bg-navy-50' : 'border-gray-100 bg-white hover:border-gray-200'
+              filter === key ? 'border-navy bg-navy-50' : 'border-gray-100 bg-white hover:border-gray-200'
             }`}
           >
-            <cfg.icon className="w-5 h-5 mb-2 text-navy-DEFAULT" />
+            <cfg.icon className="w-5 h-5 mb-2 text-navy" />
             <p className="text-2xl font-bold text-gray-900">{counts[key]}</p>
             <p className="text-xs text-gray-500 mt-0.5">{cfg.label}</p>
           </button>
@@ -71,7 +71,7 @@ export default function HabitacionesAdmin() {
         <p className="text-sm text-gray-500">{filtered.length} habitacion{filtered.length !== 1 ? 'es' : ''}</p>
         <button
           onClick={() => { setEditRoom(null); setShowForm(true); }}
-          className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" /> Nueva Habitacion
         </button>
@@ -91,7 +91,7 @@ export default function HabitacionesAdmin() {
               <div key={room.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <div className="w-10 h-10 bg-navy-50 rounded-lg flex items-center justify-center text-navy-DEFAULT font-bold text-lg">
+                    <div className="w-10 h-10 bg-navy-50 rounded-lg flex items-center justify-center text-navy font-bold text-lg">
                       {room.room_number}
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.cls}`}>
@@ -107,7 +107,7 @@ export default function HabitacionesAdmin() {
                 <div className="border-t border-gray-50 p-2 flex gap-1">
                   <button
                     onClick={() => { setEditRoom(room); setShowForm(true); }}
-                    className="flex-1 flex items-center justify-center gap-1 text-xs text-gray-500 hover:text-navy-DEFAULT hover:bg-navy-50 py-1.5 rounded-lg transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1 text-xs text-gray-500 hover:text-navy hover:bg-navy-50 py-1.5 rounded-lg transition-colors"
                   >
                     <Edit2 className="w-3.5 h-3.5" /> Editar
                   </button>

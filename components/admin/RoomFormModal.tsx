@@ -105,7 +105,7 @@ export default function RoomFormModal({ room, onClose, onSave }: Props) {
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={inputCls + ' resize-none'} rows={2} placeholder="Observaciones..." />
           </div>
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="active" checked={form.is_active} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} className="w-4 h-4 accent-navy-DEFAULT" />
+            <input type="checkbox" id="active" checked={form.is_active} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} className="w-4 h-4 accent-navy" />
             <label htmlFor="active" className="text-sm text-gray-600 cursor-pointer">Habitacion activa (visible para reservas)</label>
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -113,7 +113,7 @@ export default function RoomFormModal({ room, onClose, onSave }: Props) {
             <button type="button" onClick={onClose} className="flex-1 border-2 border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:border-gray-300 transition-colors">
               Cancelar
             </button>
-            <button type="submit" disabled={loading} className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
+            <button type="submit" disabled={loading} className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
               {loading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>

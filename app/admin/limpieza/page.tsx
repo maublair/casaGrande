@@ -108,11 +108,11 @@ export default function LimpiezaPage() {
             type="date"
             value={filterDate}
             onChange={e => setFilterDate(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
           />
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" /> Nueva Tarea
           </button>
@@ -215,7 +215,7 @@ export default function LimpiezaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Habitacion</label>
                   <select value={form.room_id} onChange={e => setForm(f => ({ ...f, room_id: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
                     <option value="">Sin habitacion</option>
                     {rooms.map(r => <option key={r.id} value={r.id}>Hab. {r.room_number}</option>)}
                   </select>
@@ -223,7 +223,7 @@ export default function LimpiezaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Asignado a</label>
                   <select value={form.assigned_to} onChange={e => setForm(f => ({ ...f, assigned_to: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
                     <option value="">Sin asignar</option>
                     {staff.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>)}
                   </select>
@@ -233,14 +233,14 @@ export default function LimpiezaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tipo de tarea</label>
                   <select value={form.task_type} onChange={e => setForm(f => ({ ...f, task_type: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
                     {Object.entries(taskTypeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Prioridad</label>
                   <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
                     {Object.entries(priorityConfig).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
                   </select>
                 </div>
@@ -249,18 +249,18 @@ export default function LimpiezaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fecha</label>
                   <input type="date" value={form.scheduled_date} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Hora</label>
                   <input type="time" value={form.scheduled_time} onChange={e => setForm(f => ({ ...f, scheduled_time: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Notas</label>
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 resize-none"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 resize-none"
                   placeholder="Instrucciones adicionales..." />
               </div>
             </div>
@@ -268,7 +268,7 @@ export default function LimpiezaPage() {
               <button onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
                 Cancelar
               </button>
-              <button onClick={saveTask} className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+              <button onClick={saveTask} className="flex-1 bg-navy hover:bg-navy-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
                 Guardar Tarea
               </button>
             </div>

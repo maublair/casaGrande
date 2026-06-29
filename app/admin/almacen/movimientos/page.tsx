@@ -53,7 +53,7 @@ export default function MovimientosPage() {
         </div>
         <Link
           href="/admin/almacen"
-          className="text-sm text-navy-DEFAULT hover:underline font-medium"
+          className="text-sm text-navy hover:underline font-medium"
         >
           Ver inventario
         </Link>
@@ -65,7 +65,7 @@ export default function MovimientosPage() {
             key={type}
             onClick={() => setFilterType(type)}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-              filterType === type ? 'bg-navy-DEFAULT text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              filterType === type ? 'bg-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             {type === '' ? 'Todos' : typeConfig[type]?.label || type}

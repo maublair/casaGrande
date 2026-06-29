@@ -33,7 +33,7 @@ export default function ContactSection() {
   }
 
   return (
-    <section id="contacto" className="py-24 bg-navy-DEFAULT">
+    <section id="contacto" className="py-24 bg-navy">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-14">
           <p className="text-gold-300 text-xs font-medium tracking-[0.4em] uppercase mb-3">Estamos Para Ti</p>
@@ -138,7 +138,7 @@ export default function ContactSection() {
                 <button
                   type="submit"
                   disabled={status === 'sending'}
-                  className="w-full bg-gold-DEFAULT hover:bg-gold-600 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-all"
+                  className="w-full bg-gold hover:bg-gold-600 disabled:opacity-60 text-navy-900 font-semibold py-3.5 rounded-xl transition-all"
                 >
                   {status === 'sending' ? 'Enviando...' : 'Enviar Mensaje'}
                 </button>

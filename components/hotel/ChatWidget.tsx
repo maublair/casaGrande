@@ -145,11 +145,11 @@ export default function ChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 bg-navy-DEFAULT hover:bg-navy-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          className="fixed bottom-6 right-6 z-50 bg-navy hover:bg-navy-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
           aria-label="Abrir chat"
         >
           <MessageCircle className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 bg-gold-DEFAULT text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 bg-gold text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
             24h
           </span>
         </button>
@@ -159,9 +159,9 @@ export default function ChatWidget() {
       {isOpen && (
         <div className={`fixed bottom-6 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col transition-all duration-300 ${isMinimized ? 'h-14' : 'h-[520px]'}`}>
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-navy-DEFAULT rounded-t-2xl text-white flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-navy rounded-t-2xl text-white flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gold-DEFAULT flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center flex-shrink-0">
                 <Bot className="w-4 h-4 text-white" />
               </div>
               <div>
@@ -190,12 +190,12 @@ export default function ChatWidget() {
                   <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {msg.role === 'assistant' && (
                       <div className="w-7 h-7 rounded-full bg-navy-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Bot className="w-3.5 h-3.5 text-navy-DEFAULT" />
+                        <Bot className="w-3.5 h-3.5 text-navy" />
                       </div>
                     )}
                     <div className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
                       msg.role === 'user'
-                        ? 'bg-navy-DEFAULT text-white rounded-br-sm'
+                        ? 'bg-navy text-white rounded-br-sm'
                         : 'bg-white text-gray-800 shadow-sm rounded-bl-sm border border-gray-100'
                     }`}>
                       {msg.content}
@@ -211,7 +211,7 @@ export default function ChatWidget() {
                 {isTyping && (
                   <div className="flex gap-2 items-center">
                     <div className="w-7 h-7 rounded-full bg-navy-100 flex items-center justify-center flex-shrink-0">
-                      <Bot className="w-3.5 h-3.5 text-navy-DEFAULT" />
+                      <Bot className="w-3.5 h-3.5 text-navy" />
                     </div>
                     <div className="bg-white px-4 py-2.5 rounded-2xl rounded-bl-sm shadow-sm border border-gray-100 flex gap-1.5">
                       <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -248,7 +248,7 @@ export default function ChatWidget() {
                 <button
                   type="submit"
                   disabled={!input.trim() || isTyping}
-                  className="bg-navy-DEFAULT disabled:opacity-40 hover:bg-navy-700 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
+                  className="bg-navy disabled:opacity-40 hover:bg-navy-700 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
                 >
                   <Send className="w-4 h-4" />
                 </button>

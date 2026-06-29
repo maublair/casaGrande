@@ -135,7 +135,7 @@ export default function BookingModal({ roomType, rooms, checkIn, checkOut, adult
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
           <div>
-            <h2 className="font-serif text-2xl text-navy-DEFAULT">Reservar {roomType.name}</h2>
+            <h2 className="font-serif text-2xl text-navy">Reservar {roomType.name}</h2>
             <p className="text-gray-400 text-sm mt-0.5">{checkIn} al {checkOut} &mdash; {nights} {nights === 1 ? 'noche' : 'noches'}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -147,8 +147,8 @@ export default function BookingModal({ roomType, rooms, checkIn, checkOut, adult
         <div className="flex items-center gap-0 px-6 py-4 border-b border-gray-50">
           {['Datos', 'Extras', 'Confirmar'].map((s, i) => (
             <div key={s} className="flex items-center">
-              <div className={`flex items-center gap-2 text-sm ${step === i + 1 ? 'text-navy-DEFAULT font-semibold' : step > i + 1 ? 'text-olive-600' : 'text-gray-400'}`}>
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step === i + 1 ? 'bg-navy-DEFAULT text-white' : step > i + 1 ? 'bg-olive-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+              <div className={`flex items-center gap-2 text-sm ${step === i + 1 ? 'text-navy font-semibold' : step > i + 1 ? 'text-olive-600' : 'text-gray-400'}`}>
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step === i + 1 ? 'bg-navy text-white' : step > i + 1 ? 'bg-olive-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
                   {i + 1}
                 </div>
                 <span className="hidden sm:block">{s}</span>
@@ -204,13 +204,13 @@ export default function BookingModal({ roomType, rooms, checkIn, checkOut, adult
                 <div className="flex items-center gap-3">
                   <Utensils className="w-5 h-5 text-olive-600" />
                   <div>
-                    <p className="font-medium text-navy-DEFAULT">Desayuno Buffet incluido</p>
+                    <p className="font-medium text-navy">Desayuno Buffet incluido</p>
                     <p className="text-xs text-gray-400">7:00 AM - 10:30 AM | S/ 35 por persona por noche</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-navy-DEFAULT">+ S/ {35 * adults * nights}</span>
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${form.breakfast ? 'bg-navy-DEFAULT border-navy-DEFAULT' : 'border-gray-300'}`}>
+                  <span className="text-sm font-semibold text-navy">+ S/ {35 * adults * nights}</span>
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${form.breakfast ? 'bg-navy border-navy' : 'border-gray-300'}`}>
                     {form.breakfast && <span className="text-white text-xs font-bold">✓</span>}
                   </div>
                 </div>
@@ -232,7 +232,7 @@ export default function BookingModal({ roomType, rooms, checkIn, checkOut, adult
           {step === 3 && (
             <div className="space-y-4">
               <div className="bg-cream rounded-xl p-5 space-y-3">
-                <h3 className="font-semibold text-navy-DEFAULT">Resumen de tu Reserva</h3>
+                <h3 className="font-semibold text-navy">Resumen de tu Reserva</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Huesped</span>
@@ -265,7 +265,7 @@ export default function BookingModal({ roomType, rooms, checkIn, checkOut, adult
                         <span>S/ {breakfastTotal.toFixed(0)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between font-bold text-navy-DEFAULT text-base pt-2 border-t border-gray-200 mt-2">
+                    <div className="flex justify-between font-bold text-navy text-base pt-2 border-t border-gray-200 mt-2">
                       <span>Total</span>
                       <span>S/ {total.toFixed(0)}</span>
                     </div>
@@ -291,7 +291,7 @@ export default function BookingModal({ roomType, rooms, checkIn, checkOut, adult
             <button
               onClick={() => setStep(s => s + 1)}
               disabled={step === 1 && (!form.firstName || !form.lastName || !form.email)}
-              className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-40 text-white font-semibold py-3 rounded-xl transition-all"
+              className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-40 text-white font-semibold py-3 rounded-xl transition-all"
             >
               Continuar
             </button>
@@ -299,7 +299,7 @@ export default function BookingModal({ roomType, rooms, checkIn, checkOut, adult
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-1 bg-gold-DEFAULT hover:bg-gold-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-all"
+              className="flex-1 bg-gold hover:bg-gold-600 disabled:opacity-60 text-navy-900 font-semibold py-3 rounded-xl transition-all"
             >
               {loading ? 'Reservando...' : 'Confirmar Reserva'}
             </button>

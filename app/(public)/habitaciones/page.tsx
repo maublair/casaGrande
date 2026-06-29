@@ -111,13 +111,13 @@ export default function HabitacionesPage() {
 
                   <div className="lg:w-1/2 w-full space-y-5">
                     <div>
-                      <p className="font-serif italic text-gold-DEFAULT text-base mb-1">Categoria</p>
+                      <p className="font-serif italic text-gold text-base mb-1">Categoria</p>
                       <h2 className="font-serif text-3xl lg:text-4xl text-gray-900 font-light">{type.name}</h2>
                     </div>
 
                     <div className="flex items-center gap-6 text-sm text-gray-600">
-                      <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-navy-DEFAULT" /> Hasta {type.capacity} personas</span>
-                      <span className="flex items-center gap-1.5"><BedDouble className="w-4 h-4 text-navy-DEFAULT" /> {type.rooms.length} habitacion{type.rooms.length !== 1 ? 'es' : ''}</span>
+                      <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-navy" /> Hasta {type.capacity} personas</span>
+                      <span className="flex items-center gap-1.5"><BedDouble className="w-4 h-4 text-navy" /> {type.rooms.length} habitacion{type.rooms.length !== 1 ? 'es' : ''}</span>
                     </div>
 
                     {type.description && (
@@ -129,7 +129,7 @@ export default function HabitacionesPage() {
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Incluye</p>
                         <div className="flex flex-wrap gap-2">
                           {type.amenities.map(a => (
-                            <span key={a} className="bg-navy-50 text-navy-DEFAULT text-xs font-medium px-3 py-1.5 rounded-full border border-navy-100">
+                            <span key={a} className="bg-navy-50 text-navy text-xs font-medium px-3 py-1.5 rounded-full border border-navy-100">
                               {a}
                             </span>
                           ))}
@@ -140,14 +140,14 @@ export default function HabitacionesPage() {
                     <div className="flex items-end justify-between pt-2">
                       <div>
                         <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Desde</p>
-                        <p className="text-3xl font-light text-navy-DEFAULT">
+                        <p className="text-3xl font-light text-navy">
                           S/ <span className="font-semibold">{type.base_price.toFixed(0)}</span>
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">por noche</p>
                       </div>
                       <a
                         href="/#reservar"
-                        className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+                        className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
                       >
                         Reservar <ArrowRight className="w-4 h-4" />
                       </a>

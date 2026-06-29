@@ -74,7 +74,7 @@ export default function HeroSlider() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="#reservar"
-              className="inline-flex items-center justify-center gap-2 bg-gold-DEFAULT hover:bg-gold-600 text-white font-semibold px-8 py-4 rounded-lg transition-all shadow-lg hover:shadow-xl text-sm tracking-wide uppercase"
+              className="inline-flex items-center justify-center gap-2 bg-gold hover:bg-gold-600 text-navy-900 font-semibold px-8 py-4 rounded-lg transition-all shadow-lg hover:shadow-xl text-sm tracking-wide uppercase"
             >
               Reservar Ahora
             </a>
@@ -110,7 +110,7 @@ export default function HeroSlider() {
           <button
             key={i}
             onClick={() => goTo(i)}
-            className={`transition-all duration-300 rounded-full ${i === current ? 'w-8 h-2 bg-gold-DEFAULT' : 'w-2 h-2 bg-white/50 hover:bg-white/80'}`}
+            className={`transition-all duration-300 rounded-full ${i === current ? 'w-8 h-2 bg-gold' : 'w-2 h-2 bg-white/50 hover:bg-white/80'}`}
             aria-label={`Slide ${i + 1}`}
           />
         ))}

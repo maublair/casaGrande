@@ -37,15 +37,15 @@ export default function ClientesAdmin() {
       {/* Header stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
-          <p className="text-2xl font-bold text-navy-DEFAULT">{customers.length}</p>
+          <p className="text-2xl font-bold text-navy">{customers.length}</p>
           <p className="text-xs text-gray-500 mt-1">Total Clientes</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
-          <p className="text-2xl font-bold text-olive-DEFAULT">{customers.filter(c => c.total_stays >= 3).length}</p>
+          <p className="text-2xl font-bold text-olive">{customers.filter(c => c.total_stays >= 3).length}</p>
           <p className="text-xs text-gray-500 mt-1">Clientes Frecuentes</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
-          <p className="text-2xl font-bold text-gold-DEFAULT">S/ {customers.reduce((s, c) => s + c.total_spent, 0).toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gold">S/ {customers.reduce((s, c) => s + c.total_spent, 0).toLocaleString()}</p>
           <p className="text-xs text-gray-500 mt-1">Ingresos Totales</p>
         </div>
       </div>
@@ -63,7 +63,7 @@ export default function ClientesAdmin() {
         </div>
         <button
           onClick={() => { setEditCustomer(null); setShowForm(true); }}
-          className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" /> Nuevo Cliente
         </button>
@@ -80,7 +80,7 @@ export default function ClientesAdmin() {
             <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-navy-DEFAULT rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                  <div className="w-10 h-10 bg-navy rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                     {c.first_name[0]}{c.last_name[0]}
                   </div>
                   <div>
@@ -111,17 +111,17 @@ export default function ClientesAdmin() {
               <div className="flex items-center justify-between pt-3 border-t border-gray-50">
                 <div className="flex gap-4 text-center">
                   <div>
-                    <p className="font-bold text-navy-DEFAULT text-sm">{c.total_stays}</p>
+                    <p className="font-bold text-navy text-sm">{c.total_stays}</p>
                     <p className="text-[10px] text-gray-400">Estancias</p>
                   </div>
                   <div>
-                    <p className="font-bold text-olive-DEFAULT text-sm">S/ {c.total_spent.toLocaleString()}</p>
+                    <p className="font-bold text-olive text-sm">S/ {c.total_spent.toLocaleString()}</p>
                     <p className="text-[10px] text-gray-400">Gastado</p>
                   </div>
                 </div>
                 <button
                   onClick={() => { setEditCustomer(c); setShowForm(true); }}
-                  className="flex items-center gap-1 text-xs text-navy-DEFAULT hover:bg-navy-50 px-3 py-1.5 rounded-lg transition-colors"
+                  className="flex items-center gap-1 text-xs text-navy hover:bg-navy-50 px-3 py-1.5 rounded-lg transition-colors"
                 >
                   <Eye className="w-3.5 h-3.5" /> Ver
                 </button>

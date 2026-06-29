@@ -21,7 +21,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="bg-navy-DEFAULT text-white py-4">
+      <div className="bg-navy text-white py-4">
         <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-8 text-sm">
           {[
             { label: 'Ubicacion', value: 'Vallecito, Arequipa' },
@@ -32,7 +32,7 @@ export default function HomePage() {
           ].map(item => (
             <div key={item.label} className="flex items-center gap-2 text-center">
               <span className="text-white/55 text-xs uppercase tracking-widest">{item.label}</span>
-              <span className="text-gold-DEFAULT font-medium">|</span>
+              <span className="text-gold font-medium">|</span>
               <span className="text-white font-medium">{item.value}</span>
             </div>
           ))}

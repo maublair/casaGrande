@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="object-contain"
             />
           </div>
-          <Loader2 className="w-6 h-6 text-navy-DEFAULT animate-spin mx-auto" />
+          <Loader2 className="w-6 h-6 text-navy animate-spin mx-auto" />
         </div>
       </div>
     );

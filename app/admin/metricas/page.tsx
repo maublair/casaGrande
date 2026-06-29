@@ -96,10 +96,10 @@ export default function MetricasAdmin() {
   }, []);
 
   const kpis = [
-    { label: 'Ocupacion Actual', value: `${occupancyRate}%`, icon: BedDouble, color: 'text-navy-DEFAULT', bg: 'bg-navy-50' },
+    { label: 'Ocupacion Actual', value: `${occupancyRate}%`, icon: BedDouble, color: 'text-navy', bg: 'bg-navy-50' },
     { label: 'Ingresos del Ano', value: `S/ ${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Tarifa Media/Noche', value: `S/ ${avgDailyRate}`, icon: DollarSign, color: 'text-gold-DEFAULT', bg: 'bg-gold-50' },
-    { label: 'Total Clientes', value: totalGuests, icon: Users, color: 'text-olive-DEFAULT', bg: 'bg-olive-50' },
+    { label: 'Tarifa Media/Noche', value: `S/ ${avgDailyRate}`, icon: DollarSign, color: 'text-gold', bg: 'bg-gold-50' },
+    { label: 'Total Clientes', value: totalGuests, icon: Users, color: 'text-olive', bg: 'bg-olive-50' },
   ];
 
   if (loading) return (

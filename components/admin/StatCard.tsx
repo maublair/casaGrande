@@ -10,9 +10,9 @@ interface StatCardProps {
 }
 
 const colorMap = {
-  navy: { bg: 'bg-navy-50', icon: 'bg-navy-DEFAULT text-white', text: 'text-navy-DEFAULT' },
-  olive: { bg: 'bg-olive-50', icon: 'bg-olive-DEFAULT text-white', text: 'text-olive-800' },
-  gold: { bg: 'bg-gold-50', icon: 'bg-gold-DEFAULT text-white', text: 'text-gold-800' },
+  navy: { bg: 'bg-navy-50', icon: 'bg-navy text-white', text: 'text-navy' },
+  olive: { bg: 'bg-olive-50', icon: 'bg-olive text-white', text: 'text-olive-800' },
+  gold: { bg: 'bg-gold-50', icon: 'bg-gold text-white', text: 'text-gold-800' },
   green: { bg: 'bg-green-50', icon: 'bg-green-500 text-white', text: 'text-green-800' },
   red: { bg: 'bg-red-50', icon: 'bg-red-500 text-white', text: 'text-red-800' },
 };

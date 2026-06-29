@@ -112,7 +112,7 @@ export default function RestauranteAdminPage() {
           <p className="text-sm text-gray-500 mt-0.5">{items.length} platos — {items.filter(i => i.is_available).length} disponibles</p>
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
+          className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
           <Plus className="w-4 h-4" /> Nuevo Plato
         </button>
       </div>
@@ -121,7 +121,7 @@ export default function RestauranteAdminPage() {
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         <button onClick={() => setActiveTab('all')}
           className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-            activeTab === 'all' ? 'bg-navy-DEFAULT text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            activeTab === 'all' ? 'bg-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}>
           Todos ({items.length})
         </button>
@@ -130,7 +130,7 @@ export default function RestauranteAdminPage() {
           return (
             <button key={cat.id} onClick={() => setActiveTab(cat.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                activeTab === cat.id ? 'bg-navy-DEFAULT text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                activeTab === cat.id ? 'bg-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}>
               {cat.name} ({count})
             </button>
@@ -173,7 +173,7 @@ export default function RestauranteAdminPage() {
                       {item.description && <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{item.description}</p>}
                     </td>
                     <td className="px-5 py-3.5 text-xs text-gray-500">{item.menu_categories?.name || '—'}</td>
-                    <td className="px-5 py-3.5 font-bold text-navy-DEFAULT">S/ {item.price.toFixed(2)}</td>
+                    <td className="px-5 py-3.5 font-bold text-navy">S/ {item.price.toFixed(2)}</td>
                     <td className="px-5 py-3.5 text-gray-500 text-xs">{item.prep_time_minutes} min</td>
                     <td className="px-5 py-3.5">
                       <button onClick={() => toggleAvailable(item)}
@@ -196,7 +196,7 @@ export default function RestauranteAdminPage() {
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1.5">
                         <button onClick={() => openEdit(item)}
-                          className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy-DEFAULT rounded-lg transition-colors">
+                          className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy rounded-lg transition-colors">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => deleteItem(item.id)}
@@ -226,12 +226,12 @@ export default function RestauranteAdminPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nombre *</label>
                   <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Categoria</label>
                   <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
                     <option value="">Sin categoria</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -240,46 +240,46 @@ export default function RestauranteAdminPage() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Descripcion</label>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 resize-none" />
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 resize-none" />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Precio (S/)</label>
                   <input type="number" min="0" step="0.5" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Prep. (min)</label>
                   <input type="number" min="1" value={form.prep_time_minutes} onChange={e => setForm(f => ({ ...f, prep_time_minutes: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Orden</label>
                   <input type="number" min="0" value={form.display_order} onChange={e => setForm(f => ({ ...f, display_order: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">URL de imagen</label>
                 <input type="url" value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
                   placeholder="https://..." />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tags (separados por coma)</label>
                 <input type="text" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
                   placeholder="vegetariano, sin gluten, picante..." />
               </div>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.is_available} onChange={e => setForm(f => ({ ...f, is_available: e.target.checked }))}
-                    className="w-4 h-4 accent-navy-DEFAULT" />
+                    className="w-4 h-4 accent-navy" />
                   <span className="text-sm text-gray-700 font-medium">Disponible</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.is_featured} onChange={e => setForm(f => ({ ...f, is_featured: e.target.checked }))}
-                    className="w-4 h-4 accent-gold-DEFAULT" />
+                    className="w-4 h-4 accent-gold" />
                   <span className="text-sm text-gray-700 font-medium">Destacado</span>
                 </label>
               </div>
@@ -287,7 +287,7 @@ export default function RestauranteAdminPage() {
             <div className="flex gap-3 px-6 pb-6">
               <button onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50">Cancelar</button>
               <button onClick={saveItem} disabled={!form.name || !form.price}
-                className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
                 {editItem ? 'Guardar cambios' : 'Agregar al menu'}
               </button>
             </div>

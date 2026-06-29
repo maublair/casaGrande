@@ -124,11 +124,11 @@ export default function CustomerDashboard() {
           <div className="max-w-md mx-auto">
             {/* Hero */}
             <div className="text-center mb-10">
-              <div className="w-16 h-16 bg-navy-DEFAULT rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg">
+              <div className="w-16 h-16 bg-navy rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg">
                 <User className="w-8 h-8 text-white" />
               </div>
-              <h1 className="font-serif text-3xl text-navy-DEFAULT mb-2">
-                Portal del <span className="italic text-gold-DEFAULT">Huesped</span>
+              <h1 className="font-serif text-3xl text-navy mb-2">
+                Portal del <span className="italic text-gold">Huesped</span>
               </h1>
               <p className="text-gray-500 text-sm">
                 Accede con tu email o numero de documento para ver tus reservas y perfil.
@@ -180,7 +180,7 @@ export default function CustomerDashboard() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                className="w-full bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -191,7 +191,7 @@ export default function CustomerDashboard() {
 
               <p className="text-center text-xs text-gray-400 pt-2">
                 ¿Primera vez?{' '}
-                <Link href="/habitaciones" className="text-navy-DEFAULT underline hover:no-underline">
+                <Link href="/habitaciones" className="text-navy underline hover:no-underline">
                   Haz tu primera reserva
                 </Link>{' '}
                 y se creara tu cuenta automaticamente.
@@ -206,7 +206,7 @@ export default function CustomerDashboard() {
                 { icon: User,          label: 'Tu perfil',    desc: 'Datos y preferencias' },
               ].map(card => (
                 <div key={card.label} className="bg-white rounded-xl p-3 border border-gray-100 text-center shadow-sm">
-                  <card.icon className="w-5 h-5 text-navy-DEFAULT mx-auto mb-1.5" />
+                  <card.icon className="w-5 h-5 text-navy mx-auto mb-1.5" />
                   <p className="text-xs font-semibold text-gray-700">{card.label}</p>
                   <p className="text-[10px] text-gray-400 mt-0.5">{card.desc}</p>
                 </div>
@@ -219,7 +219,7 @@ export default function CustomerDashboard() {
         <div className="pt-24 pb-16 px-4">
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Welcome banner */}
-            <div className="bg-navy-DEFAULT rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="bg-navy rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-white/15 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                   {customer?.first_name?.[0]}{customer?.last_name?.[0]}
@@ -233,7 +233,7 @@ export default function CustomerDashboard() {
                     {customer?.total_stays} estancia{customer?.total_stays !== 1 ? 's' : ''} &nbsp;·&nbsp;
                     S/ {customer?.total_spent?.toLocaleString()} total
                     {(customer?.total_stays ?? 0) >= 3 && (
-                      <span className="ml-2 bg-gold-DEFAULT text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      <span className="ml-2 bg-gold text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                         VIP
                       </span>
                     )}
@@ -243,7 +243,7 @@ export default function CustomerDashboard() {
               <div className="flex gap-2">
                 <Link
                   href="/habitaciones"
-                  className="flex items-center gap-2 bg-gold-DEFAULT hover:bg-gold-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all"
+                  className="flex items-center gap-2 bg-gold hover:bg-gold-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all"
                 >
                   <BedDouble className="w-4 h-4" /> Nueva Reserva
                 </Link>
@@ -260,9 +260,9 @@ export default function CustomerDashboard() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { label: 'Reservas activas', value: upcoming.length, color: 'text-green-600', bg: 'bg-green-50' },
-                { label: 'Historial total', value: reservations.length, color: 'text-navy-DEFAULT', bg: 'bg-navy-50' },
-                { label: 'Estancias', value: customer?.total_stays ?? 0, color: 'text-olive-DEFAULT', bg: 'bg-olive-50' },
-                { label: 'Total gastado', value: `S/ ${(customer?.total_spent ?? 0).toLocaleString()}`, color: 'text-gold-DEFAULT', bg: 'bg-gold-50' },
+                { label: 'Historial total', value: reservations.length, color: 'text-navy', bg: 'bg-navy-50' },
+                { label: 'Estancias', value: customer?.total_stays ?? 0, color: 'text-olive', bg: 'bg-olive-50' },
+                { label: 'Total gastado', value: `S/ ${(customer?.total_spent ?? 0).toLocaleString()}`, color: 'text-gold', bg: 'bg-gold-50' },
               ].map(s => (
                 <div key={s.label} className={`${s.bg} rounded-xl p-4 border border-white shadow-sm`}>
                   <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -279,7 +279,7 @@ export default function CustomerDashboard() {
                   onClick={() => setActiveTab(tab)}
                   className={`px-5 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
                     activeTab === tab
-                      ? 'bg-white text-navy-DEFAULT shadow-sm'
+                      ? 'bg-white text-navy shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -324,7 +324,7 @@ export default function CustomerDashboard() {
                     <p className="text-gray-400 text-sm mb-6">Haz tu primera reserva y apareceran aqui.</p>
                     <Link
                       href="/habitaciones"
-                      className="inline-flex items-center gap-2 bg-navy-DEFAULT text-white font-semibold px-6 py-3 rounded-xl hover:bg-navy-700 transition-all"
+                      className="inline-flex items-center gap-2 bg-navy text-white font-semibold px-6 py-3 rounded-xl hover:bg-navy-700 transition-all"
                     >
                       Ver habitaciones <ArrowRight className="w-4 h-4" />
                     </Link>
@@ -340,7 +340,7 @@ export default function CustomerDashboard() {
                   <h2 className="font-semibold text-gray-800">Mis Datos</h2>
                   <button
                     onClick={() => setEditingProfile(!editingProfile)}
-                    className="flex items-center gap-1.5 text-sm text-navy-DEFAULT hover:bg-navy-50 px-3 py-1.5 rounded-lg transition-colors"
+                    className="flex items-center gap-1.5 text-sm text-navy hover:bg-navy-50 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     {editingProfile ? 'Cancelar' : 'Editar'}
@@ -375,7 +375,7 @@ export default function CustomerDashboard() {
                     </div>
                     <div className="flex gap-3 pt-2">
                       <button type="button" onClick={() => setEditingProfile(false)} className="flex-1 border-2 border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:border-gray-300 transition-colors">Cancelar</button>
-                      <button type="submit" disabled={savingProfile} className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-all">
+                      <button type="submit" disabled={savingProfile} className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-all">
                         {savingProfile ? 'Guardando...' : 'Guardar cambios'}
                       </button>
                     </div>
@@ -400,7 +400,7 @@ export default function CustomerDashboard() {
                 {/* Loyalty banner */}
                 {(customer.total_stays ?? 0) >= 3 && (
                   <div className="mx-6 mb-6 bg-gold-50 border border-gold-200 rounded-xl p-4 flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold-DEFAULT flex-shrink-0" />
+                    <Star className="w-5 h-5 text-gold flex-shrink-0" />
                     <div>
                       <p className="font-semibold text-gold-800 text-sm">Cliente VIP Casagrande</p>
                       <p className="text-xs text-gold-700 mt-0.5">Disfruta de beneficios exclusivos: upgrade de habitacion sujeto a disponibilidad, early check-in y atencion preferencial.</p>
@@ -452,7 +452,7 @@ function ReservationCard({
             alt="Room"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-navy-DEFAULT/30" />
+          <div className="absolute inset-0 bg-navy/30" />
           <div className="absolute bottom-2 left-2 text-white">
             <p className="text-xs font-bold">Hab. {r.rooms?.room_number ?? '—'}</p>
           </div>
@@ -485,7 +485,7 @@ function ReservationCard({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs text-gray-400">Total: </span>
-              <span className="font-bold text-navy-DEFAULT">S/ {r.total_amount?.toFixed(0)}</span>
+              <span className="font-bold text-navy">S/ {r.total_amount?.toFixed(0)}</span>
               {r.paid_amount > 0 && r.paid_amount < r.total_amount && (
                 <span className="ml-2 text-xs text-orange-600">
                   (Pendiente: S/ {(r.total_amount - r.paid_amount).toFixed(0)})

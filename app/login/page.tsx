@@ -48,11 +48,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-800 via-navy-DEFAULT to-navy-900 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-800 via-navy to-navy-900 p-4 relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-gold-DEFAULT rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-olive-DEFAULT rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+        <div className="absolute top-0 left-0 w-96 h-96 bg-gold rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-olive rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
@@ -72,7 +72,7 @@ export default function LoginPage() {
 
         {/* Login form */}
         <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8">
-          <h1 className="text-2xl font-serif text-navy-DEFAULT text-center mb-6">Iniciar Sesion</h1>
+          <h1 className="text-2xl font-serif text-navy text-center mb-6">Iniciar Sesion</h1>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
@@ -90,7 +90,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 focus:border-navy-300"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy-300"
                   placeholder="admin@casagrande.pe"
                 />
               </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 focus:border-navy-300"
+                  className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy-300"
                   placeholder="demo1234"
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -116,7 +116,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Ingresar <ArrowRight className="w-4 h-4" /></>}
             </button>
@@ -134,7 +134,7 @@ export default function LoginPage() {
             <button
               onClick={() => quickLogin('admin@casagrande.pe', 'demo1234')}
               disabled={loading}
-              className="group relative bg-gradient-to-br from-navy-DEFAULT to-navy-700 rounded-2xl p-4 text-left hover:scale-[1.03] transition-all shadow-md hover:shadow-xl disabled:opacity-50"
+              className="group relative bg-gradient-to-br from-navy to-navy-700 rounded-2xl p-4 text-left hover:scale-[1.03] transition-all shadow-md hover:shadow-xl disabled:opacity-50"
             >
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -153,7 +153,7 @@ export default function LoginPage() {
             <button
               onClick={() => quickLogin('cliente@casagrande.pe', 'demo1234')}
               disabled={loading}
-              className="group relative bg-gradient-to-br from-olive-DEFAULT to-olive-700 rounded-2xl p-4 text-left hover:scale-[1.03] transition-all shadow-md hover:shadow-xl disabled:opacity-50"
+              className="group relative bg-gradient-to-br from-olive to-olive-700 rounded-2xl p-4 text-left hover:scale-[1.03] transition-all shadow-md hover:shadow-xl disabled:opacity-50"
             >
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">

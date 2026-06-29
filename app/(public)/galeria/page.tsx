@@ -71,7 +71,7 @@ export default function GaleriaPage() {
           {categories.map(cat => (
             <button key={cat} onClick={() => setActive(cat)}
               className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                active === cat ? 'bg-navy-DEFAULT text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                active === cat ? 'bg-navy text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}>
               {cat}
               <span className="ml-1.5 text-xs opacity-70">

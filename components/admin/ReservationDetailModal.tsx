@@ -84,7 +84,7 @@ export default function ReservationDetailModal({ reservation: res, onClose, onUp
           <div className="bg-navy-50 rounded-xl p-4">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-500">Total reserva</span>
-              <span className="font-bold text-navy-DEFAULT">S/ {res.total_amount?.toFixed(2)}</span>
+              <span className="font-bold text-navy">S/ {res.total_amount?.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-500">Pagado</span>
@@ -130,7 +130,7 @@ export default function ReservationDetailModal({ reservation: res, onClose, onUp
                   onChange={e => setPayForm(f => ({ ...f, reference: e.target.value }))}
                   className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-300"
                 />
-                <button type="submit" disabled={saving} className="bg-navy-DEFAULT hover:bg-navy-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-1">
+                <button type="submit" disabled={saving} className="bg-navy hover:bg-navy-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-1">
                   <Plus className="w-3.5 h-3.5" /> Agregar
                 </button>
               </div>

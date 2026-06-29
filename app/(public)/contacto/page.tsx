@@ -55,7 +55,7 @@ export default function ContactoPage() {
             ].map(item => (
               <div key={item.title} className="flex gap-4">
                 <div className="w-12 h-12 bg-navy-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <item.icon className="w-5 h-5 text-navy-DEFAULT" />
+                  <item.icon className="w-5 h-5 text-navy" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">{item.title}</p>
@@ -87,7 +87,7 @@ export default function ContactoPage() {
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
               <div className="bg-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
-                <MapPin className="w-4 h-4 text-navy-DEFAULT" />
+                <MapPin className="w-4 h-4 text-navy" />
                 <span className="text-sm font-medium text-gray-800">Ver en Google Maps</span>
               </div>
             </div>
@@ -105,7 +105,7 @@ export default function ContactoPage() {
               <p className="text-gray-600">Nos pondremos en contacto contigo en menos de 24 horas.</p>
               <button
                 onClick={() => { setSent(false); setForm({ name: '', email: '', phone: '', subject: '', message: '' }); }}
-                className="mt-6 text-navy-DEFAULT font-medium hover:underline text-sm"
+                className="mt-6 text-navy font-medium hover:underline text-sm"
               >
                 Enviar otro mensaje
               </button>
@@ -122,7 +122,7 @@ export default function ContactoPage() {
                       required
                       value={form.name}
                       onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 focus:border-navy-DEFAULT transition-colors bg-gray-50/50"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy transition-colors bg-gray-50/50"
                       placeholder="Tu nombre completo"
                     />
                   </div>
@@ -133,7 +133,7 @@ export default function ContactoPage() {
                       required
                       value={form.email}
                       onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 focus:border-navy-DEFAULT transition-colors bg-gray-50/50"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy transition-colors bg-gray-50/50"
                       placeholder="tu@email.com"
                     />
                   </div>
@@ -146,7 +146,7 @@ export default function ContactoPage() {
                       type="tel"
                       value={form.phone}
                       onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 focus:border-navy-DEFAULT transition-colors bg-gray-50/50"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy transition-colors bg-gray-50/50"
                       placeholder="+51 900 000 000"
                     />
                   </div>
@@ -156,7 +156,7 @@ export default function ContactoPage() {
                       required
                       value={form.subject}
                       onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 focus:border-navy-DEFAULT transition-colors bg-gray-50/50"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy transition-colors bg-gray-50/50"
                     >
                       <option value="">Selecciona un asunto</option>
                       <option value="reserva">Consulta de reserva</option>
@@ -174,7 +174,7 @@ export default function ContactoPage() {
                     rows={5}
                     value={form.message}
                     onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 focus:border-navy-DEFAULT transition-colors bg-gray-50/50 resize-none"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy transition-colors bg-gray-50/50 resize-none"
                     placeholder="Cuéntanos en que podemos ayudarte..."
                   />
                 </div>
@@ -182,7 +182,7 @@ export default function ContactoPage() {
                 <button
                   type="submit"
                   disabled={sending}
-                  className="w-full flex items-center justify-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-70 text-white font-semibold py-4 rounded-xl transition-all shadow-md hover:shadow-lg"
+                  className="w-full flex items-center justify-center gap-2 bg-navy hover:bg-navy-700 disabled:opacity-70 text-white font-semibold py-4 rounded-xl transition-all shadow-md hover:shadow-lg"
                 >
                   {sending ? (
                     <>

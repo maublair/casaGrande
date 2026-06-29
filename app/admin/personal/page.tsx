@@ -59,7 +59,7 @@ export default function PersonalAdmin() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-          <p className="text-2xl font-bold text-navy-DEFAULT">{staff.filter(s => s.is_active).length}</p>
+          <p className="text-2xl font-bold text-navy">{staff.filter(s => s.is_active).length}</p>
           <p className="text-xs text-gray-500 mt-1">Personal Activo</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
@@ -71,7 +71,7 @@ export default function PersonalAdmin() {
           <p className="text-xs text-gray-500 mt-1">Planilla Mensual</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-          <p className="text-2xl font-bold text-olive-DEFAULT">{depts.filter(d => staff.some(s => s.department === d && s.is_active)).length}</p>
+          <p className="text-2xl font-bold text-olive">{depts.filter(d => staff.some(s => s.department === d && s.is_active)).length}</p>
           <p className="text-xs text-gray-500 mt-1">Departamentos Activos</p>
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function PersonalAdmin() {
         </div>
         <button
           onClick={() => { setEditStaff(null); setShowForm(true); }}
-          className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" /> Agregar Personal
         </button>
@@ -132,7 +132,7 @@ export default function PersonalAdmin() {
                 <tr key={s.id} className={`hover:bg-gray-50 transition-colors ${!s.is_active ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-navy-DEFAULT rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      <div className="w-8 h-8 bg-navy rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                         {s.first_name[0]}{s.last_name[0]}
                       </div>
                       <div>
@@ -163,7 +163,7 @@ export default function PersonalAdmin() {
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => { setEditStaff(s); setShowForm(true); }} className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy-DEFAULT rounded-lg transition-colors">
+                      <button onClick={() => { setEditStaff(s); setShowForm(true); }} className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy rounded-lg transition-colors">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => toggleActive(s.id, s.is_active)} className="p-1.5 hover:bg-gray-100 text-gray-400 rounded-lg transition-colors">

@@ -52,7 +52,7 @@ export default function AdminHeader() {
         >
           <LogOut className="w-5 h-5" />
         </button>
-        <div className="w-8 h-8 rounded-xl bg-navy-DEFAULT flex items-center justify-center text-white text-sm font-bold">
+        <div className="w-8 h-8 rounded-xl bg-navy flex items-center justify-center text-white text-sm font-bold">
           A
         </div>
       </div>
