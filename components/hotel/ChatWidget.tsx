@@ -2,24 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Minimize2 } from 'lucide-react';
-import { getRooms, getSettings, createReservation } from '@/lib/wp';
+import { getRooms, getSettings, getAvailability, createReservation } from '@/lib/wp';
 
 interface Option { label: string; value: string }
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  options?: Option[];
-  timestamp: Date;
-}
+interface Message { role: 'user' | 'assistant'; content: string; options?: Option[]; timestamp: Date }
 
 type Step =
   | 'menu' | 'book_checkin' | 'book_checkout' | 'book_guests'
   | 'book_room' | 'book_name' | 'book_email' | 'book_phone'
   | 'book_confirm' | 'done' | 'handoff';
 
-interface RoomTypeRow { id: string; name: string; description: string | null; base_price: number; capacity: number }
 interface Draft {
-  checkIn?: string; checkOut?: string; adults?: number; children?: number;
+  checkIn?: string; checkOut?: string; adults?: number;
   roomTypeId?: string; roomTypeName?: string; price?: number; nights?: number; total?: number;
   name?: string; email?: string; phone?: string;
 }
@@ -30,6 +24,8 @@ const nightsBetween = (a: string, b: string) =>
   Math.max(0, Math.round((new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()) / 86400000));
 const fmtDate = (s: string) => new Date(s + 'T00:00:00').toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
 const money = (n: number) => 'S/ ' + n.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const has = (t: string, ws: string[]) => ws.some(w => t.includes(w));
 
 const MENU_OPTIONS: Option[] = [
   { label: 'Ver habitaciones y precios', value: 'rooms' },
@@ -37,99 +33,116 @@ const MENU_OPTIONS: Option[] = [
   { label: 'Servicios del hotel', value: 'services' },
   { label: 'Hablar con recepcion', value: 'handoff' },
 ];
+const QUICK: Option[] = [
+  { label: 'Habitaciones', value: 'rooms' },
+  { label: 'Reservar', value: 'book' },
+  { label: 'Recepcion', value: 'handoff' },
+];
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [step, setStep] = useState<Step>('menu');
-  const [inputMode, setInputMode] = useState<'none' | 'text' | 'date'>('none');
+  const [inputMode, setInputMode] = useState<'text' | 'date'>('text');
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [draft, setDraft] = useState<Draft>({});
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Record<string, string>>({});
   const [waNumber, setWaNumber] = useState(WA_DEFAULT);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
 
-  // Saludo inicial al abrir
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       botSay(
-        'Hola! Soy el asistente del Hotel Boutique Casagrande. Puedo mostrarte habitaciones, informarte sobre servicios y ayudarte a reservar al instante. ¿Que deseas hacer?',
+        'Hola! Soy el asistente del Hotel Boutique Casagrande. Escribeme tu consulta (horarios, ubicacion, servicios...) o elige una opcion. Tambien puedo ayudarte a reservar al instante.',
         MENU_OPTIONS
       );
-      getSettings().then((s) => { if (s.contact_whatsapp) setWaNumber(s.contact_whatsapp.replace(/\D/g, '') || WA_DEFAULT); });
+      getSettings().then((s) => {
+        setSettings(s || {});
+        if (s.contact_whatsapp) setWaNumber(s.contact_whatsapp.replace(/\D/g, '') || WA_DEFAULT);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   function botSay(content: string, options?: Option[]) {
     setMessages(prev => [...prev, { role: 'assistant', content, options, timestamp: new Date() }]);
-    persist('assistant', content);
   }
   function userSay(content: string) {
     setMessages(prev => [...prev, { role: 'user', content, timestamp: new Date() }]);
-    persist('user', content);
+  }
+  async function think(ms = 450) { setIsTyping(true); await new Promise(r => setTimeout(r, ms)); setIsTyping(false); }
+
+  // ---------- Bot entrenado (sin LLM): respuestas por intencion ----------
+  function s(key: string, fallback: string) { return settings[key] || fallback; }
+
+  async function freeTextAnswer(raw: string) {
+    userSay(raw);
+    setInput('');
+    const t = norm(raw);
+    await think();
+
+    if (has(t, ['asesor', 'humano', 'persona real', 'recepcion', 'agente', 'operador', 'hablar con alguien'])) return handoff();
+    if (has(t, ['reservar', 'hacer una reserva', 'quiero reserva', 'reservacion', 'agendar', 'quiero una habitacion', 'disponibilidad', 'hay cupo', 'hay espacio'])) return startBooking();
+    if (has(t, ['precio', 'tarifa', 'cuesta', 'cuanto', 'costo', 'habitacion', 'habitaciones', 'cuarto', 'cuartos', 'suite', 'room'])) return showRooms();
+    if (has(t, ['desayuno'])) return botSay('Si, el desayuno buffet esta incluido en la tarifa de todas las habitaciones.', QUICK);
+    if (has(t, ['restaurante', 'menu', 'carta', 'plato', 'comida', 'almuerzo', 'cena', 'gastronom', 'comer'])) return botSay('Nuestro restaurante ofrece cocina arequipena: rocoto relleno, chupe de camarones, adobo y mas. Puedes ver la carta y los platos se sirven en el hotel.', [{ label: 'Ver la carta', value: 'url:/restaurante' }, { label: 'Reservar', value: 'book' }]);
+    if (has(t, ['check-in', 'checkin', 'check in', 'hora de entrada', 'hora de llegada', 'check-out', 'checkout', 'check out', 'hora de salida', 'horario', 'a que hora'])) return botSay(`Check-in desde las ${s('checkin_time', '2:00 p. m.')} y check-out hasta las ${s('checkout_time', '12:00 m.')}. Nuestra recepcion atiende las 24 horas.`, QUICK);
+    if (has(t, ['donde', 'ubicacion', 'direccion', 'como llego', 'mapa', 'queda', 'ubicad', 'llegar', 'estan'])) return botSay(`Estamos en ${s('contact_address', 'Av. Luna Pizarro 202, Vallecito, Arequipa, Peru')}, una zona tranquila y central de la Ciudad Blanca.`, QUICK);
+    if (has(t, ['wifi', 'internet', 'wi-fi', 'conexion'])) return botSay('Si, contamos con WiFi de alta velocidad gratis en todo el hotel.', QUICK);
+    if (has(t, ['estacionamiento', 'cochera', 'parking', 'garaje', 'auto', 'carro'])) return botSay('Si, tenemos estacionamiento privado para huespedes (segun disponibilidad).', QUICK);
+    if (has(t, ['mascota', 'perro', 'gato', 'pet'])) return botSay('Por politica no se admiten mascotas en las instalaciones; consulta con recepcion por excepciones.', QUICK);
+    if (has(t, ['evento', 'boda', 'matrimonio', 'salon', 'reunion', 'conferencia', 'capacitacion', 'luna de miel', 'catering', 'banquete'])) return botSay('Ofrecemos salas para eventos y reuniones, paquetes de luna de miel y catering. Mira los detalles en la pagina de Servicios.', [{ label: 'Ver servicios', value: 'url:/servicios' }, { label: 'Hablar con recepcion', value: 'handoff' }]);
+    if (has(t, ['servicio', 'servicios', 'amenidad', 'ofrecen', 'incluye', 'que tienen', 'comodidad'])) return showServices();
+    if (has(t, ['pago', 'pagar', 'tarjeta', 'yape', 'plin', 'efectivo', 'transferencia', 'deposito', 'visa'])) return botSay('Aceptamos efectivo, tarjetas y Yape/Plin. El pago se coordina con recepcion al confirmar la reserva.', QUICK);
+    if (has(t, ['cancel', 'politica', 'reembolso', 'anular', 'devolucion'])) return botSay('Cancelacion gratuita hasta 48 horas antes de la llegada; despues se aplica el cargo de 1 noche. Recepcion coordina los detalles.', QUICK);
+    if (has(t, ['aeropuerto', 'transfer', 'traslado', 'recojo', 'pickup', 'movilidad'])) return botSay('Ofrecemos transfer al aeropuerto, a coordinar previamente con recepcion.', QUICK);
+    if (has(t, ['telefono', 'numero', 'contacto', 'llamar', 'whatsapp', 'celular', 'correo', 'email', 'mail'])) return botSay(`Telefono: ${s('contact_phone', '(054) 214000')}\nWhatsApp: ${s('contact_whatsapp', '+51 942 330 137')}\nEmail: ${s('contact_email', 'reservas@hotelcasagrande.pe')}`, [{ label: 'Abrir WhatsApp', value: 'wa' }, ...QUICK]);
+    if (has(t, ['gracias', 'genial', 'perfecto', 'muy amable', 'excelente'])) return botSay('Con gusto! ¿Algo mas en que ayudarte?', QUICK);
+    if (has(t, ['hola', 'buenas', 'buenos dias', 'buenas tardes', 'buenas noches', 'que tal', 'holi', 'hey'])) return botSay('Hola! ¿En que puedo ayudarte?', MENU_OPTIONS);
+
+    return botSay('Puedo ayudarte con habitaciones y precios, horarios, ubicacion, servicios, el restaurante o una reserva. Tambien puedo conectarte con recepcion para consultas mas especificas.', [...QUICK, { label: 'Servicios', value: 'services' }]);
   }
 
-  async function ensureConversation() { return conversationId; }
-  // Sin backend de chat en WordPress headless: no se persiste el historial.
-  async function persist(_role: string, _content: string) { /* no-op */ }
-
-  async function think(ms = 500) { setIsTyping(true); await new Promise(r => setTimeout(r, ms)); setIsTyping(false); }
-
-  // ---- Habitaciones disponibles (con conteo) ----
-  async function loadRooms(minCapacity = 0): Promise<(RoomTypeRow & { available: number })[]> {
-    const rooms = await getRooms();
-    return rooms
-      .map(t => ({ id: t.id, name: t.name, description: t.description, base_price: t.base_price, capacity: t.capacity, available: t.available || 0 }))
-      .filter(t => t.capacity >= minCapacity);
-  }
-
-  // ---- Router de acciones (botones) ----
+  // ---------- Router de botones ----------
   async function handleOption(value: string, label: string) {
     userSay(label);
-    setInputMode('none');
-
     if (value === 'menu') { await think(); setStep('menu'); botSay('¿En que mas puedo ayudarte?', MENU_OPTIONS); return; }
     if (value === 'rooms') return showRooms();
     if (value === 'services') return showServices();
     if (value === 'handoff') return handoff();
     if (value === 'book') return startBooking();
-
-    if (value.startsWith('guests:')) { return chooseGuests(parseInt(value.split(':')[1], 10)); }
-    if (value.startsWith('type:')) { return chooseType(value.split(':')[1]); }
+    if (value.startsWith('guests:')) return chooseGuests(parseInt(value.split(':')[1], 10));
+    if (value.startsWith('type:')) return chooseType(value.split(':')[1]);
     if (value === 'confirm') return confirmReservation();
     if (value === 'cancel') { await think(); setDraft({}); setStep('menu'); botSay('Reserva cancelada. ¿Algo mas en que ayudarte?', MENU_OPTIONS); return; }
   }
 
   async function showRooms() {
     await think();
-    const rows = await loadRooms();
+    const rows = await getRooms();
     if (!rows.length) { botSay('Por ahora no tengo habitaciones cargadas. Escribenos por WhatsApp y te ayudamos.', [{ label: 'WhatsApp recepcion', value: 'handoff' }]); return; }
-    const list = rows.map(r => `• ${r.name} — ${money(r.base_price)}/noche (hasta ${r.capacity} pers., ${r.available} disp.)`).join('\n');
+    const list = rows.map(r => `• ${r.name} — ${money(r.base_price)}/noche (hasta ${r.capacity} pers.)`).join('\n');
     botSay(`Estas son nuestras habitaciones:\n\n${list}`, [
-      { label: 'Reservar ahora', value: 'book' },
-      { label: 'Ver servicios', value: 'services' },
-      { label: 'Menu', value: 'menu' },
+      { label: 'Reservar ahora', value: 'book' }, { label: 'Ver servicios', value: 'services' }, { label: 'Menu', value: 'menu' },
     ]);
   }
 
   async function showServices() {
     await think();
     botSay(
-      'Servicios incluidos y disponibles:\n• Desayuno buffet incluido\n• WiFi de fibra optica gratis\n• Estacionamiento privado\n• Servicio al cuarto\n• Recepcion 24/7\n• Transfer al aeropuerto (a coordinar)\n• Salon para eventos y bodas',
-      [{ label: 'Hacer una reserva', value: 'book' }, { label: 'Menu', value: 'menu' }]
+      'Servicios del hotel:\n• Desayuno buffet incluido\n• WiFi de alta velocidad gratis\n• Estacionamiento privado\n• Servicio al cuarto\n• Recepcion 24/7\n• Salas para eventos y reuniones\n• Paquetes de luna de miel y catering',
+      [{ label: 'Ver pagina Servicios', value: 'url:/servicios' }, { label: 'Hacer una reserva', value: 'book' }, { label: 'Menu', value: 'menu' }]
     );
   }
 
   async function handoff() {
     await think();
     setStep('handoff');
-    const url = `https://wa.me/${waNumber}`;
-    botSay(`Te conecto con nuestra recepcion. Escribenos por WhatsApp y un asesor te atendera personalmente:\n${url}`, [
+    botSay(`Te conecto con nuestra recepcion. Escribenos por WhatsApp y un asesor te atendera personalmente.`, [
       { label: 'Abrir WhatsApp', value: 'wa' }, { label: 'Menu', value: 'menu' },
     ]);
   }
@@ -144,35 +157,33 @@ export default function ChatWidget() {
   }
 
   async function chooseGuests(adults: number) {
-    const d = { ...draft, adults, children: 0 };
-    setDraft(d);
+    setDraft(d => ({ ...d, adults }));
     await think();
-    const rows = await loadRooms(adults);
-    const avail = rows.filter(r => r.available > 0);
-    if (!avail.length) {
+    const avail = await getAvailability(draft.checkIn, draft.checkOut);
+    const options = avail.filter(r => r.capacity >= adults && r.available > 0);
+    if (!options.length) {
       setStep('handoff');
-      botSay('No encuentro disponibilidad para esas fechas/huespedes en linea. Te paso con recepcion para buscar opciones.', [{ label: 'WhatsApp recepcion', value: 'handoff' }, { label: 'Menu', value: 'menu' }]);
+      botSay('No encuentro disponibilidad en linea para esas fechas y numero de huespedes. Te paso con recepcion para buscar opciones.', [{ label: 'WhatsApp recepcion', value: 'handoff' }, { label: 'Cambiar fechas', value: 'book' }]);
       return;
     }
     setStep('book_room');
-    const opts = avail.map(r => ({ label: `${r.name} · ${money(r.base_price)}/noche`, value: `type:${r.id}` }));
-    botSay('Elige el tipo de habitacion:', opts);
+    setInputMode('text');
+    botSay('Estas habitaciones estan disponibles para tus fechas. Elige una:', options.map(r => ({ label: `${r.name} · ${money(r.base_price)}/noche · ${r.available} disp.`, value: `type:${r.id}` })));
   }
 
   async function chooseType(typeId: string) {
-    const rows = await loadRooms();
-    const t = rows.find(r => r.id === typeId);
-    if (!t || !draft.checkIn || !draft.checkOut) { botSay('Hubo un problema, reiniciemos la reserva.', MENU_OPTIONS); setStep('menu'); return; }
+    const avail = await getAvailability(draft.checkIn, draft.checkOut);
+    const tRoom = avail.find(r => r.id === typeId);
+    if (!tRoom || !draft.checkIn || !draft.checkOut) { botSay('Hubo un problema, reiniciemos la reserva.', MENU_OPTIONS); setStep('menu'); return; }
     const nights = nightsBetween(draft.checkIn, draft.checkOut) || 1;
-    const total = nights * Number(t.base_price);
-    setDraft(d => ({ ...d, roomTypeId: t.id, roomTypeName: t.name, price: Number(t.base_price), nights, total }));
+    const total = nights * Number(tRoom.base_price);
+    setDraft(d => ({ ...d, roomTypeId: tRoom.id, roomTypeName: tRoom.name, price: Number(tRoom.base_price), nights, total }));
     await think();
     setStep('book_name');
     setInputMode('text');
-    botSay(`Excelente eleccion: ${t.name}. ${nights} noche(s) = ${money(total)}.\n\nPara confirmar, ¿a nombre de quien va la reserva? (nombre y apellido)`);
+    botSay(`Excelente eleccion: ${tRoom.name}. ${nights} noche(s) = ${money(total)}.\n\nPara confirmar, ¿a nombre de quien va la reserva? (nombre y apellido)`);
   }
 
-  // ---- Entrada de texto / fecha ----
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
     const val = input.trim();
@@ -183,8 +194,7 @@ export default function ChatWidget() {
       userSay(`Llegada: ${fmtDate(val)}`);
       setDraft(d => ({ ...d, checkIn: val }));
       setStep('book_checkout');
-      const next = new Date(new Date(val + 'T00:00:00').getTime() + 86400000).toISOString().slice(0, 10);
-      setInput(next);
+      setInput(new Date(new Date(val + 'T00:00:00').getTime() + 86400000).toISOString().slice(0, 10));
       await think();
       botSay('¿Y tu fecha de salida (check-out)?');
       return;
@@ -194,13 +204,14 @@ export default function ChatWidget() {
       userSay(`Salida: ${fmtDate(val)}`);
       setDraft(d => ({ ...d, checkOut: val }));
       setStep('book_guests');
-      setInputMode('none');
+      setInputMode('text');
+      setInput('');
       await think();
       botSay('¿Cuantos huespedes seran?', [1, 2, 3, 4].map(n => ({ label: `${n} ${n === 1 ? 'persona' : 'personas'}`, value: `guests:${n}` })));
       return;
     }
     if (step === 'book_name') {
-      userSay(val);
+      userSay(val); setInput('');
       setDraft(d => ({ ...d, name: val }));
       setStep('book_email');
       await think();
@@ -209,7 +220,7 @@ export default function ChatWidget() {
     }
     if (step === 'book_email') {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { botSay('Ese correo no parece valido. ¿Puedes escribirlo de nuevo?'); return; }
-      userSay(val);
+      userSay(val); setInput('');
       setDraft(d => ({ ...d, email: val }));
       setStep('book_phone');
       await think();
@@ -217,11 +228,10 @@ export default function ChatWidget() {
       return;
     }
     if (step === 'book_phone') {
-      userSay(val);
+      userSay(val); setInput('');
       const d = { ...draft, phone: val };
       setDraft(d);
       setStep('book_confirm');
-      setInputMode('none');
       await think();
       botSay(
         `Confirmemos tu reserva:\n• Habitacion: ${d.roomTypeName}\n• Check-in: ${fmtDate(d.checkIn!)}\n• Check-out: ${fmtDate(d.checkOut!)}\n• Huespedes: ${d.adults}\n• Noches: ${d.nights}\n• Total: ${money(d.total!)}\n• A nombre de: ${d.name}\n\n¿Confirmo la reserva?`,
@@ -229,46 +239,38 @@ export default function ChatWidget() {
       );
       return;
     }
-    // fuera de flujo: texto libre -> derivar
-    userSay(val);
-    await think();
-    botSay('Para esa consulta te atiende mejor nuestro equipo de recepcion. ¿Te conecto por WhatsApp?', [
-      { label: 'WhatsApp recepcion', value: 'handoff' }, { label: 'Menu', value: 'menu' },
-    ]);
+    // Cualquier otro momento: consulta libre -> bot entrenado
+    await freeTextAnswer(val);
   }
 
   async function confirmReservation() {
     userSay('Si, confirmar');
     setIsTyping(true);
-    try {
-      const reservation = await createReservation({
-        name: draft.name || 'Huesped Web',
-        email: draft.email,
-        phone: draft.phone,
-        room: draft.roomTypeName,
-        check_in: draft.checkIn,
-        check_out: draft.checkOut,
-        adults: draft.adults || 1,
-        total: draft.total || 0,
-        notes: 'Reserva creada por el asistente web',
-      });
-      if (!reservation?.reservation_code) throw new Error('No se pudo registrar');
-      setIsTyping(false);
+    const res = await createReservation({
+      name: draft.name || 'Huesped Web', email: draft.email, phone: draft.phone,
+      room: draft.roomTypeName, room_id: draft.roomTypeId,
+      check_in: draft.checkIn, check_out: draft.checkOut,
+      adults: draft.adults || 1, total: draft.total || 0,
+      notes: 'Reserva creada por el asistente web',
+    });
+    setIsTyping(false);
+    if (res.ok && res.reservation_code) {
       setStep('done');
       botSay(
-        `¡Reserva registrada! 🎉\n\nCodigo: ${reservation?.reservation_code}\n${draft.roomTypeName} · ${fmtDate(draft.checkIn!)} → ${fmtDate(draft.checkOut!)}\nTotal estimado: ${money(draft.total!)}\n\nNuestra recepcion te contactara para confirmar el pago y los detalles. ¿Algo mas?`,
+        `¡Reserva registrada! 🎉\n\nCodigo: ${res.reservation_code}\n${draft.roomTypeName} · ${fmtDate(draft.checkIn!)} → ${fmtDate(draft.checkOut!)}\nTotal estimado: ${money(draft.total!)}\n\nNuestra recepcion te contactara para confirmar el pago y los detalles. ¿Algo mas?`,
         [{ label: 'Hacer otra reserva', value: 'book' }, { label: 'WhatsApp recepcion', value: 'handoff' }, { label: 'Menu', value: 'menu' }]
       );
-    } catch (err) {
-      setIsTyping(false);
-      botSay('No pude registrar la reserva en este momento. Te conecto con recepcion para completarla por WhatsApp.', [
-        { label: 'WhatsApp recepcion', value: 'handoff' }, { label: 'Menu', value: 'menu' },
-      ]);
+    } else if (res.error === 'no_availability') {
+      setStep('menu');
+      botSay('Justo se ocupo esa habitacion para esas fechas. ¿Probamos con otras fechas o te conecto con recepcion?', [{ label: 'Cambiar fechas', value: 'book' }, { label: 'WhatsApp recepcion', value: 'handoff' }]);
+    } else {
+      botSay('No pude registrar la reserva en este momento. Te conecto con recepcion para completarla por WhatsApp.', [{ label: 'WhatsApp recepcion', value: 'handoff' }, { label: 'Menu', value: 'menu' }]);
     }
   }
 
   function onOptionClick(o: Option) {
     if (o.value === 'wa') { window.open(`https://wa.me/${waNumber}`, '_blank'); return; }
+    if (o.value.startsWith('url:')) { window.location.href = o.value.slice(4); return; }
     handleOption(o.value, o.label);
   }
 
@@ -285,7 +287,7 @@ export default function ChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 bg-navy hover:bg-navy-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 bg-navy hover:bg-navy-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
           aria-label="Abrir chat"
         >
           <MessageCircle className="w-6 h-6" />
@@ -294,17 +296,15 @@ export default function ChatWidget() {
       )}
 
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 z-50 w-[370px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col transition-all duration-300 ${isMinimized ? 'h-14' : 'h-[560px] max-h-[calc(100vh-3rem)]'}`}>
+        <div className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[370px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col transition-all duration-300 ${isMinimized ? 'h-14' : 'h-[560px] max-h-[calc(100vh-2rem)]'}`}>
           <div className="flex items-center justify-between px-4 py-3 bg-navy rounded-t-2xl text-white flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-navy-900" />
-              </div>
+              <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center flex-shrink-0"><Bot className="w-4 h-4 text-navy-900" /></div>
               <div>
                 <p className="text-sm font-semibold">Asistente Casagrande</p>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-xs text-white/70">Reservas en linea 24/7</span>
+                  <span className="text-xs text-white/70">En linea 24/7</span>
                 </div>
               </div>
             </div>
@@ -330,7 +330,6 @@ export default function ChatWidget() {
                     )}
                   </div>
                 ))}
-
                 {isTyping && (
                   <div className="flex gap-2 items-center">
                     <div className="w-7 h-7 rounded-full bg-navy-100 flex items-center justify-center flex-shrink-0"><Bot className="w-3.5 h-3.5 text-navy" /></div>
@@ -344,9 +343,8 @@ export default function ChatWidget() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Opciones (botones) */}
               {!isTyping && lastOptions.length > 0 && (
-                <div className="px-4 py-2 border-t border-gray-100 flex flex-wrap gap-2 bg-white flex-shrink-0">
+                <div className="px-3 py-2 border-t border-gray-100 flex flex-wrap gap-2 bg-white flex-shrink-0">
                   {lastOptions.map(o => (
                     <button key={o.value} onClick={() => onOptionClick(o)}
                       className="text-xs text-navy-700 border border-navy-200 rounded-full px-3 py-1.5 hover:bg-navy hover:text-white transition-colors">
@@ -356,23 +354,21 @@ export default function ChatWidget() {
                 </div>
               )}
 
-              {/* Entrada de texto / fecha (solo cuando aplica) */}
-              {inputMode !== 'none' && (
-                <form onSubmit={handleSubmit} className="p-3 border-t border-gray-100 flex gap-2 bg-white rounded-b-2xl flex-shrink-0">
-                  <input
-                    type={inputMode === 'date' ? 'date' : 'text'}
-                    min={inputMode === 'date' ? todayStr() : undefined}
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    placeholder={inputMode === 'text' ? 'Escribe tu respuesta...' : ''}
-                    className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-300 bg-gray-50"
-                  />
-                  <button type="submit" disabled={!input.trim()}
-                    className="bg-navy disabled:opacity-40 hover:bg-navy-700 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors flex-shrink-0">
-                    <Send className="w-4 h-4" />
-                  </button>
-                </form>
-              )}
+              {/* Entrada de texto SIEMPRE disponible (consultas libres + flujo de reserva) */}
+              <form onSubmit={handleSubmit} className="p-3 border-t border-gray-100 flex gap-2 bg-white rounded-b-2xl flex-shrink-0">
+                <input
+                  type={inputMode === 'date' ? 'date' : 'text'}
+                  min={inputMode === 'date' ? todayStr() : undefined}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  placeholder={inputMode === 'date' ? '' : (step.startsWith('book_') ? 'Escribe tu respuesta...' : 'Escribe tu consulta...')}
+                  className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-300 bg-gray-50"
+                />
+                <button type="submit" disabled={!input.trim()}
+                  className="bg-navy disabled:opacity-40 hover:bg-navy-700 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors flex-shrink-0">
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
             </>
           )}
         </div>

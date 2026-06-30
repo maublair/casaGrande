@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { X, ArrowRight, Check, Loader2, CalendarCheck, Users } from 'lucide-react';
 import { createReservation } from '@/lib/wp';
 
-interface BookingRoom { name: string; base_price: number; capacity: number }
+interface BookingRoom { id?: string; name: string; base_price: number; capacity: number }
 interface BookingModalProps {
   room: BookingRoom;
   onClose: () => void;
@@ -32,10 +32,11 @@ export default function BookingModal({ room, onClose }: BookingModalProps) {
     if (checkOut <= checkIn) { setErrMsg('La fecha de salida debe ser posterior a la de llegada.'); setStatus('error'); return; }
     setStatus('sending'); setErrMsg('');
     const res = await createReservation({
-      name: form.name, email: form.email, phone: form.phone, room: room.name,
+      name: form.name, email: form.email, phone: form.phone, room: room.name, room_id: room.id,
       check_in: checkIn, check_out: checkOut, adults, total, notes: form.notes,
     });
-    if (res?.reservation_code) { setCode(res.reservation_code); setStatus('done'); }
+    if (res.ok && res.reservation_code) { setCode(res.reservation_code); setStatus('done'); }
+    else if (res.error === 'no_availability') { setErrMsg('Esa habitacion ya no tiene disponibilidad para esas fechas. Prueba con otras fechas o escribenos por WhatsApp.'); setStatus('error'); }
     else { setErrMsg('No pudimos registrar la reserva. Intenta de nuevo o escribenos por WhatsApp.'); setStatus('error'); }
   }
 

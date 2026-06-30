@@ -12,9 +12,9 @@ export default function ContactSection() {
     e.preventDefault();
     setStatus('sending');
     try {
-      await sendContact({ name: form.name, email: form.email, phone: form.phone, message: form.message });
-      setStatus('sent');
-      setForm({ name: '', email: '', phone: '', message: '' });
+      const res = await sendContact({ name: form.name, email: form.email, phone: form.phone, message: form.message });
+      if (res.ok) { setStatus('sent'); setForm({ name: '', email: '', phone: '', message: '' }); }
+      else setStatus('error');
     } catch {
       setStatus('error');
     }

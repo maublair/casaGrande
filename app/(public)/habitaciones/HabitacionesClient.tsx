@@ -80,7 +80,7 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
         ) : (
           <div className="space-y-20">
             {roomTypes.map((type, idx) => {
-              const availableCount = type.rooms.filter(r => r.status === 'available').length;
+              const availableCount = type.rooms.length;
               const isEven = idx % 2 === 0;
               const img = type.images[0] || fallbackImages[idx % fallbackImages.length];
               return (
