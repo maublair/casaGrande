@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Phone, ChevronDown, Lock } from 'lucide-react';
+import { Menu, X, Phone, Lock } from 'lucide-react';
 import Logo from './Logo';
 
 const navLinks = [
   { label: 'Inicio', href: '/' },
+  { label: 'Nosotros', href: '/nosotros' },
   { label: 'Habitaciones', href: '/habitaciones' },
+  { label: 'Servicios', href: '/servicios' },
   { label: 'Restaurante', href: '/restaurante' },
-  { label: 'Tour Virtual', href: '/tour-virtual' },
   { label: 'Galeria', href: '/galeria' },
   { label: 'Contacto', href: '/contacto' },
 ];
@@ -33,22 +34,24 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${
-        transparent ? 'py-5 bg-transparent' : 'py-3 bg-white/98 backdrop-blur-xl shadow-sm border-b border-gray-100/80'
+        transparent
+          ? 'py-4 bg-gradient-to-b from-black/70 via-black/30 to-transparent'
+          : 'py-3 bg-white backdrop-blur-xl shadow-md border-b border-gray-100'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
-        <Link href="/" className="flex-shrink-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3">
+        <Link href="/" className="flex-shrink-0" aria-label="Inicio">
           <Logo variant={transparent ? 'light' : 'dark'} size="md" />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-0.5">
           {navLinks.map(link => {
             const active = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3.5 py-2 text-sm font-medium tracking-wide rounded-md transition-all duration-200 ${
+                className={`px-3 py-2 text-sm font-medium tracking-wide rounded-md transition-all duration-200 ${
                   active
                     ? transparent
                       ? 'text-gold-300 bg-white/10'
@@ -64,25 +67,16 @@ export default function Navbar() {
           })}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-2.5">
           <a
             href="tel:54214000"
             className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-              transparent ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-navy'
+              transparent ? 'text-white/85 hover:text-white' : 'text-gray-600 hover:text-navy'
             }`}
           >
             <Phone className="w-4 h-4" />
             54-214000
           </a>
-          <Link
-            href="/login"
-            className={`hidden sm:flex items-center gap-1.5 text-sm font-medium transition-colors ${
-              transparent ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-navy'
-            }`}
-          >
-            <Lock className="w-4 h-4" />
-            Acceso
-          </Link>
           <Link
             href="/#reservar"
             className="bg-gold hover:bg-gold-600 text-navy-900 text-sm font-semibold px-5 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md"
@@ -126,6 +120,13 @@ export default function Navbar() {
               >
                 <Phone className="w-4 h-4" /> 54-214000
               </a>
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 text-sm text-gray-500 py-2 px-3"
+              >
+                <Lock className="w-4 h-4" /> Acceso administrador
+              </Link>
               <Link
                 href="/#reservar"
                 onClick={() => setOpen(false)}

@@ -4,9 +4,10 @@ import { Phone, Mail, MapPin, Instagram, Facebook, Youtube, ArrowRight } from 'l
 
 const navLinks = [
   { label: 'Inicio', href: '/' },
+  { label: 'Nosotros', href: '/nosotros' },
   { label: 'Habitaciones', href: '/habitaciones' },
+  { label: 'Servicios', href: '/servicios' },
   { label: 'Restaurante', href: '/restaurante' },
-  { label: 'Tour Virtual', href: '/tour-virtual' },
   { label: 'Galeria', href: '/galeria' },
   { label: 'Contacto', href: '/contacto' },
 ];
