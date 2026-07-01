@@ -84,7 +84,7 @@ export default function RestauranteClient({ initialMenu }: { initialMenu?: any[]
       {/* Hero */}
       <div className="relative h-64 sm:h-72 md:h-96">
         <img
-          src="https://deykard.com/uploads/imagenes/hotel-casagrande-3.jpg"
+          src="/hotel/real-54.webp"
           alt="Restaurante Casagrande"
           className="w-full h-full object-cover"
         />

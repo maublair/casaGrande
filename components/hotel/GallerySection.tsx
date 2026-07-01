@@ -4,14 +4,14 @@ import { useState } from 'react';
 import { X, ZoomIn } from 'lucide-react';
 
 const galleryImages = [
-  { url: 'https://deykard.com/uploads/imagenes/hotel-casagrande-2.jpg', label: 'Suite Ejecutiva' },
-  { url: 'https://deykard.com/uploads/imagenes/hotel-casagrande-7.jpg', label: 'Habitacion Doble' },
-  { url: 'https://deykard.com/uploads/imagenes/hotel-casagrande-3.jpg', label: 'Restaurante' },
-  { url: 'https://deykard.com/uploads/imagenes/hotel-casagrande-5.jpg', label: 'Jardines' },
-  { url: 'https://deykard.com/uploads/imagenes/hotel-casagrande-8.jpg', label: 'Habitacion Simple' },
-  { url: 'https://deykard.com/uploads/imagenes/hotel-casagrande-12.jpg', label: 'Sala de Eventos' },
-  { url: 'https://deykard.com/uploads/imagenes/hotel-casagrande-4.jpg', label: 'Lobby & Recepcion' },
-  { url: 'https://deykard.com/uploads/imagenes/hotel-casagrande-16.jpg', label: 'Bano Privado' },
+  { url: '/hotel/real-10.webp', label: 'Suite Ejecutiva' },
+  { url: '/hotel/real-07.webp', label: 'Habitacion Doble' },
+  { url: '/hotel/real-54.webp', label: 'Restaurante' },
+  { url: '/hotel/real-40.webp', label: 'Jardines' },
+  { url: '/hotel/real-57.webp', label: 'Habitacion Simple' },
+  { url: '/hotel/real-41.webp', label: 'Sala de Eventos' },
+  { url: '/hotel/real-42.webp', label: 'Lobby & Recepcion' },
+  { url: '/hotel/real-81.webp', label: 'Bano Privado' },
 ];
 
 export default function GallerySection() {

@@ -12,26 +12,47 @@ interface GalleryImage {
 }
 
 const images: GalleryImage[] = [
-  // Habitaciones
-  { id: 1, category: 'Habitaciones', title: 'Suite Premium', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-2.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-2.jpg' },
-  { id: 2, category: 'Habitaciones', title: 'Habitacion Doble', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-7.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-7.jpg' },
-  { id: 3, category: 'Habitaciones', title: 'Habitacion Simple', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-8.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-8.jpg' },
-  { id: 4, category: 'Habitaciones', title: 'Suite Ejecutiva', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-9.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-9.jpg' },
-  { id: 5, category: 'Habitaciones', title: 'Detalle de Cama', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-11.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-11.jpg' },
-  // Restaurante
-  { id: 6, category: 'Restaurante', title: 'Comedor Principal', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-3.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-3.jpg' },
-  { id: 7, category: 'Restaurante', title: 'Salon de Eventos', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-12.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-12.jpg' },
-  { id: 8, category: 'Restaurante', title: 'Desayuno Buffet', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-13.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-13.jpg' },
-  { id: 9, category: 'Restaurante', title: 'Sala de Reuniones', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-14.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-14.jpg' },
-  // Exteriores
-  { id: 10, category: 'Exteriores', title: 'Fachada del Hotel', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-1.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-1.jpg' },
-  { id: 11, category: 'Exteriores', title: 'Jardines', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-5.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-5.jpg' },
-  { id: 12, category: 'Exteriores', title: 'Terraza', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-6.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-6.jpg' },
-  // Servicios
-  { id: 13, category: 'Servicios', title: 'Lobby & Recepcion', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-4.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-4.jpg' },
-  { id: 14, category: 'Servicios', title: 'Sala de Estar', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-15.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-15.jpg' },
-  { id: 15, category: 'Servicios', title: 'Bano Premium', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-16.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-16.jpg' },
-  { id: 16, category: 'Servicios', title: 'Area Social', src: 'https://deykard.com/uploads/imagenes/hotel-casagrande-17.jpg', thumb: 'https://deykard.com/uploads/imagenes/hotel-casagrande-17.jpg' },
+  { id: 1, category: 'Habitaciones', title: 'Suite con sala', src: '/hotel/real-10.webp', thumb: '/hotel/real-10.webp' },
+  { id: 2, category: 'Habitaciones', title: 'Suite Ejecutiva', src: '/hotel/real-37.webp', thumb: '/hotel/real-37.webp' },
+  { id: 3, category: 'Habitaciones', title: 'Suite', src: '/hotel/real-36.webp', thumb: '/hotel/real-36.webp' },
+  { id: 4, category: 'Habitaciones', title: 'Habitación Matrimonial', src: '/hotel/real-04.webp', thumb: '/hotel/real-04.webp' },
+  { id: 5, category: 'Habitaciones', title: 'Habitación Matrimonial', src: '/hotel/real-16.webp', thumb: '/hotel/real-16.webp' },
+  { id: 6, category: 'Habitaciones', title: 'Habitación Matrimonial', src: '/hotel/real-64.webp', thumb: '/hotel/real-64.webp' },
+  { id: 7, category: 'Habitaciones', title: 'Habitación', src: '/hotel/real-57.webp', thumb: '/hotel/real-57.webp' },
+  { id: 8, category: 'Habitaciones', title: 'Habitación Doble', src: '/hotel/real-07.webp', thumb: '/hotel/real-07.webp' },
+  { id: 9, category: 'Habitaciones', title: 'Habitación Doble', src: '/hotel/real-08.webp', thumb: '/hotel/real-08.webp' },
+  { id: 10, category: 'Habitaciones', title: 'Habitación Doble', src: '/hotel/real-22.webp', thumb: '/hotel/real-22.webp' },
+  { id: 11, category: 'Habitaciones', title: 'Habitación Simple', src: '/hotel/real-26.webp', thumb: '/hotel/real-26.webp' },
+  { id: 12, category: 'Habitaciones', title: 'Habitación con balcón', src: '/hotel/real-45.webp', thumb: '/hotel/real-45.webp' },
+  { id: 13, category: 'Restaurante', title: 'Restaurante', src: '/hotel/real-54.webp', thumb: '/hotel/real-54.webp' },
+  { id: 14, category: 'Restaurante', title: 'Salón de eventos', src: '/hotel/real-17.webp', thumb: '/hotel/real-17.webp' },
+  { id: 15, category: 'Restaurante', title: 'Desayuno', src: '/hotel/real-18.webp', thumb: '/hotel/real-18.webp' },
+  { id: 16, category: 'Restaurante', title: 'Desayuno buffet', src: '/hotel/real-52.webp', thumb: '/hotel/real-52.webp' },
+  { id: 17, category: 'Restaurante', title: 'Buffet', src: '/hotel/real-50.webp', thumb: '/hotel/real-50.webp' },
+  { id: 18, category: 'Restaurante', title: 'Estación de buffet', src: '/hotel/real-20.webp', thumb: '/hotel/real-20.webp' },
+  { id: 19, category: 'Restaurante', title: 'Bar & comedor', src: '/hotel/real-71.webp', thumb: '/hotel/real-71.webp' },
+  { id: 20, category: 'Restaurante', title: 'Gastronomía', src: '/hotel/real-67.webp', thumb: '/hotel/real-67.webp' },
+  { id: 21, category: 'Exteriores', title: 'Fachada de noche', src: '/hotel/real-46.webp', thumb: '/hotel/real-46.webp' },
+  { id: 22, category: 'Exteriores', title: 'Edificio y jardines', src: '/hotel/real-63.webp', thumb: '/hotel/real-63.webp' },
+  { id: 23, category: 'Exteriores', title: 'Fachada del hotel', src: '/hotel/real-30.webp', thumb: '/hotel/real-30.webp' },
+  { id: 24, category: 'Exteriores', title: 'Jardines', src: '/hotel/real-34.webp', thumb: '/hotel/real-34.webp' },
+  { id: 25, category: 'Exteriores', title: 'Jardín y terraza', src: '/hotel/real-40.webp', thumb: '/hotel/real-40.webp' },
+  { id: 26, category: 'Exteriores', title: 'Áreas verdes', src: '/hotel/real-29.webp', thumb: '/hotel/real-29.webp' },
+  { id: 27, category: 'Exteriores', title: 'Jardín principal', src: '/hotel/real-01.webp', thumb: '/hotel/real-01.webp' },
+  { id: 28, category: 'Exteriores', title: 'Jardín interior', src: '/hotel/real-60.webp', thumb: '/hotel/real-60.webp' },
+  { id: 29, category: 'Exteriores', title: 'Ingreso', src: '/hotel/real-65.webp', thumb: '/hotel/real-65.webp' },
+  { id: 30, category: 'Exteriores', title: 'Fachada — Av. Luna Pizarro 202', src: '/hotel/real-74.webp', thumb: '/hotel/real-74.webp' },
+  { id: 31, category: 'Exteriores', title: 'Vista del entorno', src: '/hotel/real-13.webp', thumb: '/hotel/real-13.webp' },
+  { id: 32, category: 'Servicios', title: 'Recepción', src: '/hotel/real-42.webp', thumb: '/hotel/real-42.webp' },
+  { id: 33, category: 'Servicios', title: 'Recepción', src: '/hotel/real-44.webp', thumb: '/hotel/real-44.webp' },
+  { id: 34, category: 'Servicios', title: 'Lobby', src: '/hotel/real-75.webp', thumb: '/hotel/real-75.webp' },
+  { id: 35, category: 'Servicios', title: 'Sala de estar', src: '/hotel/real-72.webp', thumb: '/hotel/real-72.webp' },
+  { id: 36, category: 'Servicios', title: 'Sala de estar', src: '/hotel/real-80.webp', thumb: '/hotel/real-80.webp' },
+  { id: 37, category: 'Servicios', title: 'Sala de eventos', src: '/hotel/real-41.webp', thumb: '/hotel/real-41.webp' },
+  { id: 38, category: 'Servicios', title: 'Sala de reuniones', src: '/hotel/real-51.webp', thumb: '/hotel/real-51.webp' },
+  { id: 39, category: 'Servicios', title: 'Luna de miel', src: '/hotel/real-09.webp', thumb: '/hotel/real-09.webp' },
+  { id: 40, category: 'Servicios', title: 'Bodas & eventos', src: '/hotel/real-14.webp', thumb: '/hotel/real-14.webp' },
+  { id: 41, category: 'Servicios', title: 'Baño privado', src: '/hotel/real-81.webp', thumb: '/hotel/real-81.webp' },
 ];
 
 const categories = ['Todos', 'Habitaciones', 'Restaurante', 'Exteriores', 'Servicios'];
@@ -53,7 +74,7 @@ export default function GaleriaPage() {
     <div>
       <div className="relative h-72 md:h-80">
         <img
-          src="https://deykard.com/uploads/imagenes/hotel-casagrande-1.jpg"
+          src="/hotel/real-63.webp"
           alt="Galeria"
           className="w-full h-full object-cover"
         />

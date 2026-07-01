@@ -44,7 +44,7 @@ export default function ServicesSection() {
         <div className="mt-14 rounded-2xl overflow-hidden relative">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: 'url(https://deykard.com/uploads/imagenes/hotel-casagrande-5.jpg)' }}
+            style={{ backgroundImage: 'url(/hotel/real-40.webp)' }}
           />
           <div className="absolute inset-0 bg-navy/70" />
           <div className="relative py-14 px-8 sm:px-16 text-center text-white">

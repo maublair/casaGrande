@@ -37,7 +37,7 @@ export default function NosotrosPage() {
       {/* Hero */}
       <div className="relative h-[60vh] min-h-[420px]">
         <img
-          src="https://deykard.com/uploads/imagenes/hotel-casagrande-2.jpg"
+          src="/hotel/real-10.webp"
           alt="Hotel Boutique Casagrande"
           className="w-full h-full object-cover"
         />
@@ -80,7 +80,7 @@ export default function NosotrosPage() {
           </div>
           <div className="relative">
             <img
-              src="https://deykard.com/uploads/imagenes/hotel-casagrande-9.jpg"
+              src="/hotel/real-37.webp"
               alt="Interiores Casagrande"
               className="rounded-2xl shadow-xl w-full h-[420px] object-cover"
             />
@@ -135,7 +135,7 @@ export default function NosotrosPage() {
         <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-14 items-center">
           <div className="order-2 lg:order-1">
             <img
-              src="https://deykard.com/uploads/imagenes/hotel-casagrande-11.jpg"
+              src="/hotel/real-64.webp"
               alt="Edificios del hotel"
               className="rounded-2xl shadow-xl w-full h-[420px] object-cover"
             />

@@ -17,11 +17,11 @@ export default function RoomsSection({ initialRooms }: { initialRooms?: WpRoom[]
   }, []);
 
   const roomImages = [
-    'https://deykard.com/uploads/imagenes/hotel-casagrande-8.jpg',
-    'https://deykard.com/uploads/imagenes/hotel-casagrande-7.jpg',
-    'https://deykard.com/uploads/imagenes/hotel-casagrande-2.jpg',
-    'https://deykard.com/uploads/imagenes/hotel-casagrande-9.jpg',
-    'https://deykard.com/uploads/imagenes/hotel-casagrande-11.jpg',
+    '/hotel/real-57.webp',
+    '/hotel/real-07.webp',
+    '/hotel/real-10.webp',
+    '/hotel/real-37.webp',
+    '/hotel/real-64.webp',
   ];
 
   if (loading) return (

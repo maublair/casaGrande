@@ -5,25 +5,25 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const slides = [
   {
-    image: 'https://deykard.com/uploads/imagenes/hotel-casagrande-1.jpg',
+    image: '/hotel/real-63.webp',
     title: 'Una Experiencia',
     titleAccent: 'Inolvidable',
     subtitle: 'Hotel Boutique en el corazon de Vallecito, Arequipa',
   },
   {
-    image: 'https://deykard.com/uploads/imagenes/hotel-casagrande-2.jpg',
+    image: '/hotel/real-10.webp',
     title: 'Suites de',
     titleAccent: 'Lujo',
     subtitle: 'Disena cada detalle de tu estancia con nosotros',
   },
   {
-    image: 'https://deykard.com/uploads/imagenes/hotel-casagrande-3.jpg',
+    image: '/hotel/real-54.webp',
     title: 'Gastronomia',
     titleAccent: 'Arequipena',
     subtitle: 'Sabores autenticos en nuestro restaurante boutique',
   },
   {
-    image: 'https://deykard.com/uploads/imagenes/hotel-casagrande-5.jpg',
+    image: '/hotel/real-40.webp',
     title: 'Jardines',
     titleAccent: 'Privados',
     subtitle: 'Un remanso de paz en el barrio de Vallecito',

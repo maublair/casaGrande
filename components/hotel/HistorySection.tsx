@@ -18,14 +18,14 @@ export default function HistorySection() {
               <div className="space-y-4">
                 <div className="h-48 rounded-2xl overflow-hidden shadow-md">
                   <img
-                    src="https://deykard.com/uploads/imagenes/hotel-casagrande-4.jpg"
+                    src="/hotel/real-42.webp"
                     alt="Lobby Casagrande"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
                 </div>
                 <div className="h-36 rounded-2xl overflow-hidden shadow-md">
                   <img
-                    src="https://deykard.com/uploads/imagenes/hotel-casagrande-3.jpg"
+                    src="/hotel/real-54.webp"
                     alt="Restaurante"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
@@ -34,14 +34,14 @@ export default function HistorySection() {
               <div className="space-y-4 mt-8">
                 <div className="h-36 rounded-2xl overflow-hidden shadow-md">
                   <img
-                    src="https://deykard.com/uploads/imagenes/hotel-casagrande-8.jpg"
+                    src="/hotel/real-57.webp"
                     alt="Habitacion"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
                 </div>
                 <div className="h-48 rounded-2xl overflow-hidden shadow-md">
                   <img
-                    src="https://deykard.com/uploads/imagenes/hotel-casagrande-5.jpg"
+                    src="/hotel/real-40.webp"
                     alt="Jardin"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />

@@ -21,7 +21,7 @@ export default function ContactoPage() {
       {/* Hero */}
       <div className="relative h-64 md:h-80">
         <img
-          src="https://deykard.com/uploads/imagenes/hotel-casagrande-4.jpg"
+          src="/hotel/real-42.webp"
           alt="Contacto"
           className="w-full h-full object-cover"
         />
@@ -81,7 +81,7 @@ export default function ContactoPage() {
           {/* Map embed placeholder */}
           <div className="rounded-2xl overflow-hidden h-48 bg-gray-100 relative">
             <img
-              src="https://deykard.com/uploads/imagenes/hotel-casagrande-1.jpg"
+              src="/hotel/real-63.webp"
               alt="Ubicacion"
               className="w-full h-full object-cover"
             />

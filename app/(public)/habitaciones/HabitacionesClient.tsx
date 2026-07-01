@@ -14,10 +14,10 @@ const amenityIcons: Record<string, React.ElementType> = {
 };
 
 const fallbackImages = [
-  'https://deykard.com/uploads/imagenes/hotel-casagrande-8.jpg',
-  'https://deykard.com/uploads/imagenes/hotel-casagrande-7.jpg',
-  'https://deykard.com/uploads/imagenes/hotel-casagrande-2.jpg',
-  'https://deykard.com/uploads/imagenes/hotel-casagrande-9.jpg',
+  '/hotel/real-26.webp',
+  '/hotel/real-07.webp',
+  '/hotel/real-10.webp',
+  '/hotel/real-37.webp',
 ];
 
 function mapRooms(types: WpRoom[]): RoomTypeWithRooms[] {
@@ -46,7 +46,7 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
       {/* Hero */}
       <div className="relative h-72 md:h-96">
         <img
-          src="https://deykard.com/uploads/imagenes/hotel-casagrande-2.jpg"
+          src="/hotel/real-10.webp"
           alt="Habitaciones Casagrande"
           className="w-full h-full object-cover"
         />

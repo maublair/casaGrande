@@ -13,7 +13,7 @@ const servicios = [
   {
     icon: Heart,
     title: 'Luna de Miel',
-    image: 'https://deykard.com/uploads/imagenes/hotel-casagrande-7.jpg',
+    image: '/hotel/real-07.webp',
     text: 'Una experiencia pensada para recien casados.',
     features: [
       'Habitaciones comodas previas al evento',
@@ -25,7 +25,7 @@ const servicios = [
   {
     icon: Presentation,
     title: 'Salas de Reuniones',
-    image: 'https://deykard.com/uploads/imagenes/hotel-casagrande-8.jpg',
+    image: '/hotel/real-57.webp',
     text: 'Tres espacios multiproposito adaptables a tu evento.',
     features: [
       'Montaje Auditorio para conferencias',
@@ -37,7 +37,7 @@ const servicios = [
   {
     icon: UtensilsCrossed,
     title: 'Catering y Eventos',
-    image: 'https://deykard.com/uploads/imagenes/hotel-casagrande-3.jpg',
+    image: '/hotel/real-54.webp',
     text: 'Gastronomia a la medida para cada ocasion.',
     features: [
       'Desayunos buffet',
@@ -67,7 +67,7 @@ export default function ServiciosPage() {
       {/* Hero */}
       <div className="relative h-[55vh] min-h-[400px]">
         <img
-          src="https://deykard.com/uploads/imagenes/hotel-casagrande-8.jpg"
+          src="/hotel/real-57.webp"
           alt="Servicios Casagrande"
           className="w-full h-full object-cover"
         />
