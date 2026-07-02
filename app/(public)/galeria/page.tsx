@@ -107,7 +107,7 @@ export default function GaleriaPage() {
           {filtered.map((img, i) => (
             <div key={img.id} className="break-inside-avoid group cursor-pointer rounded-xl overflow-hidden relative shadow-sm hover:shadow-xl transition-all duration-300"
               onClick={() => setLightbox(img.id)} style={{ animationDelay: `${i * 0.05}s` }}>
-              <img src={img.thumb} alt={img.title}
+              <img src={img.thumb} alt={img.title} loading="lazy" decoding="async"
                 className="w-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 backdrop-blur-sm rounded-xl p-2.5">

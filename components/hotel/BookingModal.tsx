@@ -8,16 +8,26 @@ interface BookingRoom { id?: string; name: string; base_price: number; capacity:
 interface BookingModalProps {
   room: BookingRoom;
   onClose: () => void;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialAdults?: number;
 }
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const plusDays = (s: string, d: number) => new Date(new Date(s + 'T00:00:00').getTime() + d * 86400000).toISOString().slice(0, 10);
 const money = (n: number) => 'S/ ' + n.toLocaleString('es-PE');
 
-export default function BookingModal({ room, onClose }: BookingModalProps) {
-  const [checkIn, setCheckIn] = useState(todayStr());
-  const [checkOut, setCheckOut] = useState(plusDays(todayStr(), 1));
-  const [adults, setAdults] = useState(2);
+export default function BookingModal({ room, onClose, initialCheckIn, initialCheckOut, initialAdults }: BookingModalProps) {
+  // Fechas iniciales de la búsqueda: solo si el rango es válido (checkOut > checkIn).
+  const hasValidInitialDates = Boolean(initialCheckIn && initialCheckOut && initialCheckOut > initialCheckIn);
+  const maxAdults = Math.max(2, room.capacity);
+  const [checkIn, setCheckIn] = useState(hasValidInitialDates && initialCheckIn ? initialCheckIn : todayStr());
+  const [checkOut, setCheckOut] = useState(hasValidInitialDates && initialCheckOut ? initialCheckOut : plusDays(todayStr(), 1));
+  const [adults, setAdults] = useState(
+    typeof initialAdults === 'number' && initialAdults >= 1
+      ? Math.min(Math.max(1, Math.round(initialAdults)), maxAdults)
+      : 2
+  );
   const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' });
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [errMsg, setErrMsg] = useState('');
@@ -78,7 +88,7 @@ export default function BookingModal({ room, onClose }: BookingModalProps) {
             <div>
               <label className="text-xs font-medium text-gray-600 flex items-center gap-1 mb-1"><Users className="w-3.5 h-3.5" /> Huespedes</label>
               <select value={adults} onChange={e => setAdults(Number(e.target.value))} className={inputCls}>
-                {Array.from({ length: Math.max(2, room.capacity) }, (_, i) => i + 1).map(n => (
+                {Array.from({ length: maxAdults }, (_, i) => i + 1).map(n => (
                   <option key={n} value={n}>{n} {n === 1 ? 'persona' : 'personas'}</option>
                 ))}
               </select>

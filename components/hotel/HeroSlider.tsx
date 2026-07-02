@@ -34,6 +34,14 @@ export default function HeroSlider() {
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  // Preload all slide images to avoid flash when changing
+  useEffect(() => {
+    slides.forEach(s => {
+      const img = new window.Image();
+      img.src = s.image;
+    });
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => goTo((current + 1) % slides.length), 5500);
     return () => clearInterval(timer);
@@ -54,7 +62,8 @@ export default function HeroSlider() {
     <div className="relative h-screen min-h-[600px] max-h-[900px] overflow-hidden">
       {/* Background image */}
       <div
-        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
+        key={current}
+        className={`absolute inset-0 bg-cover bg-center kenburns transition-opacity duration-700 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
         style={{ backgroundImage: `url(${slide.image})` }}
       />
       <div className="absolute inset-0 hero-overlay" />

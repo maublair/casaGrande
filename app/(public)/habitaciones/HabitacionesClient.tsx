@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { BedDouble, Users, Star, Wifi, Car, Coffee, Waves, ChevronRight, ArrowRight } from 'lucide-react';
-import { getRooms, type WpRoom } from '@/lib/wp';
+import { BedDouble, Users, Star, Wifi, Car, Coffee, Waves, ChevronRight, ArrowRight, CalendarCheck } from 'lucide-react';
+import { getRooms, getAvailability, type WpRoom } from '@/lib/wp';
 import BookingModal from '@/components/hotel/BookingModal';
 import type { RoomType } from '@/lib/supabase';
 interface Room { id: string; status: string; room_type_id: string; }
@@ -28,11 +28,21 @@ function mapRooms(types: WpRoom[]): RoomTypeWithRooms[] {
   })) as unknown as RoomTypeWithRooms[];
 }
 
+const isDateStr = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+const fmtDay = (s: string) =>
+  new Date(s + 'T12:00:00').toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
+const nightsBetween = (a: string, b: string) =>
+  Math.max(1, Math.round((+new Date(b + 'T12:00:00') - +new Date(a + 'T12:00:00')) / 86400000));
+
+interface SearchDates { checkIn: string; checkOut: string; adults: number }
+
 export default function HabitacionesClient({ initialRooms }: { initialRooms: WpRoom[] }) {
   const [roomTypes, setRoomTypes] = useState<RoomTypeWithRooms[]>(mapRooms(initialRooms));
   const [loading, setLoading] = useState(initialRooms.length === 0);
   const [, setSelected] = useState<RoomType | null>(null);
   const [bookingRoom, setBookingRoom] = useState<RoomTypeWithRooms | null>(null);
+  const [searchDates, setSearchDates] = useState<SearchDates | null>(null);
+  const [availByType, setAvailByType] = useState<Record<string, number>>({});
 
   useEffect(() => {
     getRooms().then((types) => {
@@ -40,6 +50,32 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
       setLoading(false);
     });
   }, []);
+
+  // Lee los params de búsqueda del BookingWidget desde window.location (compatible con export estático).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const checkIn = params.get('checkIn') || '';
+    const checkOut = params.get('checkOut') || '';
+    const adultsRaw = parseInt(params.get('adults') || '', 10);
+    const adults = Number.isFinite(adultsRaw) && adultsRaw >= 1 ? adultsRaw : 2;
+    if (!isDateStr(checkIn) || !isDateStr(checkOut) || checkOut <= checkIn) return;
+    setSearchDates({ checkIn, checkOut, adults });
+    getAvailability(checkIn, checkOut).then((rows) => {
+      const map: Record<string, number> = {};
+      rows.forEach((r) => {
+        map[r.id] = r.available;
+        if (map[r.name] === undefined) map[r.name] = r.available;
+      });
+      setAvailByType(map);
+    });
+  }, []);
+
+  function clearSearch() {
+    window.history.replaceState(null, '', window.location.pathname);
+    setSearchDates(null);
+    setAvailByType({});
+  }
 
   return (
     <div className="pt-0">
@@ -60,6 +96,27 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-16">
+        {searchDates && (
+          <div className="mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-cream border border-gold-200 rounded-2xl px-5 py-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="w-10 h-10 rounded-full bg-gold-100 flex items-center justify-center shrink-0">
+                <CalendarCheck className="w-5 h-5 text-gold-700" />
+              </span>
+              <p className="text-sm text-navy-900">
+                Disponibilidad del <span className="font-semibold">{fmtDay(searchDates.checkIn)}</span> al{' '}
+                <span className="font-semibold">{fmtDay(searchDates.checkOut)}</span>{' '}
+                · {nightsBetween(searchDates.checkIn, searchDates.checkOut)} noche{nightsBetween(searchDates.checkIn, searchDates.checkOut) !== 1 ? 's' : ''}{' '}
+                · {searchDates.adults} huésped{searchDates.adults !== 1 ? 'es' : ''}
+              </p>
+            </div>
+            <button
+              onClick={clearSearch}
+              className="self-start sm:self-auto text-xs font-semibold text-navy bg-white border border-navy-100 hover:bg-navy-50 px-4 py-2 rounded-lg transition-colors"
+            >
+              Limpiar
+            </button>
+          </div>
+        )}
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, i) => (
@@ -83,6 +140,10 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
               const availableCount = type.rooms.length;
               const isEven = idx % 2 === 0;
               const img = type.images[0] || fallbackImages[idx % fallbackImages.length];
+              const searchAvail = searchDates
+                ? (availByType[type.id] !== undefined ? availByType[type.id] : availByType[type.name])
+                : undefined;
+              const soldOut = searchDates !== null && searchAvail === 0;
               return (
                 <div
                   key={type.id}
@@ -95,11 +156,21 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
                         alt={type.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      {availableCount > 0 && (
+                      {searchDates && searchAvail !== undefined ? (
+                        searchAvail > 0 ? (
+                          <div className="absolute top-4 left-4 bg-olive-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                            {searchAvail} libre{searchAvail > 1 ? 's' : ''} para tus fechas
+                          </div>
+                        ) : (
+                          <div className="absolute top-4 left-4 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                            Sin disponibilidad para tus fechas
+                          </div>
+                        )
+                      ) : availableCount > 0 ? (
                         <div className="absolute top-4 left-4 bg-olive-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
                           {availableCount} disponible{availableCount > 1 ? 's' : ''}
                         </div>
-                      )}
+                      ) : null}
                       <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1">
                         <Star className="w-3 h-3 fill-gold-300 text-gold-300" />
                         <Star className="w-3 h-3 fill-gold-300 text-gold-300" />
@@ -147,8 +218,9 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
                         <p className="text-xs text-gray-400 mt-0.5">por noche</p>
                       </div>
                       <button
-                        onClick={() => setBookingRoom(type)}
-                        className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+                        onClick={soldOut ? undefined : () => setBookingRoom(type)}
+                        disabled={soldOut}
+                        className={`flex items-center gap-2 bg-navy text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md ${soldOut ? 'opacity-50 cursor-not-allowed' : 'hover:bg-navy-700 hover:shadow-lg'}`}
                       >
                         Reservar <ArrowRight className="w-4 h-4" />
                       </button>
@@ -175,7 +247,15 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
         </div>
       </div>
 
-      {bookingRoom && <BookingModal room={bookingRoom} onClose={() => setBookingRoom(null)} />}
+      {bookingRoom && (
+        <BookingModal
+          room={bookingRoom}
+          initialCheckIn={searchDates?.checkIn}
+          initialCheckOut={searchDates?.checkOut}
+          initialAdults={searchDates?.adults}
+          onClose={() => setBookingRoom(null)}
+        />
+      )}
     </div>
   );
 }

@@ -4,10 +4,13 @@ import BookingWidget from '@/components/hotel/BookingWidget';
 import RoomsSection from '@/components/hotel/RoomsSection';
 import ServicesSection from '@/components/hotel/ServicesSection';
 import HistorySection from '@/components/hotel/HistorySection';
+import Testimonials from '@/components/hotel/Testimonials';
 import GallerySection from '@/components/hotel/GallerySection';
+import TourTeaser from '@/components/hotel/TourTeaser';
 import ContactSection from '@/components/hotel/ContactSection';
 import Footer from '@/components/hotel/Footer';
 import ChatWidget from '@/components/hotel/ChatWidget';
+import ScrollReveal from '@/components/hotel/ScrollReveal';
 import { getRooms } from '@/lib/wp';
 
 export default async function HomePage() {
@@ -44,10 +47,13 @@ export default async function HomePage() {
       <RoomsSection initialRooms={rooms} />
       <ServicesSection />
       <HistorySection />
+      <Testimonials />
       <GallerySection />
+      <TourTeaser />
       <ContactSection />
       <Footer />
       <ChatWidget />
+      <ScrollReveal />
     </main>
   );
 }

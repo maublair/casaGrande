@@ -16,7 +16,13 @@ export default function BookingWidget() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    const params = new URLSearchParams({ checkIn, checkOut, adults: String(adults), children: String(children) });
+    let out = checkOut;
+    if (out <= checkIn) {
+      // Refuerzo: la salida siempre debe ser posterior a la llegada.
+      out = new Date(new Date(checkIn + 'T12:00:00').getTime() + 86400000).toISOString().split('T')[0];
+      setCheckOut(out);
+    }
+    const params = new URLSearchParams({ checkIn, checkOut: out, adults: String(adults), children: String(children) });
     router.push(`/habitaciones?${params}`);
   }
 
