@@ -50,7 +50,7 @@ export default function ContactoPage() {
             {[
               { icon: Phone, title: 'Telefono', lines: ['54-214000', '942 330 137'] },
               { icon: Mail, title: 'Correo electronico', lines: ['reservas@hotelcasagrande.pe', 'info@hotelcasagrande.pe'] },
-              { icon: MapPin, title: 'Direccion', lines: ['Jr. Ejemplo 123, Cercado', 'Arequipa, Peru'] },
+              { icon: MapPin, title: 'Direccion', lines: ['Av. Luna Pizarro 202, Vallecito', 'Arequipa, Peru'] },
               { icon: Clock, title: 'Horario de atencion', lines: ['Recepcion: 24 horas / 7 dias', 'Administracion: Lun-Vie 8am - 6pm'] },
             ].map(item => (
               <div key={item.title} className="flex gap-4">
@@ -78,20 +78,26 @@ export default function ContactoPage() {
             Chatear por WhatsApp
           </a>
 
-          {/* Map embed placeholder */}
-          <div className="rounded-2xl overflow-hidden h-48 bg-gray-100 relative">
+          {/* Mapa — enlaza a la ubicacion real en Google Maps */}
+          <a
+            href="https://maps.app.goo.gl/SnxbM6dird9A5Y2fA"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block rounded-2xl overflow-hidden h-48 bg-gray-100 relative"
+            aria-label="Ver la ubicacion del hotel en Google Maps"
+          >
             <img
               src="/hotel/real-63.webp"
-              alt="Ubicacion"
-              className="w-full h-full object-cover"
+              alt="Ubicacion del Hotel Boutique Casagrande"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <div className="bg-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors group-hover:bg-black/40">
+              <div className="bg-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg transition-transform group-hover:scale-105">
                 <MapPin className="w-4 h-4 text-navy" />
                 <span className="text-sm font-medium text-gray-800">Ver en Google Maps</span>
               </div>
             </div>
-          </div>
+          </a>
         </div>
 
         {/* Contact form */}

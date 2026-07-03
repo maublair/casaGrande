@@ -39,19 +39,30 @@ export default function ContactSection() {
             {[
               { icon: Phone, title: 'Telefono', lines: ['(054) 214000', '+51 942 330 137 (WhatsApp)'] },
               { icon: Mail, title: 'Email', lines: ['reservas@hotelcasagrande.pe'] },
-              { icon: MapPin, title: 'Ubicacion', lines: ['Av. Luna Pizarro 202, Vallecito', 'Arequipa, Peru'] },
+              { icon: MapPin, title: 'Ubicacion', lines: ['Av. Luna Pizarro 202, Vallecito', 'Arequipa, Peru'], href: 'https://maps.app.goo.gl/SnxbM6dird9A5Y2fA' },
               { icon: Clock, title: 'Horario de Atencion', lines: ['Recepcion: 24 horas, 7 dias', 'Check-in: 2:00 PM | Check-out: 12:00 PM'] },
-            ].map(item => (
-              <div key={item.title} className="flex gap-4">
-                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <item.icon className="w-5 h-5 text-gold-300" />
+            ].map(item => {
+              const inner = (
+                <>
+                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-5 h-5 text-gold-300" />
+                  </div>
+                  <div>
+                    <p className={`text-white font-semibold mb-1 ${item.href ? 'group-hover:text-gold-300 transition-colors' : ''}`}>{item.title}</p>
+                    {item.lines.map(line => <p key={line} className="text-white/60 text-sm">{line}</p>)}
+                  </div>
+                </>
+              );
+              return item.href ? (
+                <a key={item.title} href={item.href} target="_blank" rel="noopener noreferrer" className="flex gap-4 group cursor-pointer">
+                  {inner}
+                </a>
+              ) : (
+                <div key={item.title} className="flex gap-4">
+                  {inner}
                 </div>
-                <div>
-                  <p className="text-white font-semibold mb-1">{item.title}</p>
-                  {item.lines.map(line => <p key={line} className="text-white/60 text-sm">{line}</p>)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             <a
               href="https://wa.me/51942330137"

@@ -132,9 +132,12 @@ export default function Footer() {
           <div>
             <SectionTitle>Contacto</SectionTitle>
             <ul className="space-y-4">
-              <li className="flex items-start gap-3 text-white/70 text-sm">
-                <MapPin className="w-4 h-4 text-gold-300 mt-0.5 flex-shrink-0" />
-                <span>Vallecito, Arequipa, Peru</span>
+              <li>
+                <a href="https://maps.app.goo.gl/SnxbM6dird9A5Y2fA" target="_blank" rel="noopener noreferrer"
+                  className="flex items-start gap-3 text-white/70 hover:text-gold-300 text-sm transition-colors duration-200">
+                  <MapPin className="w-4 h-4 text-gold-300 mt-0.5 flex-shrink-0" />
+                  <span>Av. Luna Pizarro 202, Vallecito, Arequipa</span>
+                </a>
               </li>
               <li>
                 <a href="tel:+5154214000" className="flex items-center gap-3 text-white/70 hover:text-gold-300 text-sm transition-colors duration-200">
