@@ -139,7 +139,9 @@ add_action('admin_menu', function () {
 /* ============ Disponibilidad / ocupacion (logica anti-overbooking) ============ */
 function cg_room_units($room_id) {
   $u = (int) get_post_meta($room_id, 'cg_units', true);
-  return $u > 0 ? $u : 3; // por defecto 3 si no se configuro
+  $u = $u > 0 ? $u : 3; // por defecto 3 si no se configuro
+  // Si existe el rack de habitaciones fisicas (CRM), el conteo real manda.
+  return (int) apply_filters('cg_room_units_override', $u, $room_id);
 }
 function cg_ranges_overlap($a_in, $a_out, $b_in, $b_out) {
   return ($a_in < $b_out) && ($a_out > $b_in);

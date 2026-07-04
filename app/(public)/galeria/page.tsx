@@ -56,7 +56,7 @@ const fallbackImages: GalleryImage[] = [
   { id: 41, category: 'Servicios', title: 'Baño privado', src: '/hotel/real-81.webp', thumb: '/hotel/real-81.webp' },
 ];
 
-const categories = ['Todos', 'Habitaciones', 'Restaurante', 'Exteriores', 'Servicios'];
+// Las categorias se derivan de las fotos (administradas en WordPress).
 
 export default function GaleriaPage() {
   const [active, setActive] = useState('Todos');
@@ -81,6 +81,7 @@ export default function GaleriaPage() {
   }, []);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
+  const categories = ['Todos', ...images.map(i => i.category).filter((c, i, a) => a.indexOf(c) === i)];
   const filtered = active === 'Todos' ? images : images.filter(i => i.category === active);
   const lbImg = lightbox !== null ? images.find(i => i.id === lightbox) : null;
 

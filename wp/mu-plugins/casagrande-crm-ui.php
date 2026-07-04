@@ -16,6 +16,8 @@ function cg_crm_sections() {
     'cg-crm-limpieza' => 'limpieza',
     'cg-crm-turnos' => 'turnos',
     'cg-crm-reservas' => 'reservas',
+    'cg-crm-cuartos' => 'cuartos',
+    'cg-crm-proveedores' => 'proveedores',
     'cg-crm-almacen' => 'almacen',
     'cg-crm-finanzas' => 'finanzas',
     'cg-crm-whatsapp' => 'whatsapp',
@@ -699,7 +701,9 @@ function cg_crm_render_router() {
   $section = cg_crm_section_from_page();
   $titles = [
     'dashboard' => ['CRM Casa Grande', 'Panel operativo con KPIs, grafico financiero, almacen, personal y WhatsApp conectados.'],
-    'reservas' => ['Reservas', 'Disponibilidad y reservas recientes.'],
+    'reservas' => ['Front Desk', 'Calendario de ocupacion, check-in/check-out y cuenta del cuarto.'],
+    'cuartos' => ['Cuartos', 'Rack de habitaciones 101-515 por piso: tipo, capacidad y estado.'],
+    'proveedores' => ['Proveedores', 'Proveedores de insumos y servicios de terceros.'],
     'personal' => ['Personal', 'Equipo, roles y sueldo base.'],
     'limpieza' => ['Limpieza', 'Estado de habitaciones y mantenimiento.'],
     'turnos' => ['Turnos', 'Asignacion semanal y turno de hoy.'],
@@ -711,13 +715,15 @@ function cg_crm_render_router() {
   [$title, $subtitle] = $titles[$section] ?? $titles['dashboard'];
   cg_crm_shell_start($title, $subtitle, $section);
   switch ($section) {
-    case 'personal': cg_crm_render_staff(); break;
+    case 'personal': cg_crm2_render_personal(); break;
     case 'limpieza': cg_crm_render_limpieza(); break;
     case 'turnos': cg_crm_render_turnos(); break;
-    case 'reservas': cg_crm_render_reservas(); break;
-    case 'almacen': cg_crm_render_almacen(); break;
-    case 'finanzas': cg_crm_render_finanzas(); break;
+    case 'reservas': cg_crm2_render_reservas(); break;
+    case 'almacen': cg_crm2_render_almacen(); break;
+    case 'finanzas': cg_crm2_render_finanzas(); break;
     case 'whatsapp': cg_crm_render_whatsapp(); break;
+    case 'cuartos': cg_crm2_render_cuartos(); break;
+    case 'proveedores': cg_crm2_render_proveedores(); break;
     case 'contenido': cg_crm_render_contenido(); break;
     default: cg_crm_dashboard_render(); break;
   }
@@ -732,6 +738,8 @@ add_action('admin_menu', function () {
   add_submenu_page('cg-crm', 'Limpieza', 'Limpieza', $cap, 'cg-crm-limpieza', 'cg_crm_render_router');
   add_submenu_page('cg-crm', 'Turnos', 'Turnos', $cap, 'cg-crm-turnos', 'cg_crm_render_router');
   add_submenu_page('cg-crm', 'Reservas', 'Reservas', $cap, 'cg-crm-reservas', 'cg_crm_render_router');
+  add_submenu_page('cg-crm', 'Cuartos', 'Cuartos', $cap, 'cg-crm-cuartos', 'cg_crm_render_router');
+  add_submenu_page('cg-crm', 'Proveedores', 'Proveedores', $cap, 'cg-crm-proveedores', 'cg_crm_render_router');
   add_submenu_page('cg-crm', 'Almacen', 'Almacen', $cap, 'cg-crm-almacen', 'cg_crm_render_router');
   add_submenu_page('cg-crm', 'Finanzas', 'Finanzas', $cap, 'cg-crm-finanzas', 'cg_crm_render_router');
   add_submenu_page('cg-crm', 'WhatsApp', 'WhatsApp', $cap, 'cg-crm-whatsapp', 'cg_crm_render_router');

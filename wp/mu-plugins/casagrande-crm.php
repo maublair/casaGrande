@@ -552,3 +552,93 @@ function cg_today_movements() {
   };
   return ['arrivals' => $mk('cg_check_in'), 'departures' => $mk('cg_check_out')];
 }
+
+/* ================= Habitaciones fisicas (rack 101-515, 15 por piso) ================= */
+add_action('init', function () {
+  if (get_option('cg_crm_db2') === '1') return;
+  global $wpdb; $charset = $wpdb->get_charset_collate();
+  require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+  dbDelta("CREATE TABLE " . cg_tbl('rooms') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    number SMALLINT UNSIGNED NOT NULL, floor TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    type_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    cap_adults TINYINT UNSIGNED NOT NULL DEFAULT 2, cap_children TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    active TINYINT(1) NOT NULL DEFAULT 1, note VARCHAR(160) DEFAULT '',
+    PRIMARY KEY (id), UNIQUE KEY number (number)) $charset;");
+
+  // Personal: fechas de contrato, archivo de contrato y pagos de ley
+  dbDelta("CREATE TABLE " . cg_tbl('staff_payments') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    staff_id BIGINT UNSIGNED NOT NULL, period CHAR(7) NOT NULL,
+    concept VARCHAR(30) NOT NULL DEFAULT 'sueldo', amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    paid TINYINT(1) NOT NULL DEFAULT 0, paid_date DATE NULL,
+    PRIMARY KEY (id), KEY staff_id (staff_id), KEY period (period)) $charset;");
+
+  // Proveedores y servicios de terceros
+  dbDelta("CREATE TABLE " . cg_tbl('suppliers') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(160) NOT NULL, ruc VARCHAR(15) DEFAULT '', contact VARCHAR(120) DEFAULT '',
+    phone VARCHAR(40) DEFAULT '', category VARCHAR(60) DEFAULT 'General',
+    is_service TINYINT(1) NOT NULL DEFAULT 0, note VARCHAR(200) DEFAULT '',
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (id)) $charset;");
+
+  // columnas nuevas de staff (dbDelta no altera bien: ALTER manual tolerante)
+  foreach ([
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN hire_date DATE NULL",
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN contract_end DATE NULL",
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN contract_att BIGINT UNSIGNED NOT NULL DEFAULT 0",
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN doc_id VARCHAR(15) DEFAULT ''",
+    "ALTER TABLE " . cg_tbl('inventory') . " ADD COLUMN supplier_id BIGINT UNSIGNED NOT NULL DEFAULT 0",
+    "ALTER TABLE " . cg_tbl('stock_moves') . " ADD COLUMN destino VARCHAR(120) DEFAULT ''",
+  ] as $sql) { $wpdb->hide_errors(); $wpdb->query($sql); $wpdb->show_errors(); }
+
+  update_option('cg_crm_db2', '1');
+}, 5);
+
+// Unidades por tipo DERIVADAS del rack fisico (fallback a cg_units si el rack esta vacio)
+function cg_room_units_physical($type_id) {
+  global $wpdb; $t = cg_tbl('rooms');
+  static $counts = null;
+  if ($counts === null) {
+    $counts = [];
+    foreach ((array) $wpdb->get_results("SELECT type_id, COUNT(*) c FROM $t WHERE active=1 GROUP BY type_id") as $r)
+      $counts[(int) $r->type_id] = (int) $r->c;
+  }
+  return $counts[(int) $type_id] ?? 0;
+}
+// Sobreescribir el conteo del headless: si hay rack, manda el rack
+add_filter('cg_room_units_override', function ($units, $room_id) {
+  $n = cg_room_units_physical($room_id);
+  return $n > 0 ? $n : $units;
+}, 10, 2);
+
+function cg_rack_rows($floor = 0) {
+  global $wpdb; $t = cg_tbl('rooms');
+  $where = $floor ? $wpdb->prepare('WHERE floor=%d', $floor) : '';
+  return $wpdb->get_results("SELECT * FROM $t $where ORDER BY number ASC");
+}
+function cg_rack_floors() {
+  global $wpdb; return array_map('intval', $wpdb->get_col("SELECT DISTINCT floor FROM " . cg_tbl('rooms') . " ORDER BY floor"));
+}
+
+/* ============ Folio / cuenta del cuarto ============ */
+add_action('init', function () {
+  if (get_option('cg_crm_db3') === '1') return;
+  global $wpdb; require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+  dbDelta("CREATE TABLE " . cg_tbl('folio') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    res_id BIGINT UNSIGNED NOT NULL, concept VARCHAR(160) NOT NULL,
+    qty DECIMAL(8,2) NOT NULL DEFAULT 1, unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total DECIMAL(10,2) NOT NULL DEFAULT 0, settled TINYINT(1) NOT NULL DEFAULT 0,
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id), KEY res_id (res_id)) " . $wpdb->get_charset_collate() . ";");
+  update_option('cg_crm_db3', '1');
+}, 5);
+function cg_folio_rows($res_id) {
+  global $wpdb; return $wpdb->get_results($wpdb->prepare("SELECT * FROM " . cg_tbl('folio') . " WHERE res_id=%d ORDER BY ts", $res_id));
+}
+function cg_folio_total($res_id) {
+  global $wpdb; return (float) $wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(total),0) FROM " . cg_tbl('folio') . " WHERE res_id=%d AND settled=0", $res_id));
+}

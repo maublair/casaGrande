@@ -67,7 +67,7 @@ const mapaSitio = [
 ];
 
 const requerimientos = [
-  ['Panel de administracion', 'WordPress con CRM integrado y usuario demo restringido (rol Gerente del Hotel).'],
+  ['Panel de administracion', 'WordPress con CRM integrado y usuario de prueba con rol Gerente del Hotel.'],
   ['Reservas en linea', 'Motor propio con disponibilidad real, codigo de reserva y anti-overbooking (rechaza sin cupo).'],
   ['Noticias y novedades', 'Entradas de WordPress con imagen destacada; aparecen en el home y en /blog.'],
   ['Galeria administrable', 'Pagina moderna por categorias con miniaturas y formulario simple.'],
@@ -83,7 +83,7 @@ const cronograma = [
   ['1', 'Diagnostico y preparacion', 'Revision del sitio actual, inventario de contenidos, estructura y accesos.', 'E1'],
   ['2', 'Implementacion base', 'WordPress headless + front Next.js con la identidad del hotel; carga de contenido real.', 'E2'],
   ['3', 'Contenido y medios', 'Fotos reales en la mediateca con SEO, galeria, hero, noticias, habitaciones y carta.', 'E2'],
-  ['4', 'CRM y WhatsApp', 'Modulos operativos, KPIs, usuario demo restringido, conexion YCloud lista para credenciales.', 'E3'],
+  ['4', 'CRM y WhatsApp', 'Modulos operativos, KPIs, usuario de prueba del hotel, conexion YCloud lista para credenciales.', 'E3'],
   ['5', 'Produccion y entrega', 'Pruebas, puesta en produccion en el hosting del cliente, capacitacion y manual.', 'E4/E5'],
 ];
 
@@ -124,16 +124,16 @@ const Sec = ({ n, title, children }: { n: string; title: string; children: React
 
 const Tabla = ({ head, rows }: { head: string[]; rows: string[][] }) => (
   <div className="overflow-x-auto">
-    <table className="w-full text-left text-sm border-collapse">
+    <table className="w-full text-sm border border-slate-300 border-collapse">
       <thead>
-        <tr className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
-          {head.map((h, i) => <th key={h} className={`p-3 ${i === 0 ? 'rounded-tl-xl' : ''} ${i === head.length - 1 ? 'rounded-tr-xl' : ''}`}>{h}</th>)}
+        <tr className="bg-slate-100 text-slate-800 font-bold">
+          {head.map(h => <th key={h} className="p-2.5 border border-slate-300 text-center">{h}</th>)}
         </tr>
       </thead>
-      <tbody className="divide-y divide-slate-100 text-slate-600">
+      <tbody className="text-slate-600">
         {rows.map((r, i) => (
-          <tr key={i}>
-            {r.map((c, j) => <td key={j} className={`p-3 ${j === 0 ? 'font-semibold text-slate-950' : ''}`}>{c}</td>)}
+          <tr key={i} className={i % 2 ? 'bg-slate-50/60' : ''}>
+            {r.map((c, j) => <td key={j} className={`p-2.5 border border-slate-300 align-top ${j === 0 ? 'font-semibold text-slate-950' : ''}`}>{c}</td>)}
           </tr>
         ))}
       </tbody>
@@ -144,8 +144,19 @@ const Tabla = ({ head, rows }: { head: string[]; rows: string[][] }) => (
 export default function PropuestaPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 py-10 px-4 sm:px-6 lg:px-8 print:bg-white print:py-0 print:px-0">
-      <div className="max-w-5xl mx-auto bg-white shadow-xl rounded-3xl border border-slate-100 p-8 sm:p-12 relative overflow-hidden print:shadow-none print:border-none print:p-0">
+      <div className="max-w-5xl mx-auto bg-white shadow-xl rounded-3xl border border-slate-100 p-8 sm:p-12 relative overflow-hidden print:shadow-none print:border-none print:p-0 [&>*]:relative [&>*]:z-10">
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-orange-500 via-rose-500 to-blue-600 print:hidden" />
+
+        {/* Sello de agua (logo) — no estorba la lectura */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center z-0">
+          <img src="/logo-bcode.png" alt="" className="w-[420px] max-w-[70%] opacity-[0.05] rotate-[-12deg]" />
+        </div>
+
+        {/* Franja superior del template */}
+        <div className="relative z-10 flex items-center justify-between border border-slate-200 rounded-xl px-4 py-2.5 mb-6 bg-white/80">
+          <img src="/logo-bcode.png" alt="BlairCode" className="h-9 object-contain" />
+          <span className="text-xs sm:text-sm font-semibold text-slate-500 tracking-wide">Propuesta Tecnica y Economica – 2026</span>
+        </div>
 
         {/* Encabezado */}
         <div className="flex flex-col gap-6 border-b border-slate-100 pb-8 mb-8 sm:flex-row sm:items-start sm:justify-between print:mb-6">
@@ -281,7 +292,7 @@ export default function PropuestaPage() {
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-sm text-amber-900/90 space-y-2">
             <p><strong>Esta propuesta no incluye hosting ni dominio</strong>, y por eso no genera ningun pago recurrente hacia BlairCode. El hotel contrata su hosting y dominio directamente (o usa los que ya tiene) y mantiene el control total.</p>
             <p><strong>Incluido en el precio:</strong> asesoria para elegir el plan adecuado, instalacion completa y puesta en produccion en ese hosting.</p>
-            <p><strong>Requisitos minimos del hosting:</strong> PHP 8.1+, MySQL/MariaDB, SSL incluido (los planes compartidos estandar en Peru los cumplen).</p>
+            <p><strong>Requisitos minimos del hosting:</strong> PHP 8.2+, MySQL/MariaDB, SSL incluido (los planes compartidos estandar en Peru los cumplen).</p>
             <p><strong>Nota critica:</strong> antes de cualquier cambio de DNS validamos los registros MX/SPF/DKIM para que el correo corporativo del hotel no sufra ninguna interrupcion.</p>
           </div>
         </Sec>
@@ -360,27 +371,26 @@ export default function PropuestaPage() {
           </p>
           <p className="text-sm text-slate-500 mb-10">Arequipa, 04 de julio del 2026</p>
 
-          <div className="grid sm:grid-cols-2 gap-10">
+          <div>
             <div>
-              <div className="border-b border-slate-300 w-64 h-16 mb-3 flex items-end pb-1">
-                <span className="font-serif italic text-2xl text-slate-700 pl-4" style={{ fontFamily: 'cursive' }}>Mauricio Blair</span>
+              <div className="border-b border-slate-300 w-64 mb-3 pb-1">
+                <img src="/firma-mauricio-blair.png" alt="Firma de Mauricio Blair Farah" className="h-20 object-contain" />
               </div>
               <p className="text-sm font-bold text-slate-900">Mauricio Blair Farah</p>
               <p className="text-xs text-slate-500">BlairCode AI · B&D Co S.A.C.</p>
               <p className="text-xs text-slate-400">CE N.° 000925350 | RUC N.° 20614096561</p>
             </div>
-            <div className="sm:text-right">
-              <div className="border-b border-dashed border-slate-300 w-64 h-16 mb-3 sm:ml-auto" />
-              <p className="text-sm font-bold text-slate-900">Aceptacion y conformidad</p>
-              <p className="text-xs text-slate-500">Hotel Boutique Casa Grande</p>
-              <p className="text-xs text-slate-400">Fecha: ____ / ____ / ________</p>
-            </div>
           </div>
         </Sec>
 
-        <div className="border-t border-slate-100 pt-4 mt-10 flex items-center justify-between text-xs text-slate-400">
-          <span>BlairCode AI · B&D Co S.A.C. | www.blaircode.com | R.U.C. 20614096561</span>
-          <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Confidencial — Casa Grande</span>
+        <div className="border border-slate-300 mt-10 grid sm:grid-cols-2 text-xs text-slate-500">
+          <div className="p-3 border-b sm:border-b-0 sm:border-r border-slate-300 flex items-center gap-2">
+            <img src="/logo-bcode.png" alt="" className="h-5 object-contain" />
+            <span>BlairCode AI · B&D Co S.A.C. | www.blaircode.com<br />R.U.C.: 20614096561</span>
+          </div>
+          <div className="p-3 flex items-center justify-end gap-1 text-right">
+            <FileText className="w-3.5 h-3.5" /> Pagina | Confidencial — Casa Grande
+          </div>
         </div>
       </div>
     </div>

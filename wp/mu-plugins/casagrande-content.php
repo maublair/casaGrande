@@ -128,7 +128,11 @@ add_action('save_post_cg_slide', function ($id) {
 });
 
 /* ============ Galeria: pagina de administracion moderna ============ */
-function cg_gallery_cats() { return ['Habitaciones', 'Restaurante', 'Exteriores', 'Servicios', 'Eventos']; }
+function cg_gallery_cats() {
+  $cats = get_option('cg_gallery_categories');
+  if (!is_array($cats) || !$cats) $cats = ['Habitaciones', 'Restaurante', 'Exteriores', 'Servicios', 'Eventos'];
+  return array_values(array_filter(array_map('trim', $cats)));
+}
 
 add_action('admin_menu', function () {
   add_menu_page('Galeria', 'Galeria', 'manage_hotel', 'cg-galeria', 'cg_galeria_page', 'dashicons-format-gallery', 57);
@@ -179,6 +183,17 @@ function cg_galeria_page() {
     </div>
     <p class="description" style="margin-top:-8px">Al elegir foto puedes <b>subir una nueva</b> o escoger una existente. El texto alternativo (SEO) se edita en la mediateca; si la foto no tiene, se usa el titulo.</p>
 
+    <details style="margin:10px 0 4px;max-width:640px">
+      <summary style="cursor:pointer;font-weight:600;color:#0c2b3d">⚙ Editar categorias (una por linea)</summary>
+      <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:10px;align-items:flex-end;margin-top:8px">
+        <?php wp_nonce_field('cg_gal_cats', '_n'); ?>
+        <input type="hidden" name="action" value="cg_gal_cats">
+        <textarea name="cats" rows="5" style="width:280px"><?php echo esc_textarea(implode("\n", cg_gallery_cats())); ?></textarea>
+        <button class="button button-primary">Guardar categorias</button>
+      </form>
+      <p class="description">Puedes agregar, renombrar o quitar. Las fotos con una categoria eliminada conservan su etiqueta hasta que las cambies.</p>
+    </details>
+
     <div class="cg-cats">
       <?php foreach ($counts as $c => $n): ?>
         <a class="<?php echo $filter === $c ? 'on' : ''; ?>" href="<?php echo esc_url(add_query_arg(['page' => 'cg-galeria', 'cat' => $c], admin_url('admin.php'))); ?>"><?php echo esc_html($c); ?> (<?php echo (int) $n; ?>)</a>
@@ -213,6 +228,14 @@ function cg_galeria_page() {
   </div>
   <?php
 }
+
+add_action('admin_post_cg_gal_cats', function () {
+  check_admin_referer('cg_gal_cats', '_n');
+  if (!current_user_can('manage_hotel')) wp_die('Sin permiso');
+  $cats = array_values(array_filter(array_map('trim', explode("\n", sanitize_textarea_field($_POST['cats'] ?? '')))));
+  if ($cats) update_option('cg_gallery_categories', $cats);
+  wp_safe_redirect(add_query_arg(['page' => 'cg-galeria', 'done' => 1], admin_url('admin.php'))); exit;
+});
 
 add_action('admin_post_cg_gal_add', function () {
   check_admin_referer('cg_gal_add', '_n');
