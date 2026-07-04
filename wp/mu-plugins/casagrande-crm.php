@@ -505,3 +505,50 @@ add_action('login_footer', function () {
   </script>
   <?php
 });
+
+/* ================= KPIs hoteleros (PMS): ADR, RevPAR, llegadas/salidas ================= */
+// ADR = ingreso alojamiento / noches vendidas; RevPAR = ingreso alojamiento / (unidades x dias)
+function cg_hotel_kpis($from, $to) {
+  $rows = cg_income_reservations($from, $to);
+  $revenue = array_sum(array_column($rows, 'amount'));
+  // noches vendidas del periodo (reservas pagadas)
+  $nights = 0;
+  $q = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => -1, 'post_status' => 'publish', 'fields' => 'ids',
+    'meta_query' => [['key' => 'cg_payment', 'value' => 'pagado']]]);
+  foreach ($q->posts as $id) {
+    $ci = get_post_meta($id, 'cg_check_in', true); $co = get_post_meta($id, 'cg_check_out', true);
+    if (!$ci || !$co || $co <= $ci) continue;
+    if ($ci < $from || $ci > $to) continue;
+    $nights += max(1, (int) ((strtotime($co) - strtotime($ci)) / 86400));
+  }
+  // unidades totales del hotel
+  $units = 0;
+  foreach (get_posts(['post_type' => 'room', 'posts_per_page' => -1, 'post_status' => 'publish']) as $rm)
+    $units += cg_room_units($rm->ID);
+  $days = max(1, (int) round((strtotime($to) - strtotime($from)) / 86400) + 1);
+  return [
+    'revenue' => $revenue, 'nights' => $nights,
+    'adr' => $nights ? $revenue / $nights : 0,
+    'revpar' => ($units && $days) ? $revenue / ($units * $days) : 0,
+  ];
+}
+// Llegadas y salidas de hoy (front desk)
+function cg_today_movements() {
+  $today = current_time('Y-m-d');
+  $mk = function ($key) use ($today) {
+    $q = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => 20, 'post_status' => 'publish',
+      'meta_query' => [
+        ['key' => $key, 'value' => $today],
+        ['key' => 'cg_status', 'value' => 'cancelada', 'compare' => '!='],
+      ]]);
+    $out = [];
+    foreach ($q->posts as $p) $out[] = [
+      'code' => get_post_meta($p->ID, 'cg_code', true) ?: $p->post_title,
+      'name' => get_post_meta($p->ID, 'cg_name', true) ?: trim(explode('-', $p->post_title)[1] ?? ''),
+      'room' => get_post_meta($p->ID, 'cg_room', true) ?: '—',
+      'edit' => get_edit_post_link($p->ID, 'raw'),
+    ];
+    return $out;
+  };
+  return ['arrivals' => $mk('cg_check_in'), 'departures' => $mk('cg_check_out')];
+}

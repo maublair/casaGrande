@@ -221,6 +221,8 @@ function cg_crm_dashboard_render() {
   $staff = function_exists('cg_staff_counts') ? cg_staff_counts() : ['active' => 0, 'on_shift' => 0];
   $hk = function_exists('cg_hk_counts') ? cg_hk_counts() : [];
   $wa = cg_crm_conversations(50);
+  $hotel = function_exists('cg_hotel_kpis') ? cg_hotel_kpis(date('Y-m-01'), current_time('Y-m-t')) : ['adr' => 0, 'revpar' => 0, 'nights' => 0];
+  $moves = function_exists('cg_today_movements') ? cg_today_movements() : ['arrivals' => [], 'departures' => []];
   $unread = 0;
   foreach ($wa as $c) $unread += (int) ($c->unread ?? 0);
   $by_area = [];
@@ -244,6 +246,8 @@ function cg_crm_dashboard_render() {
       ['Personal', $staff['active'] ?? 0, (string) ($staff['active'] ?? 0) . ' activos', 'cg-b-slate', ($staff['on_shift'] ?? 0) . ' en turno hoy'],
       ['Ocupacion', $occ['rate'] ?? 0, (string) ($occ['rate'] ?? 0) . '%', 'cg-b-blue', ($occ['occupied'] ?? 0) . ' ocupadas / ' . ($occ['free'] ?? 0) . ' libres'],
       ['WhatsApp', $unread, (string) $unread . ' no leidos', 'cg-b-gold', 'con YCloud y bot por reglas'],
+      ['ADR (tarifa media)', $hotel['adr'] ?? 0, cg_crm_money_fmt($hotel['adr'] ?? 0), 'cg-b-slate', ($hotel['nights'] ?? 0) . ' noches vendidas este mes'],
+      ['RevPAR', $hotel['revpar'] ?? 0, cg_crm_money_fmt($hotel['revpar'] ?? 0), 'cg-b-olive', 'ingreso por habitacion disponible'],
     ];
     foreach ($cards as [$label, $value, $formatted, $badge, $sub]) : ?>
       <div class="cg-card cg-kpi">
@@ -303,6 +307,28 @@ function cg_crm_dashboard_render() {
       </table>
     </div>
 
+    <div class="cg-card">
+      <h3>Recepcion hoy — llegadas y salidas</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-weight:700;color:#155e37;margin-bottom:6px">→ Llegadas (<?php echo count($moves['arrivals']); ?>)</div>
+          <?php if (!$moves['arrivals']) echo '<div class="cg-note">Sin llegadas hoy.</div>'; ?>
+          <?php foreach ($moves['arrivals'] as $mv) : ?>
+            <div class="cg-note" style="margin-bottom:6px"><strong><?php echo esc_html($mv['name'] ?: $mv['code']); ?></strong><div style="font-size:12px;color:#64748b"><?php echo esc_html($mv['room']); ?> · <?php echo esc_html($mv['code']); ?></div></div>
+          <?php endforeach; ?>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#9a3412;margin-bottom:6px">← Salidas (<?php echo count($moves['departures']); ?>)</div>
+          <?php if (!$moves['departures']) echo '<div class="cg-note">Sin salidas hoy.</div>'; ?>
+          <?php foreach ($moves['departures'] as $mv) : ?>
+            <div class="cg-note" style="margin-bottom:6px"><strong><?php echo esc_html($mv['name'] ?: $mv['code']); ?></strong><div style="font-size:12px;color:#64748b"><?php echo esc_html($mv['room']); ?> · <?php echo esc_html($mv['code']); ?></div></div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cg-grid two" style="margin-top:16px;">
     <div class="cg-card">
       <h3>WhatsApp / YCloud</h3>
       <?php foreach (cg_crm_conversations(4) as $conv) : ?>
