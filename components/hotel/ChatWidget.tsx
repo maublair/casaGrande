@@ -97,7 +97,7 @@ export default function ChatWidget() {
     if (has(t, ['mascota', 'perro', 'gato', 'pet'])) return botSay('Por politica no se admiten mascotas en las instalaciones; consulta con recepcion por excepciones.', QUICK);
     if (has(t, ['evento', 'boda', 'matrimonio', 'salon', 'reunion', 'conferencia', 'capacitacion', 'luna de miel', 'catering', 'banquete'])) return botSay('Ofrecemos salas para eventos y reuniones, paquetes de luna de miel y catering. Mira los detalles en la pagina de Servicios.', [{ label: 'Ver servicios', value: 'url:/servicios' }, { label: 'Hablar con recepcion', value: 'handoff' }]);
     if (has(t, ['servicio', 'servicios', 'amenidad', 'ofrecen', 'incluye', 'que tienen', 'comodidad'])) return showServices();
-    if (has(t, ['pago', 'pagar', 'tarjeta', 'yape', 'plin', 'efectivo', 'transferencia', 'deposito', 'visa'])) return botSay('Aceptamos efectivo, tarjetas y Yape/Plin. El pago se coordina con recepcion al confirmar la reserva.', QUICK);
+    if (has(t, ['pago', 'pagar', 'tarjeta', 'yape', 'plin', 'efectivo', 'transferencia', 'deposito', 'visa'])) return botSay('Aceptamos Izipay, Yape, Plin y transferencia bancaria. Las credenciales y enlaces se configuran desde WordPress; recepcion puede coordinar el cobro manual dentro de la ventana de 24 horas.', QUICK);
     if (has(t, ['cancel', 'politica', 'reembolso', 'anular', 'devolucion'])) return botSay('Cancelacion gratuita hasta 48 horas antes de la llegada; despues se aplica el cargo de 1 noche. Recepcion coordina los detalles.', QUICK);
     if (has(t, ['aeropuerto', 'transfer', 'traslado', 'recojo', 'pickup', 'movilidad'])) return botSay('Ofrecemos transfer al aeropuerto, a coordinar previamente con recepcion.', QUICK);
     if (has(t, ['telefono', 'numero', 'contacto', 'llamar', 'whatsapp', 'celular', 'correo', 'email', 'mail'])) return botSay(`Telefono: ${s('contact_phone', '(054) 214000')}\nWhatsApp: ${s('contact_whatsapp', '+51 942 330 137')}\nEmail: ${s('contact_email', 'reservas@hotelcasagrande.pe')}`, [{ label: 'Abrir WhatsApp', value: 'wa' }, ...QUICK]);
@@ -257,7 +257,7 @@ export default function ChatWidget() {
     if (res.ok && res.reservation_code) {
       setStep('done');
       botSay(
-        `¡Reserva registrada! 🎉\n\nCodigo: ${res.reservation_code}\n${draft.roomTypeName} · ${fmtDate(draft.checkIn!)} → ${fmtDate(draft.checkOut!)}\nTotal estimado: ${money(draft.total!)}\n\nNuestra recepcion te contactara para confirmar el pago y los detalles. ¿Algo mas?`,
+        `¡Reserva registrada! 🎉\n\nCodigo: ${res.reservation_code}\n${draft.roomTypeName} · ${fmtDate(draft.checkIn!)} → ${fmtDate(draft.checkOut!)}\nTotal estimado: ${money(draft.total!)}\n\nNuestra recepcion te contactara para confirmar el pago y los detalles. Si prefieres, puede ser por Izipay, Yape, Plin o transferencia bancaria. ¿Algo mas?`,
         [{ label: 'Hacer otra reserva', value: 'book' }, { label: 'WhatsApp recepcion', value: 'handoff' }, { label: 'Menu', value: 'menu' }]
       );
     } else if (res.error === 'no_availability') {

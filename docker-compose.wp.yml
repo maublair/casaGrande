@@ -1,0 +1,22 @@
+# ==================================================================
+# Front ESTATICO (Next.js output:export) servido por nginx.
+# Backend = WordPress headless (casagrande-cms.bcode.work).
+# Reemplaza al casagrande-web (standalone+Supabase) en el gateway.
+# ==================================================================
+name: casagrande-wpfront
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.static
+      args:
+        NEXT_PUBLIC_WP_API: ${NEXT_PUBLIC_WP_API}
+    image: casagrande-web-static:local
+    container_name: casagrande-web-static
+    restart: unless-stopped
+    networks: [bcode_gateway]
+
+networks:
+  bcode_gateway:
+    external: true

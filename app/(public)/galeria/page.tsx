@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getGallery } from '@/lib/wp';
 import { X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface GalleryImage {
@@ -11,7 +12,7 @@ interface GalleryImage {
   category: string;
 }
 
-const images: GalleryImage[] = [
+const fallbackImages: GalleryImage[] = [
   { id: 1, category: 'Habitaciones', title: 'Suite con sala', src: '/hotel/real-10.webp', thumb: '/hotel/real-10.webp' },
   { id: 2, category: 'Habitaciones', title: 'Suite Ejecutiva', src: '/hotel/real-37.webp', thumb: '/hotel/real-37.webp' },
   { id: 3, category: 'Habitaciones', title: 'Suite', src: '/hotel/real-36.webp', thumb: '/hotel/real-36.webp' },
@@ -59,6 +60,25 @@ const categories = ['Todos', 'Habitaciones', 'Restaurante', 'Exteriores', 'Servi
 
 export default function GaleriaPage() {
   const [active, setActive] = useState('Todos');
+  // La galeria se administra desde WordPress; si no hay datos, usa el set local.
+  const [images, setImages] = useState<GalleryImage[]>(fallbackImages);
+
+  useEffect(() => {
+    let alive = true;
+    getGallery()
+      .then(rows => {
+        if (!alive || !rows || rows.length === 0) return;
+        setImages(rows.map((r, i) => ({
+          id: i + 1,
+          category: r.category || 'Habitaciones',
+          title: r.title || '',
+          src: r.src,
+          thumb: r.src,
+        })));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   const filtered = active === 'Todos' ? images : images.filter(i => i.category === active);

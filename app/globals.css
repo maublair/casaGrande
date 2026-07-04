@@ -206,3 +206,17 @@ html { scroll-behavior: smooth; }
 .kpi-olive { background: linear-gradient(135deg, #7a8c3f 0%, #9cb848 100%); }
 .kpi-red   { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); }
 .kpi-teal  { background: linear-gradient(135deg, #1a7a6b 0%, #2abcaa 100%); }
+
+/* Blog: cuerpo del articulo (sin plugin de tipografia) */
+.article-body { color: #374151; font-size: 1.075rem; line-height: 1.85; }
+.article-body p { margin: 0 0 1.35rem; }
+.article-body h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 2rem; color: #0c2b3d; margin: 2.2rem 0 1rem; font-weight: 600; }
+.article-body h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.5rem; color: #0c2b3d; margin: 1.8rem 0 .8rem; font-weight: 600; }
+.article-body ul, .article-body ol { margin: 0 0 1.35rem 1.4rem; }
+.article-body ul { list-style: disc; }
+.article-body ol { list-style: decimal; }
+.article-body li { margin: .4rem 0; }
+.article-body a { color: #154562; text-decoration: underline; }
+.article-body img { border-radius: 0.75rem; margin: 1.5rem 0; max-width: 100%; height: auto; }
+.article-body blockquote { border-left: 3px solid #c9a84c; padding-left: 1.1rem; margin: 1.5rem 0; font-style: italic; color: #4b5563; }
+.article-body strong { color: #0c2b3d; }

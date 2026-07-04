@@ -58,6 +58,8 @@ export interface ReservationInput {
   children?: number;
   total?: number;
   notes?: string;
+  payment_method?: string;
+  payment_reference?: string;
 }
 
 export interface ReservationResult {
@@ -85,3 +87,25 @@ export async function createReservation(d: ReservationInput): Promise<Reservatio
 
 export const sendContact = (d: { name: string; email?: string; phone?: string; message: string }) =>
   createReservation({ name: d.name, email: d.email, phone: d.phone, room: 'Consulta de contacto', notes: d.message });
+
+// ---- Contenido editable desde WordPress: hero, galeria, blog ----
+export interface WpSlide {
+  id: string; eyebrow: string; title: string; accent: string;
+  subtitle: string; cta_label: string; cta_link: string; image: string;
+}
+export const getSlides = () => getJSON<WpSlide[]>('/slides', []);
+
+export interface WpGalleryImg { id: string; title: string; category: string; src: string; }
+export const getGallery = () => getJSON<WpGalleryImg[]>('/gallery', []);
+
+export interface WpPost {
+  id: string; slug: string; title: string; excerpt: string; date: string;
+  date_h: string; category: string; author: string; image: string; reading: number;
+}
+export const getPosts = (limit = 20) => getJSON<WpPost[]>(`/posts?limit=${limit}`, []);
+
+export interface WpPostFull extends WpPost { content: string; }
+export async function getPost(slug: string): Promise<WpPostFull | null> {
+  const r = await getJSON<any>(`/post?slug=${encodeURIComponent(slug)}`, { error: 'nf' });
+  return r && !r.error ? (r as WpPostFull) : null;
+}

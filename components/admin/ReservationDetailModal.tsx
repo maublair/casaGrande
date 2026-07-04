@@ -116,11 +116,12 @@ export default function ReservationDetailModal({ reservation: res, onClose, onUp
                   onChange={e => setPayForm(f => ({ ...f, method: e.target.value }))}
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-300"
                 >
-                  <option value="cash">Efectivo</option>
-                  <option value="card">Tarjeta</option>
-                  <option value="transfer">Transferencia</option>
+                  <option value="izipay">Izipay</option>
                   <option value="yape">Yape</option>
                   <option value="plin">Plin</option>
+                  <option value="transfer">Transferencia bancaria</option>
+                  <option value="card">Tarjeta</option>
+                  <option value="cash">Efectivo</option>
                 </select>
               </div>
               <div className="flex gap-2">

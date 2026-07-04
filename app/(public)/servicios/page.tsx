@@ -13,7 +13,7 @@ const servicios = [
   {
     icon: Heart,
     title: 'Luna de Miel',
-    image: '/hotel/real-07.webp',
+    image: '/hotel/real-09.webp',
     text: 'Una experiencia pensada para recien casados.',
     features: [
       'Habitaciones comodas previas al evento',
@@ -25,7 +25,7 @@ const servicios = [
   {
     icon: Presentation,
     title: 'Salas de Reuniones',
-    image: '/hotel/real-57.webp',
+    image: '/hotel/real-51.webp',
     text: 'Tres espacios multiproposito adaptables a tu evento.',
     features: [
       'Montaje Auditorio para conferencias',
@@ -67,7 +67,7 @@ export default function ServiciosPage() {
       {/* Hero */}
       <div className="relative h-[55vh] min-h-[400px]">
         <img
-          src="/hotel/real-57.webp"
+          src="/hotel/real-41.webp"
           alt="Servicios Casagrande"
           className="w-full h-full object-cover"
         />

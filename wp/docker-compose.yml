@@ -1,0 +1,62 @@
+# ==================================================================
+# WordPress headless (backend de contenido) para Casa Grande.
+# Apache+PHP (REST API) + MariaDB. Ingreso por casagrande-cms.bcode.work
+# (cloudflared -> NPM -> casagrande-wp). DB sin puertos al host.
+# El front Next.js (estatico) consume /wp-json. Admin = WP-admin.
+# Portable a hosting compartido (PHP/MySQL): sin plugins externos.
+# ==================================================================
+name: casagrande-wp
+
+services:
+  wpdb:
+    image: mariadb:11
+    container_name: casagrande-wpdb
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - wpdb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 8s
+      timeout: 5s
+      retries: 20
+    networks: [casagrande-net]
+
+  wp:
+    image: wordpress:6.5-php8.2-apache
+    container_name: casagrande-wp
+    restart: unless-stopped
+    depends_on:
+      wpdb:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: casagrande-wpdb
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_CONFIG_EXTRA: |
+        /* Detras de proxy HTTPS (cloudflared -> NPM) */
+        if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $$_SERVER['HTTPS'] = 'on'; }
+        define('WP_HOME', 'https://casagrande-cms.bcode.work');
+        define('WP_SITEURL', 'https://casagrande-cms.bcode.work');
+        define('FORCE_SSL_ADMIN', true);
+        define('FORCE_SSL_LOGIN', true);
+    volumes:
+      - wp_data:/var/www/html
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+    networks: [casagrande-net, bcode_gateway]
+
+volumes:
+  wpdb_data:
+  wp_data:
+
+networks:
+  casagrande-net:
+    external: true
+    name: casagrande-backend_casagrande-net
+  bcode_gateway:
+    external: true

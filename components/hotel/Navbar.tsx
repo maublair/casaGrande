@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, Phone, Lock } from 'lucide-react';
 import Logo from './Logo';
 
+const ADMIN_URL = 'https://casagrande-cms.bcode.work/wp-login.php';
+
 const navLinks = [
   { label: 'Inicio', href: '/' },
   { label: 'Nosotros', href: '/nosotros' },
@@ -13,6 +15,7 @@ const navLinks = [
   { label: 'Servicios', href: '/servicios' },
   { label: 'Restaurante', href: '/restaurante' },
   { label: 'Galeria', href: '/galeria' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
 ];
 
@@ -77,6 +80,17 @@ export default function Navbar() {
             <Phone className="w-4 h-4" />
             54-214000
           </a>
+          <a
+            href={ADMIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
+              transparent ? 'text-white/75 hover:text-white' : 'text-gray-500 hover:text-navy'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            Administrador
+          </a>
           <Link
             href="/#reservar"
             className="bg-gold hover:bg-gold-600 text-navy-900 text-sm font-semibold px-5 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md"
@@ -120,13 +134,15 @@ export default function Navbar() {
               >
                 <Phone className="w-4 h-4" /> 54-214000
               </a>
-              <Link
-                href="/login"
+              <a
+                href={ADMIN_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2 text-sm text-gray-500 py-2 px-3"
               >
-                <Lock className="w-4 h-4" /> Acceso administrador
-              </Link>
+                <Lock className="w-4 h-4" /> Administrador
+              </a>
               <Link
                 href="/#reservar"
                 onClick={() => setOpen(false)}

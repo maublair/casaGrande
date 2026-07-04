@@ -5,6 +5,7 @@ import RoomsSection from '@/components/hotel/RoomsSection';
 import ServicesSection from '@/components/hotel/ServicesSection';
 import HistorySection from '@/components/hotel/HistorySection';
 import Testimonials from '@/components/hotel/Testimonials';
+import NewsSection from '@/components/hotel/NewsSection';
 import GallerySection from '@/components/hotel/GallerySection';
 import TourTeaser from '@/components/hotel/TourTeaser';
 import ContactSection from '@/components/hotel/ContactSection';
@@ -48,6 +49,7 @@ export default async function HomePage() {
       <ServicesSection />
       <HistorySection />
       <Testimonials />
+      <NewsSection />
       <GallerySection />
       <TourTeaser />
       <ContactSection />

@@ -34,3 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secretos y artefactos locales
+wp/.env
+backend/.env
+backend/**/.env
+/test-results/
+/playwright-audit/

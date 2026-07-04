@@ -28,7 +28,7 @@ export default function BookingModal({ room, onClose, initialCheckIn, initialChe
       ? Math.min(Math.max(1, Math.round(initialAdults)), maxAdults)
       : 2
   );
-  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '', payment_method: 'izipay', payment_reference: '' });
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [errMsg, setErrMsg] = useState('');
   const [code, setCode] = useState('');
@@ -43,7 +43,7 @@ export default function BookingModal({ room, onClose, initialCheckIn, initialChe
     setStatus('sending'); setErrMsg('');
     const res = await createReservation({
       name: form.name, email: form.email, phone: form.phone, room: room.name, room_id: room.id,
-      check_in: checkIn, check_out: checkOut, adults, total, notes: form.notes,
+      check_in: checkIn, check_out: checkOut, adults, total, notes: form.notes, payment_method: form.payment_method, payment_reference: form.payment_reference,
     });
     if (res.ok && res.reservation_code) { setCode(res.reservation_code); setStatus('done'); }
     else if (res.error === 'no_availability') { setErrMsg('Esa habitacion ya no tiene disponibilidad para esas fechas. Prueba con otras fechas o escribenos por WhatsApp.'); setStatus('error'); }
@@ -70,7 +70,7 @@ export default function BookingModal({ room, onClose, initialCheckIn, initialChe
             </div>
             <h4 className="font-serif text-2xl text-navy mb-1">¡Reserva registrada!</h4>
             <p className="text-gray-500 text-sm mb-4">Codigo <span className="font-semibold text-navy">{code}</span></p>
-            <p className="text-gray-500 text-sm">{room.name} · {nights} noche(s) · {money(total)}<br />Nuestra recepcion te contactara para confirmar el pago.</p>
+            <p className="text-gray-500 text-sm">{room.name} · {nights} noche(s) · {money(total)}<br />Nuestra recepcion te contactara para confirmar el pago por Izipay, Yape, Plin o transferencia bancaria.</p>
             <button onClick={onClose} className="mt-6 bg-gold hover:bg-gold-600 text-navy-900 font-semibold px-6 py-2.5 rounded-lg text-sm">Listo</button>
           </div>
         ) : (
@@ -98,6 +98,23 @@ export default function BookingModal({ room, onClose, initialCheckIn, initialChe
               <div className="grid grid-cols-2 gap-3">
                 <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="Correo *" className={inputCls} />
                 <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="Telefono / WhatsApp" className={inputCls} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600 block mb-1.5">Metodo de pago preferido</label>
+                  <select value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} className={inputCls}>
+                    <option value="izipay">Izipay</option>
+                    <option value="yape">Yape</option>
+                    <option value="plin">Plin</option>
+                    <option value="transferencia">Transferencia bancaria</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="efectivo">Efectivo</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 block mb-1.5">Referencia / voucher</label>
+                  <input value={form.payment_reference} onChange={e => setForm(f => ({ ...f, payment_reference: e.target.value }))} placeholder="Opcional" className={inputCls} />
+                </div>
               </div>
               <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Pedidos especiales (opcional)" className={inputCls + ' resize-none'} />
             </div>
