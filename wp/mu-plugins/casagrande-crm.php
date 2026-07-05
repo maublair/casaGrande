@@ -768,3 +768,93 @@ add_action('cg_reservation_created', function ($res_id, $room_type_id, $ci, $co)
   $num = cg_pick_free_room($room_type_id, $ci, $co);
   if ($num) update_post_meta($res_id, 'cg_room_number', (string) $num);
 }, 10, 4);
+
+/* ================= v4: tarifas, mantenimiento, actividad, huespedes ================= */
+add_action('init', function () {
+  if (get_option('cg_crm_db5') === '1') return;
+  global $wpdb; $cs = $wpdb->get_charset_collate();
+  require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+  dbDelta("CREATE TABLE " . cg_tbl('rates') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    type_id BIGINT UNSIGNED NOT NULL, label VARCHAR(80) NOT NULL DEFAULT 'Temporada',
+    date_from DATE NOT NULL, date_to DATE NOT NULL, price DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (id), KEY type_id (type_id), KEY dates (date_from, date_to)) $cs;");
+  dbDelta("CREATE TABLE " . cg_tbl('maintenance') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    room_number SMALLINT UNSIGNED NOT NULL DEFAULT 0, area VARCHAR(80) DEFAULT '',
+    issue VARCHAR(220) NOT NULL, priority VARCHAR(10) NOT NULL DEFAULT 'media',
+    status VARCHAR(12) NOT NULL DEFAULT 'abierta', staff_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    cost DECIMAL(10,2) NOT NULL DEFAULT 0, created DATETIME DEFAULT CURRENT_TIMESTAMP, resolved DATETIME NULL,
+    PRIMARY KEY (id), KEY status (status)) $cs;");
+  dbDelta("CREATE TABLE " . cg_tbl('activity') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user VARCHAR(60) NOT NULL DEFAULT '', action VARCHAR(40) NOT NULL, detail VARCHAR(240) DEFAULT '',
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id), KEY ts (ts)) $cs;");
+  dbDelta("CREATE TABLE " . cg_tbl('guest_notes') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    guest_key VARCHAR(120) NOT NULL, note VARCHAR(300) NOT NULL, ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id), KEY guest_key (guest_key)) $cs;");
+  update_option('cg_crm_db5', '1');
+}, 7);
+
+/* ---- Log de actividad (auditoria) ---- */
+function cg_log($action, $detail = '') {
+  global $wpdb;
+  $u = wp_get_current_user();
+  $wpdb->insert(cg_tbl('activity'), ['user' => $u && $u->exists() ? $u->user_login : 'sistema',
+    'action' => substr($action, 0, 40), 'detail' => substr($detail, 0, 240)]);
+}
+
+/* ---- Tarifas por temporada ---- */
+function cg_rate_for($type_id, $date) {
+  global $wpdb; static $cache = [];
+  $k = $type_id . '|' . $date;
+  if (!isset($cache[$k])) {
+    $p = $wpdb->get_var($wpdb->prepare("SELECT price FROM " . cg_tbl('rates') . " WHERE type_id=%d AND %s BETWEEN date_from AND date_to ORDER BY id DESC LIMIT 1", $type_id, $date));
+    $cache[$k] = $p !== null ? (float) $p : null;
+  }
+  return $cache[$k];
+}
+// Total de estadia con tarifas por noche (fallback precio base)
+function cg_stay_total($type_id, $ci, $co) {
+  $base = (float) get_post_meta($type_id, 'cg_price', true);
+  $total = 0.0;
+  for ($d = $ci; $d < $co; $d = date('Y-m-d', strtotime($d . ' +1 day'))) {
+    $r = cg_rate_for($type_id, $d);
+    $total += ($r !== null ? $r : $base);
+  }
+  return $total > 0 ? $total : $base;
+}
+
+/* ---- Perfiles de huespedes (derivados de reservas) ---- */
+function cg_guest_key($name, $phone, $email) {
+  $p = preg_replace('/\D+/', '', (string) $phone);
+  if (strlen($p) >= 6) return 'p:' . substr($p, -9);
+  if ($email) return 'e:' . strtolower(trim($email));
+  return 'n:' . strtolower(trim((string) $name));
+}
+function cg_guests_index() {
+  $q = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => -1, 'post_status' => 'publish']);
+  $g = [];
+  foreach ($q->posts as $p) {
+    $name = get_post_meta($p->ID, 'cg_name', true) ?: trim(explode('-', $p->post_title, 2)[1] ?? '');
+    if (!$name || stripos($name, 'consulta') !== false) continue;
+    $phone = get_post_meta($p->ID, 'cg_phone', true); $email = get_post_meta($p->ID, 'cg_email', true);
+    $k = cg_guest_key($name, $phone, $email);
+    if (!isset($g[$k])) $g[$k] = ['key' => $k, 'name' => $name, 'phone' => $phone, 'email' => $email,
+      'visits' => 0, 'nights' => 0, 'spent' => 0.0, 'last' => '', 'res' => []];
+    $ci = get_post_meta($p->ID, 'cg_check_in', true); $co = get_post_meta($p->ID, 'cg_check_out', true);
+    $status = get_post_meta($p->ID, 'cg_status', true);
+    if ($status === 'cancelada') continue;
+    $g[$k]['visits']++;
+    if ($ci && $co && $co > $ci) $g[$k]['nights'] += (int) ((strtotime($co) - strtotime($ci)) / 86400);
+    if (get_post_meta($p->ID, 'cg_payment', true) === 'pagado') $g[$k]['spent'] += (float) get_post_meta($p->ID, 'cg_total', true);
+    if (function_exists('cg_folio_rows')) foreach (cg_folio_rows($p->ID) as $f) if ($f->settled) $g[$k]['spent'] += (float) $f->total;
+    if ($ci > $g[$k]['last']) $g[$k]['last'] = $ci;
+    if ($phone && !$g[$k]['phone']) $g[$k]['phone'] = $phone;
+    if ($email && !$g[$k]['email']) $g[$k]['email'] = $email;
+    $g[$k]['res'][] = $p->ID;
+  }
+  uasort($g, function ($a, $b) { return $b['spent'] <=> $a['spent']; });
+  return $g;
+}

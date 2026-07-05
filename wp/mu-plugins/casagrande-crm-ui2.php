@@ -103,7 +103,7 @@ function cg2_free_rooms_of_type($type_id) {
 function cg_crm2_render_reservas() {
   global $wpdb;
   $sel = (int) ($_GET['res'] ?? 0);
-  $q = new WP_Query(['post_type'=>'reservation','posts_per_page'=>30,'post_status'=>'publish','orderby'=>'date','order'=>'DESC']);
+  $q = new WP_Query(['post_type'=>'reservation','posts_per_page'=>(!empty($_GET['q']) ? 300 : 30),'post_status'=>'publish','orderby'=>'date','order'=>'DESC']);
   $dishes = get_posts(['post_type'=>'dish','posts_per_page'=>-1,'post_status'=>'publish','orderby'=>'title','order'=>'ASC']);
   // --- Calendario de ocupacion 14 dias por tipo ---
   $types = get_posts(['post_type'=>'room','posts_per_page'=>-1,'post_status'=>'publish','orderby'=>'meta_value_num','meta_key'=>'cg_price','order'=>'ASC']);
@@ -126,10 +126,21 @@ function cg_crm2_render_reservas() {
       <?php endforeach; ?></table></div>
     <p style="font-size:11px;color:#64748b">Numero = habitaciones libres ese dia. Verde: disponible · Ambar: pocas · Rojo: completo.</p></div>
 
-  <div class="cg-card"><h3>Front desk — reservas <a class="button button-small" style="margin-left:8px" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg4_csv_reservas'), 'cg4_csv')); ?>">⬇ CSV</a></h3>
+  <?php $fq = mb_strtolower(sanitize_text_field($_GET['q'] ?? '')); ?>
+  <div class="cg-card"><form method="get" style="display:flex;gap:8px;margin-bottom:10px">
+    <input type="hidden" name="page" value="cg-crm-reservas">
+    <input name="q" value="<?php echo esc_attr($fq); ?>" placeholder="🔎 Buscar por codigo, huesped, telefono o N° de habitacion..." style="width:340px">
+    <button class="button">Buscar</button>
+    <?php if ($fq) : ?><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=cg-crm-reservas')); ?>">Limpiar</a><?php endif; ?>
+  </form><h3>Front desk — reservas <a class="button button-small" style="margin-left:8px" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg4_csv_reservas'), 'cg4_csv')); ?>">⬇ CSV</a></h3>
     <table class="widefat striped"><thead><tr><th>Codigo / huesped</th><th>Tipo</th><th>Hab.</th><th>Fechas</th><th>Aloj.</th><th>Cuenta</th><th>Pago</th><th>Estado</th><th style="min-width:230px">Acciones</th></tr></thead><tbody>
     <?php foreach ($q->posts as $p) :
       $id = $p->ID;
+      if ($fq) {
+        $hay = mb_strtolower(get_post_meta($id, 'cg_code', true) . ' ' . get_post_meta($id, 'cg_name', true) . ' ' .
+          get_post_meta($id, 'cg_phone', true) . ' ' . get_post_meta($id, 'cg_room_number', true) . ' ' . $p->post_title);
+        if (strpos($hay, $fq) === false) continue;
+      }
       $inhouse = get_post_meta($id, 'cg_inhouse', true) === '1';
       $num = get_post_meta($id, 'cg_room_number', true);
       $status = get_post_meta($id, 'cg_status', true) ?: 'pendiente';
@@ -196,6 +207,15 @@ function cg_crm2_render_reservas() {
             <div style="display:flex;gap:8px">
               <?php echo cg2_field('Cantidad', '<input type="number" step="1" min="1" name="qty" value="1" style="width:80px">'); ?>
             </div>
+            <div style="border-top:1px dashed #e3e6ea;padding-top:8px;font-size:12px;color:#64748b">…o un servicio del hotel:</div>
+            <select name="service">
+              <option value="">— servicio rapido —</option>
+              <option value="Lavanderia|25">Lavanderia (S/ 25.00)</option>
+              <option value="Minibar|15">Minibar (S/ 15.00)</option>
+              <option value="Late check-out|50">Late check-out (S/ 50.00)</option>
+              <option value="Desayuno extra|18">Desayuno extra (S/ 18.00)</option>
+              <option value="Transfer aeropuerto|40">Transfer aeropuerto (S/ 40.00)</option>
+            </select>
             <div style="border-top:1px dashed #e3e6ea;padding-top:8px;font-size:12px;color:#64748b">…o un consumo libre:</div>
             <div style="display:flex;gap:8px">
               <?php echo cg2_field('Concepto', '<input name="concept" placeholder="Ej: Lavanderia">');
@@ -217,6 +237,7 @@ add_action('admin_post_cg2_checkin', function () {
     update_post_meta($res, 'cg_inhouse', '1');
     update_post_meta($res, 'cg_status', 'confirmada');
     cg2_set_hk($num, 'ocupado');
+    if (function_exists('cg_log')) cg_log('check_in', 'Hab. ' . $num . ' res#' . $res);
   }
   cg2_redir('cg-crm-reservas');
 });
@@ -234,12 +255,20 @@ add_action('admin_post_cg2_checkout', function () {
   $num = get_post_meta($res, 'cg_room_number', true);
   if ($num) cg2_set_hk((int) $num, 'sucio');
   update_post_meta($res, 'cg_inhouse', '0');
+  if (function_exists('cg_log')) cg_log('check_out', ($num ? 'Hab. ' . $num : '') . ' res#' . $res . ($tot > 0 ? ' consumos S/' . number_format($tot, 2) : ''));
   cg2_redir('cg-crm-reservas');
 });
 add_action('admin_post_cg2_folio', function () {
   check_admin_referer('cg2_folio','_n'); cg2_can(); global $wpdb;
   $res = (int) $_POST['res']; $qty = max(1, (float) ($_POST['qty'] ?? 1));
   $dish = (int) ($_POST['dish_id'] ?? 0);
+  $svc = sanitize_text_field($_POST['service'] ?? '');
+  if (!$dish && $svc && strpos($svc, '|') !== false) {
+    [$sname, $sprice] = explode('|', $svc, 2);
+    $wpdb->insert(cg_tbl('folio'), ['res_id'=>$res,'concept'=>$sname,'qty'=>$qty,'unit_price'=>(float) $sprice,'total'=>$qty*(float) $sprice]);
+    if (function_exists('cg_log')) cg_log('cargo_folio', $sname . ' x' . $qty . ' res#' . $res);
+    cg2_redir('cg-crm-reservas', ['res'=>$res]); return;
+  }
   if ($dish) {
     $price = (float) get_post_meta($dish, 'cg_price', true);
     $wpdb->insert(cg_tbl('folio'), ['res_id'=>$res,'concept'=>get_the_title($dish),'qty'=>$qty,'unit_price'=>$price,'total'=>$qty*$price]);

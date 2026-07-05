@@ -18,6 +18,10 @@ function cg_crm_sections() {
     'cg-crm-reservas' => 'reservas',
     'cg-crm-cuartos' => 'cuartos',
     'cg-crm-proveedores' => 'proveedores',
+    'cg-crm-huespedes' => 'huespedes',
+    'cg-crm-tarifas' => 'tarifas',
+    'cg-crm-mantenimiento' => 'mantenimiento',
+    'cg-crm-reportes' => 'reportes',
     'cg-crm-almacen' => 'almacen',
     'cg-crm-finanzas' => 'finanzas',
     'cg-crm-whatsapp' => 'whatsapp',
@@ -344,7 +348,7 @@ function cg_crm_dashboard_render() {
       <div class="cg-quick"><a class="cg-btn primary" href="<?php echo esc_url(cg_crm_url('cg-crm-whatsapp')); ?>">Abrir inbox</a></div>
     </div>
   </div>
-  <?php
+  <?php do_action('cg_dashboard_bottom');
 }
 
 function cg_crm_render_staff() {
@@ -664,6 +668,12 @@ function cg_crm_render_whatsapp() {
               <input type="hidden" name="action" value="cg_crm_wa_reply" />
               <input type="hidden" name="conv_id" value="<?php echo (int) $row->id; ?>" />
               <input type="hidden" name="phone" value="<?php echo esc_attr($row->phone); ?>" />
+              <select onchange="if(this.value){this.closest('form').querySelector('textarea').value=this.value;this.selectedIndex=0}" style="font-size:12px">
+                <option value="">⚡ Respuesta rapida...</option>
+                <?php foreach (cg5_canned_replies() as $cr) : ?>
+                  <option value="<?php echo esc_attr($cr[1]); ?>"><?php echo esc_html($cr[0]); ?></option>
+                <?php endforeach; ?>
+              </select>
               <textarea name="message" placeholder="Responder manualmente" required></textarea>
               <button type="submit">Enviar</button>
             </form>
@@ -705,6 +715,10 @@ function cg_crm_render_router() {
     'reservas' => ['Front Desk', 'Calendario de ocupacion, check-in/check-out y cuenta del cuarto.'],
     'cuartos' => ['Cuartos', 'Rack de habitaciones 101-515 por piso: tipo, capacidad y estado.'],
     'proveedores' => ['Proveedores', 'Proveedores de insumos y servicios de terceros.'],
+    'huespedes' => ['Huespedes', 'Perfiles, historial de estancias, gasto total y notas.'],
+    'tarifas' => ['Tarifas', 'Precios por temporada aplicados noche por noche.'],
+    'mantenimiento' => ['Mantenimiento', 'Ordenes de trabajo con prioridad, costo y estados.'],
+    'reportes' => ['Reportes', 'Ocupacion, ADR/RevPAR, ingresos por categoria y rankings.'],
     'personal' => ['Personal', 'Equipo, roles y sueldo base.'],
     'limpieza' => ['Limpieza', 'Estado de habitaciones y mantenimiento.'],
     'turnos' => ['Turnos', 'Asignacion semanal y turno de hoy.'],
@@ -717,14 +731,18 @@ function cg_crm_render_router() {
   cg_crm_shell_start($title, $subtitle, $section);
   switch ($section) {
     case 'personal': cg_crm3_render_personal(); break;
-    case 'limpieza': cg_crm_render_limpieza(); break;
-    case 'turnos': cg_crm_render_turnos(); break;
+    case 'limpieza': cg5_render_limpieza(); break;
+    case 'turnos': cg5_render_turnos(); break;
     case 'reservas': cg_crm2_render_reservas(); break;
     case 'almacen': cg_crm2_render_almacen(); break;
     case 'finanzas': cg_crm2_render_finanzas(); break;
     case 'whatsapp': cg_crm_render_whatsapp(); break;
     case 'cuartos': cg_crm2_render_cuartos(); break;
     case 'proveedores': cg_crm2_render_proveedores(); break;
+    case 'huespedes': cg5_render_huespedes(); break;
+    case 'tarifas': cg5_render_tarifas(); break;
+    case 'mantenimiento': cg5_render_mantenimiento(); break;
+    case 'reportes': cg5_render_reportes(); break;
     case 'contenido': cg_crm_render_contenido(); break;
     default: cg_crm_dashboard_render(); break;
   }

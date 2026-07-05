@@ -304,6 +304,7 @@ add_action('admin_post_cg3_pay', function () {
     $wpdb->insert(cg_tbl('ledger'), ['kind' => 'egreso', 'category' => 'Personal',
       'concept' => 'Planilla ' . $p->period . ' — ' . $p->name . ' (neto ' . number_format((float) $p->net, 2) . ' + ' . strtoupper($p->pension_type) . ' ' . number_format((float) $p->pension_amount, 2) . ' + EsSalud ' . number_format((float) $p->essalud, 2) . ')',
       'amount' => $total, 'taxable' => 0, 'ref_type' => 'payslip', 'ref_id' => (string) $p->id]);
+    if (function_exists('cg_log')) cg_log('planilla_pagada', $p->name . ' ' . $p->period . ' S/' . number_format($total, 2));
   }
   wp_safe_redirect(add_query_arg(['page' => 'cg-crm-personal', 'vista' => 'planilla',
     'pm_from' => sanitize_text_field($_GET['pm_from'] ?? ''), 'pm_to' => sanitize_text_field($_GET['pm_to'] ?? ''), 'done' => 1], admin_url('admin.php'))); exit;

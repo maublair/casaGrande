@@ -37,6 +37,11 @@ function cg4_alerts() {
       'txt' => 'WhatsApp sin responder: ' . ($r->name ?: $r->phone) . ($open ? ' (ventana gratis ABIERTA)' : ' (ventana cerrada)'),
       'url' => admin_url('admin.php?page=cg-crm-whatsapp')];
   }
+  // 6b) Ordenes de mantenimiento abiertas de prioridad alta
+  if ($wpdb->get_var("SHOW TABLES LIKE '" . cg_tbl('maintenance') . "'")) {
+    $n = (int) $wpdb->get_var("SELECT COUNT(*) FROM " . cg_tbl('maintenance') . " WHERE status != 'resuelta' AND priority='alta'");
+    if ($n) $out[] = ['sev' => 'alta', 'icon' => '🔧', 'txt' => "$n orden(es) de mantenimiento de prioridad ALTA sin resolver", 'url' => admin_url('admin.php?page=cg-crm-mantenimiento')];
+  }
   // 7) Llegadas de hoy sin check-in
   $today = current_time('Y-m-d');
   $q = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => -1, 'post_status' => 'publish', 'fields' => 'ids',

@@ -269,8 +269,13 @@ add_action('rest_api_init', function () {
         update_post_meta($id, 'cg_room_id', (string) $room->ID);
         update_post_meta($id, 'cg_room', $room->post_title);
         if ($ci && $co && $co > $ci && empty($b['total'])) {
-          $nights = max(1, (int) ((strtotime($co) - strtotime($ci)) / 86400));
-          update_post_meta($id, 'cg_total', (string) ($nights * (float) get_post_meta($room->ID, 'cg_price', true)));
+          // Total por noche con tarifas de temporada (si el CRM esta activo)
+          if (function_exists('cg_stay_total')) {
+            update_post_meta($id, 'cg_total', (string) cg_stay_total($room->ID, $ci, $co));
+          } else {
+            $nights = max(1, (int) ((strtotime($co) - strtotime($ci)) / 86400));
+            update_post_meta($id, 'cg_total', (string) ($nights * (float) get_post_meta($room->ID, 'cg_price', true)));
+          }
         }
       }
       update_post_meta($id, 'cg_code', $code);
