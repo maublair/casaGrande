@@ -243,7 +243,18 @@ add_action('rest_api_init', function () {
       $ci = sanitize_text_field($r->get_param('check_in') ?: current_time('Y-m-d'));
       $co = sanitize_text_field($r->get_param('check_out') ?: date('Y-m-d', strtotime($ci . ' +1 day')));
       if ($co <= $ci) $co = date('Y-m-d', strtotime($ci . ' +1 day'));
-      return ['check_in' => $ci, 'check_out' => $co, 'rooms' => cg_availability($ci, $co)];
+      $rooms = cg_availability($ci, $co);
+      // Precio real de la estadia con tarifas por temporada (si el CRM esta activo)
+      if (function_exists('cg_stay_total')) {
+        $nights = max(1, (int) ((strtotime($co) - strtotime($ci)) / 86400));
+        foreach ($rooms as &$rm) {
+          $tot = cg_stay_total((int) $rm['id'], $ci, $co);
+          $rm['stay_total'] = round($tot, 2);
+          $rm['avg_night'] = round($tot / $nights, 2);
+        }
+        unset($rm);
+      }
+      return ['check_in' => $ci, 'check_out' => $co, 'rooms' => $rooms];
     }]);
   register_rest_route('casagrande/v1', '/reservations', ['methods' => 'POST', 'permission_callback' => '__return_true',
     'callback' => function (WP_REST_Request $r) {
@@ -352,7 +363,8 @@ add_action('admin_post_cg_res_action', function () {
   if (!current_user_can('edit_posts')) wp_die('Sin permiso');
   $id = (int) ($_GET['id'] ?? 0); $do = sanitize_text_field($_GET['do'] ?? '');
   check_admin_referer('cg_res_' . $id);
-  if ($do === 'pagar') update_post_meta($id, 'cg_payment', 'pagado');
+  if ($do === 'pagar') { update_post_meta($id, 'cg_payment', 'pagado');
+    if (!get_post_meta($id, 'cg_paid_date', true)) update_post_meta($id, 'cg_paid_date', current_time('Y-m-d')); }
   if ($do === 'confirmar') update_post_meta($id, 'cg_status', 'confirmada');
   if ($do === 'cancelar') update_post_meta($id, 'cg_status', 'cancelada');
   wp_safe_redirect(wp_get_referer() ?: admin_url('edit.php?post_type=reservation')); exit;

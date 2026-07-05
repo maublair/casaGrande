@@ -39,6 +39,8 @@ export interface AvailRoom {
   available: number;
   base_price: number;
   capacity: number;
+  stay_total?: number;
+  avg_night?: number;
 }
 export async function getAvailability(checkIn?: string, checkOut?: string): Promise<AvailRoom[]> {
   const qs = checkIn && checkOut ? `?check_in=${checkIn}&check_out=${checkOut}` : '';

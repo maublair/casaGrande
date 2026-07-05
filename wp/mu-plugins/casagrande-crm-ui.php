@@ -658,7 +658,10 @@ function cg_crm_render_whatsapp() {
       <tbody>
       <?php foreach ($conv as $row) : ?>
         <tr>
-          <td><strong><?php echo esc_html($row->name ?: $row->phone); ?></strong><br /><span style="color:#64748b;font-size:12px"><?php echo esc_html($row->phone); ?></span></td>
+          <td><strong><?php echo esc_html($row->name ?: $row->phone); ?></strong><br /><span style="color:#64748b;font-size:12px"><?php echo esc_html($row->phone); ?></span>
+            <?php if (function_exists('cg_guest_key')) : $gk = cg_guest_key($row->name, $row->phone, ''); ?>
+              <br><a style="font-size:11px" href="<?php echo esc_url(add_query_arg(['page' => 'cg-crm-huespedes', 'g' => $gk], admin_url('admin.php'))); ?>#perfil">👤 Ver perfil</a>
+            <?php endif; ?></td>
           <td><?php echo esc_html($row->service); ?></td>
           <td><?php echo esc_html($row->last_body); ?></td>
           <td><?php echo esc_html($row->status); ?><br />Unread <?php echo (int) $row->unread; ?></td>

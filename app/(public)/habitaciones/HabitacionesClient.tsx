@@ -43,6 +43,8 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
   const [bookingRoom, setBookingRoom] = useState<RoomTypeWithRooms | null>(null);
   const [searchDates, setSearchDates] = useState<SearchDates | null>(null);
   const [availByType, setAvailByType] = useState<Record<string, number>>({});
+  // Precio por noche para las fechas buscadas (tarifas de temporada del CRM)
+  const [priceByType, setPriceByType] = useState<Record<string, number>>({});
 
   useEffect(() => {
     getRooms().then((types) => {
@@ -68,6 +70,9 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
         if (map[r.name] === undefined) map[r.name] = r.available;
       });
       setAvailByType(map);
+        const pmap: Record<string, number> = {};
+        rows.forEach(r => { if (r.avg_night && r.avg_night > 0) { pmap[r.id] = r.avg_night; pmap[r.name] = r.avg_night; } });
+        setPriceByType(pmap);
     });
   }, []);
 
@@ -213,7 +218,10 @@ export default function HabitacionesClient({ initialRooms }: { initialRooms: WpR
                       <div>
                         <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Desde</p>
                         <p className="text-3xl font-light text-navy">
-                          S/ <span className="font-semibold">{type.base_price.toFixed(0)}</span>
+                          S/ <span className="font-semibold">{(searchDates && (priceByType[type.id] || priceByType[type.name]) ? (priceByType[type.id] || priceByType[type.name]) : type.base_price).toFixed(0)}</span>
+                          {searchDates && (priceByType[type.id] || priceByType[type.name]) && Math.round(priceByType[type.id] || priceByType[type.name]) !== Math.round(type.base_price) && (
+                            <span className="ml-1 text-[10px] text-gold-600 font-semibold uppercase">tarifa de temporada</span>
+                          )}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">por noche</p>
                       </div>

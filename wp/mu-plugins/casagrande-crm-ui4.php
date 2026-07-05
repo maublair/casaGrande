@@ -145,6 +145,12 @@ function cg4_render_voucher() {
       <?php endforeach; ?>
       <tr><td colspan="2"><b>Total consumos</b></td><td style="text-align:right"><b>S/ <?php echo number_format($ft, 2); ?></b></td></tr></table>
     <?php endif; ?>
+    <?php if (function_exists('cg_res_paid_sum')) :
+      $paid = cg_res_paid_sum($id); $tot = (float) $g('total');
+      if ($paid > 0) : ?>
+      <table style="margin-top:10px"><tr style="background:#dff5e5"><td><b>Pagado</b></td><td style="text-align:right"><b>S/ <?php echo number_format($paid, 2); ?></b></td>
+        <td><b>Saldo</b></td><td style="text-align:right"><b>S/ <?php echo number_format(max(0, $tot - $paid), 2); ?></b></td></tr></table>
+    <?php endif; endif; ?>
     <p style="font-size:11px;color:#64748b;margin-top:14px">Desayuno buffet incluido (7:00–10:00 am) · WiFi gratuito · Presentar documento de identidad al check-in.</p>
     <p class="no-print" style="text-align:center;margin-top:14px"><button class="button button-primary" onclick="window.print()">🖨 Imprimir voucher</button></p>
   </div>

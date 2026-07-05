@@ -226,6 +226,7 @@ function cg_crm2_render_reservas() {
           <p style="font-size:11px;color:#64748b;margin-top:10px">Al hacer <strong>check-out</strong>, la cuenta pendiente se liquida y entra sola como ingreso de Restaurante/Consumos en Finanzas.</p>
         </div>
       </div>
+      <?php do_action('cg_folio_after', $sel); ?>
     </div>
   <?php endif;
 }

@@ -412,6 +412,10 @@ add_action('admin_post_cg5_hkmass', function () {
 add_action('cg_dashboard_bottom', function () {
   global $wpdb;
   $rows = $wpdb->get_results("SELECT * FROM " . cg_tbl('activity') . " ORDER BY ts DESC LIMIT 10");
+  echo '<div style="display:flex;gap:8px;margin-top:16px">'
+     . '<a class="button button-primary" target="_blank" href="' . esc_url(admin_url('admin.php?page=cg-crm-audit')) . '">🌙 Cierre del dia (night audit)</a>'
+     . '<a class="button" target="_blank" href="' . esc_url(admin_url('admin.php?page=cg-crm-hoja')) . '">🧹 Hoja de limpieza imprimible</a>'
+     . '</div>';
   echo '<div class="cg-card" style="margin-top:16px"><h3>🕘 Actividad reciente (auditoria)</h3><table class="widefat striped" style="font-size:12px">';
   foreach ($rows as $r)
     echo '<tr><td style="width:120px;color:#64748b">' . esc_html(date('d/m H:i', strtotime($r->ts))) . '</td><td><b>' . esc_html($r->user) . '</b></td><td>' . esc_html($r->action) . '</td><td>' . esc_html($r->detail) . '</td></tr>';

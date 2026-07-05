@@ -858,3 +858,83 @@ function cg_guests_index() {
   uasort($g, function ($a, $b) { return $b['spent'] <=> $a['spent']; });
   return $g;
 }
+
+/* ================= v5: pagos por reserva + confirmacion WA + audit ================= */
+add_action('init', function () {
+  if (get_option('cg_crm_db6') === '1') return;
+  global $wpdb; require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+  dbDelta("CREATE TABLE " . cg_tbl('payments') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    res_id BIGINT UNSIGNED NOT NULL, amount DECIMAL(10,2) NOT NULL,
+    method VARCHAR(20) NOT NULL DEFAULT 'efectivo', note VARCHAR(160) DEFAULT '',
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id), KEY res_id (res_id)) " . $wpdb->get_charset_collate() . ";");
+  update_option('cg_crm_db6', '1');
+}, 8);
+function cg_res_paid_sum($res_id) {
+  global $wpdb;
+  return (float) $wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(amount),0) FROM " . cg_tbl('payments') . " WHERE res_id=%d", $res_id));
+}
+function cg_res_register_payment($res_id, $amount, $method, $note = '') {
+  global $wpdb;
+  $wpdb->insert(cg_tbl('payments'), ['res_id' => $res_id, 'amount' => $amount,
+    'method' => sanitize_key($method), 'note' => sanitize_text_field($note)]);
+  $total = (float) get_post_meta($res_id, 'cg_total', true);
+  $paid = cg_res_paid_sum($res_id);
+  if ($total > 0 && $paid >= $total - 0.01) {
+    update_post_meta($res_id, 'cg_payment', 'pagado');
+    if (!get_post_meta($res_id, 'cg_paid_date', true)) update_post_meta($res_id, 'cg_paid_date', current_time('Y-m-d'));
+  } elseif ($paid > 0) {
+    update_post_meta($res_id, 'cg_payment', 'parcial');
+  }
+  if (function_exists('cg_log')) cg_log('pago_reserva', 'res#' . $res_id . ' S/' . number_format($amount, 2) . ' [' . $method . ']');
+  return $paid;
+}
+
+/* ---- Confirmacion automatica por WhatsApp al crear reserva ---- */
+add_action('cg_reservation_created', function ($res_id, $room_type_id, $ci, $co) {
+  $phone = get_post_meta($res_id, 'cg_phone', true);
+  if (!$phone) return;
+  $code = get_post_meta($res_id, 'cg_code', true);
+  $num = get_post_meta($res_id, 'cg_room_number', true);
+  $name = get_post_meta($res_id, 'cg_name', true);
+  $total = (float) get_post_meta($res_id, 'cg_total', true);
+  $msg = "¡Hola" . ($name ? ' ' . strtok($name, ' ') : '') . "! Tu reserva en Hotel Boutique Casa Grande quedo registrada ✅\n"
+       . "Codigo: $code" . ($num ? "\nHabitacion: N° $num" : '') . "\n"
+       . "Del $ci al $co · Total: S/ " . number_format($total, 2) . "\n"
+       . "Te esperamos en Av. Luna Pizarro 202, Vallecito, Arequipa. Check-in desde las 2 pm. 🙌";
+  $via = function_exists('cg_ycloud_send') ? cg_ycloud_send($phone, $msg) : 'demo';
+  // registrar en el inbox del CRM
+  if (function_exists('cg_wa_upsert_conversation')) {
+    $conv = cg_wa_upsert_conversation($phone, $name ?: $phone, 'Reservas');
+    cg_wa_add_message($conv, 'out', $msg, $via === 'ycloud' ? 'ycloud' : 'bot');
+  }
+  if (function_exists('cg_log')) cg_log('wa_confirmacion', 'res#' . $res_id . ' → ' . $phone . ' (' . $via . ')');
+}, 20, 4);
+
+/* ---- Datos del cierre del dia (night audit) ---- */
+function cg_night_audit($date = null) {
+  global $wpdb; $date = $date ?: current_time('Y-m-d');
+  // alojamiento cobrado hoy (reservas cuyo pago se completo hoy)
+  $q = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => -1, 'post_status' => 'publish', 'fields' => 'ids',
+    'meta_query' => [['key' => 'cg_paid_date', 'value' => $date]]]);
+  $lodging = 0; foreach ($q->posts as $rid) $lodging += (float) get_post_meta($rid, 'cg_total', true);
+  // pagos registrados hoy por metodo
+  $bymethod = [];
+  foreach ($wpdb->get_results($wpdb->prepare("SELECT method, SUM(amount) t FROM " . cg_tbl('payments') . " WHERE DATE(ts)=%s GROUP BY method", $date)) as $r)
+    $bymethod[$r->method] = (float) $r->t;
+  // ledger de hoy
+  $ing = $wpdb->get_results($wpdb->prepare("SELECT category, concept, amount FROM " . cg_tbl('ledger') . " WHERE kind='ingreso' AND DATE(ts)=%s", $date));
+  $egr = $wpdb->get_results($wpdb->prepare("SELECT category, concept, amount FROM " . cg_tbl('ledger') . " WHERE kind='egreso' AND DATE(ts)=%s", $date));
+  // consumos cargados hoy
+  $folio_hoy = (float) $wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(total),0) FROM " . cg_tbl('folio') . " WHERE DATE(ts)=%s", $date));
+  $occ = cg_occupancy_today();
+  $mv = cg_today_movements();
+  $pend_in = 0;
+  $q2 = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => -1, 'post_status' => 'publish', 'fields' => 'ids',
+    'meta_query' => [['key' => 'cg_check_in', 'value' => $date], ['key' => 'cg_status', 'value' => 'cancelada', 'compare' => '!=']]]);
+  foreach ($q2->posts as $rid) if (get_post_meta($rid, 'cg_inhouse', true) !== '1') $pend_in++;
+  return ['date' => $date, 'lodging' => $lodging, 'bymethod' => $bymethod,
+    'ing' => $ing, 'egr' => $egr, 'folio' => $folio_hoy, 'occ' => $occ,
+    'arrivals' => count($mv['arrivals']), 'departures' => count($mv['departures']), 'pending_in' => $pend_in];
+}
