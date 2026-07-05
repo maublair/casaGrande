@@ -267,12 +267,14 @@ add_action('admin_post_cg2_folio', function () {
   if (!$dish && $svc && strpos($svc, '|') !== false) {
     [$sname, $sprice] = explode('|', $svc, 2);
     $wpdb->insert(cg_tbl('folio'), ['res_id'=>$res,'concept'=>$sname,'qty'=>$qty,'unit_price'=>(float) $sprice,'total'=>$qty*(float) $sprice]);
+    do_action('cg_folio_charge', $res, $sname, $qty);
     if (function_exists('cg_log')) cg_log('cargo_folio', $sname . ' x' . $qty . ' res#' . $res);
     cg2_redir('cg-crm-reservas', ['res'=>$res]); return;
   }
   if ($dish) {
     $price = (float) get_post_meta($dish, 'cg_price', true);
     $wpdb->insert(cg_tbl('folio'), ['res_id'=>$res,'concept'=>get_the_title($dish),'qty'=>$qty,'unit_price'=>$price,'total'=>$qty*$price]);
+    do_action('cg_folio_charge', $res, get_the_title($dish), $qty);
   } elseif (!empty($_POST['concept']) && (float) $_POST['amount'] > 0) {
     $amt = (float) $_POST['amount'];
     $wpdb->insert(cg_tbl('folio'), ['res_id'=>$res,'concept'=>sanitize_text_field($_POST['concept']),'qty'=>1,'unit_price'=>$amt,'total'=>$amt]);

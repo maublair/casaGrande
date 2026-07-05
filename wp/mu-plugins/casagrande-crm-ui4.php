@@ -69,7 +69,8 @@ function cg4_tape_chart() {
   global $wpdb;
   $floors = cg_rack_floors();
   $piso = (int) ($_GET['tape_piso'] ?? ($floors[0] ?? 1));
-  $days = []; for ($i = 0; $i < 14; $i++) $days[] = date('Y-m-d', strtotime("+$i day"));
+  $start = apply_filters('cg_tape_start', current_time('Y-m-d'));
+  $days = []; for ($i = 0; $i < 14; $i++) $days[] = date('Y-m-d', strtotime($start . " +$i day"));
   $end = date('Y-m-d', strtotime('+14 day'));
   // reservas con numero asignado que tocan la ventana
   $q = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => -1, 'post_status' => 'publish', 'fields' => 'ids',
@@ -86,7 +87,10 @@ function cg4_tape_chart() {
   ?>
   <div class="cg-card" style="margin-bottom:14px">
     <h3>🗓 Tape chart — habitaciones del piso <?php echo $piso; ?> (14 dias)</h3>
-    <div style="display:flex;gap:6px;margin:8px 0 12px">
+    <div style="display:flex;gap:6px;margin:8px 0 12px;align-items:center">
+      <a class="button button-small" href="<?php echo esc_url(add_query_arg(['page' => 'cg-crm-reservas', 'tape_piso' => $piso, 'tape_ini' => date('Y-m-d', strtotime($start . ' -14 day'))], admin_url('admin.php'))); ?>">← 2 sem</a>
+      <a class="button button-small" href="<?php echo esc_url(add_query_arg(['page' => 'cg-crm-reservas', 'tape_piso' => $piso, 'tape_ini' => date('Y-m-d', strtotime($start . ' +14 day'))], admin_url('admin.php'))); ?>">2 sem →</a>
+      <b style="font-size:12px;color:#64748b"><?php echo esc_html(date('d/m', strtotime($days[0])) . ' — ' . date('d/m', strtotime($days[13]))); ?></b>
       <?php foreach ($floors as $f) : ?>
         <a href="<?php echo esc_url(add_query_arg(['page' => 'cg-crm-reservas', 'tape_piso' => $f], admin_url('admin.php'))); ?>"
            style="padding:5px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:12px;<?php echo $f === $piso ? 'background:#0c2b3d;color:#fff' : 'background:#eef0f2;color:#50575e'; ?>">P<?php echo $f; ?></a>
