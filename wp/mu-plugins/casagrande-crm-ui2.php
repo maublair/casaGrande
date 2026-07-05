@@ -48,6 +48,7 @@ function cg2_can() { if (!current_user_can('manage_hotel')) wp_die('Sin permiso'
 
 /* ================= CUARTOS: rack por piso ================= */
 function cg_crm2_render_cuartos() {
+  do_action('cg_cuartos_top');
   $types = get_posts(['post_type'=>'room','posts_per_page'=>-1,'post_status'=>'publish','orderby'=>'meta_value_num','meta_key'=>'cg_price','order'=>'ASC']);
   $floors = cg_rack_floors(); $cur = (int) ($_GET['piso'] ?? ($floors[0] ?? 1));
   ?>
@@ -107,6 +108,7 @@ function cg_crm2_render_reservas() {
   // --- Calendario de ocupacion 14 dias por tipo ---
   $types = get_posts(['post_type'=>'room','posts_per_page'=>-1,'post_status'=>'publish','orderby'=>'meta_value_num','meta_key'=>'cg_price','order'=>'ASC']);
   $days = []; for ($i=0;$i<14;$i++) $days[] = date('Y-m-d', strtotime("+$i day"));
+  do_action('cg_frontdesk_top');
   ?>
   <div class="cg-card" style="margin-bottom:14px"><h3>Calendario de ocupacion — proximos 14 dias</h3>
     <div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px;min-width:860px">
@@ -124,7 +126,7 @@ function cg_crm2_render_reservas() {
       <?php endforeach; ?></table></div>
     <p style="font-size:11px;color:#64748b">Numero = habitaciones libres ese dia. Verde: disponible · Ambar: pocas · Rojo: completo.</p></div>
 
-  <div class="cg-card"><h3>Front desk — reservas</h3>
+  <div class="cg-card"><h3>Front desk — reservas <a class="button button-small" style="margin-left:8px" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg4_csv_reservas'), 'cg4_csv')); ?>">⬇ CSV</a></h3>
     <table class="widefat striped"><thead><tr><th>Codigo / huesped</th><th>Tipo</th><th>Hab.</th><th>Fechas</th><th>Aloj.</th><th>Cuenta</th><th>Pago</th><th>Estado</th><th style="min-width:230px">Acciones</th></tr></thead><tbody>
     <?php foreach ($q->posts as $p) :
       $id = $p->ID;
@@ -157,6 +159,7 @@ function cg_crm2_render_reservas() {
             <a class="button button-small" style="color:#c0392b" onclick="return confirm('¿Hacer check-out? La cuenta pendiente se liquida como ingreso.')"
                href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg2_checkout&res=' . $id), 'cg2_checkout_' . $id)); ?>">Check-out</a>
           <?php endif; ?>
+          <a class="button button-small" target="_blank" href="<?php echo esc_url(add_query_arg(['page' => 'cg-crm-voucher', 'id' => $id], admin_url('admin.php'))); ?>">🎫 Voucher</a>
           <a class="button button-small" href="<?php echo esc_url(get_edit_post_link($id)); ?>">Editar</a>
         </td>
       </tr>
@@ -470,6 +473,7 @@ function cg_crm2_render_finanzas() {
     <?php echo cg2_field('Desde', '<input type="date" name="from" value="' . esc_attr($from) . '">');
           echo cg2_field('Hasta', '<input type="date" name="to" value="' . esc_attr($to) . '">'); ?>
     <button class="button">Ver periodo</button>
+    <a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg4_csv_fin&from=' . $from . '&to=' . $to), 'cg4_csv')); ?>">⬇ Exportar CSV</a>
   </form>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px">
     <?php foreach ([['Ingresos', $fin['ingresos'], '#1a7f37'],['Egresos', $fin['egresos'], '#c0392b'],

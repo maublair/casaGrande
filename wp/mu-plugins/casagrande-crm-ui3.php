@@ -172,6 +172,7 @@ function cg_crm3_planilla() {
         <label style="font-size:12px;font-weight:600;display:flex;flex-direction:column;gap:3px">Generar boletas del mes<input type="month" name="period" value="<?php echo esc_attr($today_m); ?>"></label>
         <button class="button button-primary">Generar</button>
       </form>
+      <a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg4_csv_planilla&period=' . $today_m), 'cg4_csv')); ?>">⬇ Exportar planilla CSV</a>
     </div>
     <div style="overflow-x:auto">
     <table class="widefat" style="border-collapse:collapse;min-width:760px">

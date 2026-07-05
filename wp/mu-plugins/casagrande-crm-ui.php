@@ -237,6 +237,7 @@ function cg_crm_dashboard_render() {
     $hk_pairs[] = ['label' => ucwords(str_replace('_', ' ', (string) $status)), 'value' => (float) $count, 'formatted' => (string) $count];
   }
   ?>
+  <?php if (function_exists('cg4_alerts_render')) cg4_alerts_render(); ?>
   <div class="cg-grid kpis">
     <?php
     $cards = [
