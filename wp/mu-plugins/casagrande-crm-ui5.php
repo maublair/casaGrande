@@ -430,4 +430,5 @@ add_action('admin_menu', function () {
   add_submenu_page('cg-crm', 'Tarifas', 'Tarifas', $cap, 'cg-crm-tarifas', 'cg_crm_render_router');
   add_submenu_page('cg-crm', 'Mantenimiento', 'Mantenimiento', $cap, 'cg-crm-mantenimiento', 'cg_crm_render_router');
   add_submenu_page('cg-crm', 'Reportes', 'Reportes', $cap, 'cg-crm-reportes', 'cg_crm_render_router');
+  add_submenu_page('cg-crm', 'Chatbot & Canales', '🤖 Chatbot & Canales', $cap, 'cg-crm-canales', 'cg_crm_render_router');
 }, 11);

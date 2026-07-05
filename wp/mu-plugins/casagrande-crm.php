@@ -238,6 +238,8 @@ function cg_wa_classify($text) {
   return 'General';
 }
 function cg_wa_bot_reply($text, $service) {
+  $maybe = apply_filters('cg_bot_reply_override', null, $text, $service);
+  if ($maybe !== null) return $maybe;
   $t = mb_strtolower($text);
   $s = function ($k, $d = '') { $v = get_option('cg_settings', []); return $v[$k] ?? $d; };
   if (strpos($t, 'precio') !== false || strpos($t, 'tarifa') !== false || strpos($t, 'cuesta') !== false) {
@@ -938,3 +940,148 @@ function cg_night_audit($date = null) {
     'ing' => $ing, 'egr' => $egr, 'folio' => $folio_hoy, 'occ' => $occ,
     'arrivals' => count($mv['arrivals']), 'departures' => count($mv['departures']), 'pending_in' => $pend_in];
 }
+
+/* ================= v6: WEBCHAT del sitio gestionado en el CRM ================= */
+add_action('init', function () {
+  if (get_option('cg_crm_db7') === '1') return;
+  global $wpdb;
+  $wpdb->hide_errors();
+  $wpdb->query("ALTER TABLE " . cg_tbl('wa_conversations') . " ADD COLUMN channel VARCHAR(10) NOT NULL DEFAULT 'wa'");
+  $wpdb->query("ALTER TABLE " . cg_tbl('wa_messages') . " ADD COLUMN attachment VARCHAR(300) DEFAULT ''");
+  $wpdb->show_errors();
+  update_option('cg_crm_db7', '1');
+}, 9);
+
+add_action('rest_api_init', function () {
+  // Visitante envia mensaje desde el chat del sitio
+  register_rest_route('casagrande/v1', '/chat/send', ['methods' => 'POST', 'permission_callback' => '__return_true',
+    'callback' => function (WP_REST_Request $r) {
+      global $wpdb;
+      $b = $r->get_json_params();
+      $session = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($b['session'] ?? ''));
+      $text = sanitize_textarea_field($b['text'] ?? '');
+      $vname = sanitize_text_field($b['name'] ?? '');
+      if (!$session || $text === '') return new WP_REST_Response(['error' => 'bad_request'], 400);
+      $blocked = cg_chat_guard($session, $text);
+      if ($blocked !== null) return ['ok' => true, 'reply' => $blocked, 'last_id' => 0, 'limited' => true];
+      $key = 'web:' . substr($session, 0, 24);
+      $conv = cg_wa_upsert_conversation($key, $vname ?: 'Visitante web', cg_wa_classify($text));
+      $wpdb->update(cg_tbl('wa_conversations'), ['channel' => 'web'], ['id' => $conv]);
+      if ($vname) $wpdb->update(cg_tbl('wa_conversations'), ['name' => $vname], ['id' => $conv]);
+      cg_wa_add_message($conv, 'in', $text, 'human');
+      $reply = null;
+      $s = cg_crm_settings();
+      $bot_on = (int) $wpdb->get_var($wpdb->prepare("SELECT bot_enabled FROM " . cg_tbl('wa_conversations') . " WHERE id=%d", $conv));
+      $bw = cg_bot_settings();
+      if ($bw['bot_enabled_web'] === '1' && $bot_on) {
+        $reply = cg_wa_bot_reply($text, cg_wa_classify($text));
+        cg_wa_add_message($conv, 'out', $reply, 'bot');
+      }
+      $last = (int) $wpdb->get_var($wpdb->prepare("SELECT MAX(id) FROM " . cg_tbl('wa_messages') . " WHERE conv_id=%d", $conv));
+      return ['ok' => true, 'reply' => $reply, 'last_id' => $last];
+    }]);
+  // Visitante consulta nuevos mensajes (respuestas manuales del hotel)
+  register_rest_route('casagrande/v1', '/chat/poll', ['methods' => 'GET', 'permission_callback' => '__return_true',
+    'callback' => function (WP_REST_Request $r) {
+      global $wpdb;
+      $session = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $r->get_param('session'));
+      $after = (int) $r->get_param('after');
+      if (!$session) return new WP_REST_Response(['error' => 'bad_request'], 400);
+      $key = 'web:' . substr($session, 0, 24);
+      $conv = (int) $wpdb->get_var($wpdb->prepare("SELECT id FROM " . cg_tbl('wa_conversations') . " WHERE phone=%s", $key));
+      if (!$conv) return ['messages' => [], 'last_id' => $after];
+      $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, body, attachment, ts FROM " . cg_tbl('wa_messages') . " WHERE conv_id=%d AND direction='out' AND id > %d ORDER BY id ASC LIMIT 20", $conv, $after));
+      $out = []; $last = $after;
+      foreach ($rows as $m) { $out[] = ['id' => (int) $m->id, 'text' => $m->body, 'file' => $m->attachment ?: null]; $last = max($last, (int) $m->id); }
+      // tambien el ultimo id global para no re-pedir
+      $maxall = (int) $wpdb->get_var($wpdb->prepare("SELECT MAX(id) FROM " . cg_tbl('wa_messages') . " WHERE conv_id=%d", $conv));
+      return ['messages' => $out, 'last_id' => max($last, $after), 'max_id' => $maxall];
+    }]);
+});
+
+/* ================= v7: Bot entrenable, conocimiento BD real y seguridad ================= */
+function cg_bot_defaults() {
+  return ['bot_name' => 'Casa', 'bot_color' => '#1a5270', 'bot_greeting' => '¡Hola! Soy Casa, la asistente virtual del Hotel Boutique Casa Grande. Puedo ayudarte con reservas, precios, el restaurante y mas. 😊',
+          'bot_enabled_web' => '1'];
+}
+function cg_bot_settings() { return array_merge(cg_bot_defaults(), (array) get_option('cg_bot_settings', [])); }
+function cg_bot_faq() { $f = get_option('cg_bot_faq'); return is_array($f) ? $f : []; }
+
+/* Config publica del widget (colores, nombre, saludo) */
+add_action('rest_api_init', function () {
+  register_rest_route('casagrande/v1', '/chat/config', ['methods' => 'GET', 'permission_callback' => '__return_true',
+    'callback' => function () {
+      $b = cg_bot_settings();
+      return ['name' => $b['bot_name'], 'color' => $b['bot_color'], 'greeting' => $b['bot_greeting'],
+              'enabled' => $b['bot_enabled_web'] === '1'];
+    }]);
+});
+
+/* Seguridad: rate limit + sanitizado estricto (sin LLM => inmune a prompt injection por diseno) */
+function cg_chat_guard($session, $text) {
+  if (mb_strlen($text) > 500) return 'Tu mensaje es muy largo. ¿Puedes resumirlo? 🙏';
+  $key = 'cg_rl_' . md5($session . '|' . ($_SERVER['REMOTE_ADDR'] ?? ''));
+  $n = (int) get_transient($key);
+  if ($n >= 20) return 'Has enviado muchos mensajes seguidos. Espera unos minutos o llamanos al (054) 214000. 🙏';
+  set_transient($key, $n + 1, 5 * MINUTE_IN_SECONDS);
+  return null;
+}
+
+/* Cerebro por reglas con CONOCIMIENTO REAL de las bases de datos */
+function cg_bot_brain($text, $service = 'General') {
+  $t = mb_strtolower(wp_strip_all_tags($text));
+  $has = function ($arr) use ($t) { foreach ($arr as $w) if (strpos($t, $w) !== false) return true; return false; };
+
+  // 1) Conocimiento personalizado (entrenado desde wp-admin) — prioridad maxima
+  foreach (cg_bot_faq() as $row) {
+    $kws = array_filter(array_map('trim', explode(',', mb_strtolower($row['q'] ?? ''))));
+    foreach ($kws as $kw) if ($kw !== '' && strpos($t, $kw) !== false) return $row['a'];
+  }
+  // 2) Disponibilidad REAL (hoy) desde el motor de reservas
+  if ($has(['disponib', 'libre', 'hay habitacion', 'hay cuarto', 'vacante'])) {
+    $today = current_time('Y-m-d'); $tom = date('Y-m-d', strtotime('+1 day'));
+    $lines = [];
+    foreach (cg_availability($today, $tom) as $r) if ($r['available'] > 0) $lines[] = $r['name'] . ': ' . $r['available'] . ' libre(s)';
+    return $lines ? ('Disponibilidad de HOY: ' . implode(' · ', $lines) . '. Dime tus fechas exactas y te confirmo con numero de habitacion. 🗓️')
+                  : 'Para hoy estamos completos 😔 pero dime tus fechas y reviso disponibilidad real al instante.';
+  }
+  // 3) Precios reales (con temporada si aplica hoy)
+  if ($has(['precio', 'tarifa', 'cuesta', 'costo', 'cuanto'])) {
+    $lines = [];
+    foreach (get_posts(['post_type' => 'room', 'posts_per_page' => -1, 'post_status' => 'publish', 'orderby' => 'meta_value_num', 'meta_key' => 'cg_price', 'order' => 'ASC']) as $rm) {
+      $base = (float) get_post_meta($rm->ID, 'cg_price', true);
+      $rate = function_exists('cg_rate_for') ? cg_rate_for($rm->ID, current_time('Y-m-d')) : null;
+      $lines[] = $rm->post_title . ': S/' . number_format($rate !== null ? $rate : $base, 0);
+    }
+    return 'Tarifas por noche con desayuno incluido: ' . implode(' · ', $lines) . '. ¿Para que fechas? 🗓️';
+  }
+  // 4) Menu real del restaurante
+  if ($has(['menu', 'carta', 'plato', 'comida', 'restaurante', 'almuerzo', 'cena'])) {
+    $dishes = get_posts(['post_type' => 'dish', 'posts_per_page' => 4, 'post_status' => 'publish',
+      'meta_key' => 'cg_featured', 'meta_value' => '1']);
+    if (!$dishes) $dishes = get_posts(['post_type' => 'dish', 'posts_per_page' => 4, 'post_status' => 'publish']);
+    $lines = [];
+    foreach ($dishes as $d) $lines[] = $d->post_title . ' (S/' . number_format((float) get_post_meta($d->ID, 'cg_price', true), 0) . ')';
+    return 'Nuestro restaurante de cocina arequipena te recomienda: ' . implode(' · ', $lines) . '. Almuerzo de 12:30 a 3:30 pm. 🍽️';
+  }
+  // 5) Datos del hotel (ajustes reales)
+  $set = get_option('cg_settings', []);
+  if ($has(['ubica', 'direcc', 'donde', 'llegar', 'mapa']))
+    return 'Estamos en ' . ($set['contact_address'] ?? 'Av. Luna Pizarro 202, Vallecito, Arequipa') . ', a 10 min del centro historico. 📍 maps.app.goo.gl/SnxbM6dird9A5Y2fA';
+  if ($has(['telefono', 'llamar', 'numero', 'contacto']))
+    return 'Puedes llamarnos al ' . ($set['contact_phone'] ?? '(054) 214000') . ' o escribirnos por WhatsApp al ' . ($set['contact_whatsapp'] ?? '+51 942 330 137') . '. 📞';
+  if ($has(['check', 'entrada', 'salida', 'hora']))
+    return 'Check-in desde las ' . ($set['checkin_time'] ?? '2:00 pm') . ' y check-out hasta las ' . ($set['checkout_time'] ?? '12:00 pm') . '. Guardamos tu equipaje sin costo. 🧳';
+  if ($has(['desayuno'])) return 'El desayuno buffet esta incluido, de 7:00 a 10:00 am. ☕';
+  if ($has(['wifi', 'internet'])) return 'WiFi de fibra optica gratuito en todo el hotel. 📶';
+  if ($has(['cochera', 'estacionamiento', 'parking'])) return 'Contamos con estacionamiento privado gratuito con vigilancia. 🚗';
+  if ($has(['catering', 'evento', 'boda', 'reunion', 'salon']) || $service === 'Catering')
+    return 'Hacemos eventos y catering: salones con montaje auditorio/escuela/en U, coffee breaks y banquetes. ¿Para cuantas personas y que fecha? �elicitamos';
+  if ($has(['gracias'])) return '¡Con gusto! Aqui estamos para lo que necesites. 😊';
+  if ($has(['reserva', 'reservar'])) return 'Con gusto te ayudo a reservar: dime la fecha de llegada, la de salida y cuantas personas son, y te confirmo disponibilidad real con numero de habitacion. ✍️';
+  $b = cg_bot_settings();
+  return 'Soy ' . $b['bot_name'] . ' 🤖 Puedo darte tarifas, disponibilidad real, la carta del restaurante, como llegar y ayudarte a reservar. ¿Que necesitas?';
+}
+// El bot de WhatsApp y del webchat usan el mismo cerebro
+add_filter('cg_bot_reply_override', function ($reply, $text, $service) { return cg_bot_brain($text, $service); }, 10, 3);

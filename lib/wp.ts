@@ -112,3 +112,23 @@ export async function getPost(slug: string): Promise<WpPostFull | null> {
   const r = await getJSON<any>(`/post?slug=${encodeURIComponent(slug)}`, { error: 'nf' });
   return r && !r.error ? (r as WpPostFull) : null;
 }
+
+// ---- Webchat gestionado en el CRM (bot por reglas, respuestas manuales, polling) ----
+export interface ChatConfig { name: string; color: string; greeting: string; enabled: boolean; }
+export const getChatConfig = () =>
+  getJSON<ChatConfig>('/chat/config', { name: 'Casa', color: '#1a5270', greeting: '', enabled: true });
+
+export async function chatSend(session: string, text: string, name?: string):
+  Promise<{ ok?: boolean; reply?: string | null; last_id?: number } | null> {
+  try {
+    const r = await fetch(`${WP}/chat/send`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session, text, name }),
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+export const chatPoll = (session: string, after: number) =>
+  getJSON<{ messages: { id: number; text: string; file?: string | null }[]; max_id?: number }>(
+    `/chat/poll?session=${encodeURIComponent(session)}&after=${after}`, { messages: [] });

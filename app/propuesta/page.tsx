@@ -51,7 +51,8 @@ const modulosCRM = [
   ['Personal y turnos', 'Equipo con roles y sueldos; turnos manana/tarde/noche por dia.'],
   ['Almacen', 'Inventario de hotel, restaurante y catering; entradas/salidas; alertas de stock minimo.'],
   ['Finanzas', 'Ingresos, egresos, utilidad e IGV estimado calculados solos desde reservas, compras y planilla.'],
-  ['WhatsApp', 'Inbox por servicio (reservas, restaurante, catering, eventos), bot por reglas y respuesta manual.'],
+  ['Mensajes', 'WhatsApp + chat web en cards; al abrir una conversacion se muestra la ficha del lead con historial, respuesta manual, archivos y links de pago.'],
+  ['Chatbot', 'Personalizable desde el panel (nombre, color, saludo) y entrenable con conocimiento propio; responde con datos REALES: tarifas, disponibilidad, carta y horarios. Sin APIs de IA (S/0 mensual) y blindado: sanitizacion, limites y sin LLM que manipular.'],
 ];
 
 const mapaSitio = [
@@ -212,7 +213,10 @@ export default function PropuestaPage() {
               'Sitio publico veloz (Next.js) + WordPress headless como centro de contenido.',
               'CRM hotelero completo dentro de wp-admin (8 modulos operativos).',
               'Motor de reservas propio con disponibilidad real y anti-overbooking.',
-              'WhatsApp con YCloud: configuracion incluida, bot por reglas y respuesta manual.',
+              'Chatbot entrenado con los datos reales del hotel, SIN APIs de IA: S/0 de costo mensual e inmune a prompt injection.',
+              'Mensajeria unificada: chat de la web y WhatsApp en un solo panel de cards con ficha de lead.',
+              'Respuesta manual con envio de archivos y links de pago (Yape, Plin, Izipay) en un clic.',
+              'Tutorial integrado en cada seccion del sistema (modal de ayuda) + guia completa.',
               'Fotos reales en la mediateca con texto alternativo (SEO de imagenes).',
               'Capacitacion, manual de uso y 90 dias de garantia y soporte tecnico.',
               'Instalacion en el hosting que el cliente contrate (hosting y dominio no incluidos).',
@@ -290,7 +294,7 @@ export default function PropuestaPage() {
 
         <Sec n="8" title="Alojamiento web y dominio (no incluidos)">
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-sm text-amber-900/90 space-y-2">
-            <p><strong>Esta propuesta no incluye hosting ni dominio</strong>, y por eso no genera ningun pago recurrente hacia BlairCode. El hotel contrata su hosting y dominio directamente (o usa los que ya tiene) y mantiene el control total.</p>
+            <p><strong>BlairCode NO vende hosting ni dominio: esta propuesta no los incluye</strong>, y por eso no genera ningun pago recurrente hacia BlairCode. El hotel contrata su hosting y dominio directamente (o usa los que ya tiene) y mantiene el control total.</p>
             <p><strong>Incluido en el precio:</strong> asesoria para elegir el plan adecuado, instalacion completa y puesta en produccion en ese hosting.</p>
             <p><strong>Requisitos minimos del hosting:</strong> PHP 8.2+, MySQL/MariaDB, SSL incluido (los planes compartidos estandar en Peru los cumplen).</p>
             <p><strong>Nota critica:</strong> antes de cualquier cambio de DNS validamos los registros MX/SPF/DKIM para que el correo corporativo del hotel no sufra ninguna interrupcion.</p>
@@ -306,16 +310,8 @@ export default function PropuestaPage() {
           <Tabla head={['Entregable', 'Contenido', 'Plazo']} rows={entregables} />
         </Sec>
 
-        <Sec n="11" title="Equipo de trabajo">
-          <Tabla head={['Rol', 'Responsable', 'Funciones']} rows={[
-            ['Coordinacion y desarrollo', 'Mauricio Blair Farah — BlairCode AI', 'Diseno, implementacion, CRM, integraciones y control de calidad.'],
-            ['Contenido y migracion', 'BlairCode AI + personal del hotel', 'Carga y validacion de textos, fotos, tarifas y datos reales.'],
-            ['Capacitacion y soporte', 'BlairCode AI', 'Entrenamiento al personal, manual de uso y soporte de garantia 90 dias.'],
-          ]} />
-        </Sec>
-
-        <Sec n="12" title="Propuesta economica">
-          <h3 className="font-semibold text-slate-950 mb-2 text-sm">12.1 Presupuesto detallado del servicio</h3>
+        <Sec n="11" title="Propuesta economica">
+          <h3 className="font-semibold text-slate-950 mb-2 text-sm">11.1 Presupuesto detallado del servicio</h3>
           <div className="mb-5"><Tabla head={['Item', 'Descripcion']} rows={presupuesto} /></div>
 
           <div className="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-5 print:bg-white print:text-slate-900 print:border print:border-slate-200">
@@ -334,17 +330,17 @@ export default function PropuestaPage() {
             </div>
           </div>
 
-          <h3 className="font-semibold text-slate-950 mb-2 text-sm">12.2 WhatsApp con YCloud — atencion sin costo</h3>
+          <h3 className="font-semibold text-slate-950 mb-2 text-sm">11.2 WhatsApp con YCloud — atencion sin costo</h3>
           <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 text-sm text-emerald-900/90 mb-5 space-y-2">
             <p>Ofrecemos la <strong>configuracion gratuita</strong> de la linea de WhatsApp del hotel con YCloud (API oficial de WhatsApp Business) y su uso para <strong>responder manualmente desde el CRM</strong> los mensajes que llegan.</p>
             <p>Responder dentro de la <strong>ventana de servicio de WhatsApp</strong> (que se renueva con cada mensaje del cliente) <strong>no tiene costo por mensaje</strong>. Fuera de esa ventana, WhatsApp exige plantillas pagadas — el CRM lo indica en cada conversacion para que el equipo siempre sepa cuando responder gratis.</p>
             <p>El bot de respuesta automatica por reglas (sin IA, sin costos de terceros) atiende consultas frecuentes de todos los servicios: reservas, restaurante, catering y eventos.</p>
           </div>
 
-          <h3 className="font-semibold text-slate-950 mb-2 text-sm">12.3 Opcionales no incluidos (conversables)</h3>
+          <h3 className="font-semibold text-slate-950 mb-2 text-sm">11.3 Opcionales no incluidos (conversables)</h3>
           <div className="mb-5"><Tabla head={['Opcional', 'Costo referencial']} rows={opcionales} /></div>
 
-          <h3 className="font-semibold text-slate-950 mb-2 text-sm">12.4 Condiciones economicas</h3>
+          <h3 className="font-semibold text-slate-950 mb-2 text-sm">11.4 Condiciones economicas</h3>
           <ul className="text-sm text-slate-600 space-y-1.5">
             <li>• Pago unico de S/ 850.00 (incluye IGV). Sin pagos recurrentes de ningun tipo.</li>
             <li>• El precio es el mismo con o sin migracion de contenido del sitio actual.</li>
@@ -354,7 +350,7 @@ export default function PropuestaPage() {
           </ul>
         </Sec>
 
-        <Sec n="13" title="Propiedad intelectual y entrega de accesos">
+        <Sec n="12" title="Propiedad intelectual y entrega de accesos">
           <ul className="text-sm text-slate-600 space-y-1.5">
             <li>• Todos los disenos, contenidos, base de datos y configuraciones desarrollados para el hotel se entregan al cliente al finalizar el servicio.</li>
             <li>• No se utilizan plugins, plantillas ni recursos sin licencia valida; la solucion no depende de licencias de pago de terceros.</li>
@@ -363,7 +359,7 @@ export default function PropuestaPage() {
           </ul>
         </Sec>
 
-        <Sec n="14" title="Declaracion de cumplimiento">
+        <Sec n="13" title="Declaracion de cumplimiento">
           <p className="text-sm text-slate-600 mb-8">
             BlairCode AI · B&D Co S.A.C. declara que ejecutara el servicio conforme a lo descrito en esta propuesta,
             mantendra confidencialidad sobre la informacion del hotel, no insertara publicidad ni codigo malicioso,

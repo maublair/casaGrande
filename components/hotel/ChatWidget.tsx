@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Minimize2 } from 'lucide-react';
-import { getRooms, getSettings, getAvailability, createReservation } from '@/lib/wp';
+import { getRooms, getSettings, getAvailability, createReservation, getChatConfig, chatSend, chatPoll, ChatConfig } from '@/lib/wp';
 
 interface Option { label: string; value: string }
 interface Message { role: 'user' | 'assistant'; content: string; options?: Option[]; timestamp: Date }
@@ -51,20 +51,48 @@ export default function ChatWidget() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [waNumber, setWaNumber] = useState(WA_DEFAULT);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [botCfg, setBotCfg] = useState<ChatConfig | null>(null);
+  const sessionRef = useRef<string>('');
+  const lastIdRef = useRef<number>(0);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      botSay(
-        'Hola! Soy el asistente del Hotel Boutique Casagrande. Escribeme tu consulta (horarios, ubicacion, servicios...) o elige una opcion. Tambien puedo ayudarte a reservar al instante.',
-        MENU_OPTIONS
-      );
+      // Sesion persistente del visitante (el hotel puede responder manual desde el CRM)
+      if (!sessionRef.current) {
+        let sid = '';
+        try { sid = localStorage.getItem('cg_chat_session') || ''; } catch {}
+        if (!sid) { sid = Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('cg_chat_session', sid); } catch {} }
+        sessionRef.current = sid;
+        chatPoll(sid, 999999999).then(p => { if (p && p.max_id) lastIdRef.current = p.max_id; }).catch(() => {});
+      }
+      const fallbackGreeting = 'Hola! Soy el asistente del Hotel Boutique Casagrande. Escribeme tu consulta (horarios, ubicacion, servicios...) o elige una opcion. Tambien puedo ayudarte a reservar al instante.';
+      getChatConfig()
+        .then(cfg => { setBotCfg(cfg); botSay(cfg.greeting || fallbackGreeting, MENU_OPTIONS); })
+        .catch(() => botSay(fallbackGreeting, MENU_OPTIONS));
       getSettings().then((s) => {
         setSettings(s || {});
         if (s.contact_whatsapp) setWaNumber(s.contact_whatsapp.replace(/\D/g, '') || WA_DEFAULT);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Respuestas manuales del hotel: polling suave mientras el chat esta abierto
+  useEffect(() => {
+    if (!isOpen) return;
+    const iv = setInterval(async () => {
+      if (!sessionRef.current) return;
+      const p = await chatPoll(sessionRef.current, lastIdRef.current);
+      if (p && p.messages && p.messages.length) {
+        p.messages.forEach(m => {
+          lastIdRef.current = Math.max(lastIdRef.current, m.id);
+          botSay(m.text + (m.file ? `\n📎 ${m.file}` : ''));
+        });
+      }
+    }, 9000);
+    return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
@@ -85,6 +113,14 @@ export default function ChatWidget() {
     const t = norm(raw);
     await think();
 
+    // Primero el cerebro del servidor (conocimiento real + entrenamiento del hotel).
+    const srv = await chatSend(sessionRef.current, raw);
+    if (srv && srv.ok) {
+      if (srv.last_id) lastIdRef.current = Math.max(lastIdRef.current, srv.last_id);
+      if (srv.reply) return botSay(srv.reply, QUICK);
+      return botSay('Tu mensaje llego a recepcion; un miembro del equipo te respondera aqui mismo en un momento. 🙌', QUICK);
+    }
+    // Fallback local si el servidor no responde:
     if (has(t, ['asesor', 'humano', 'persona real', 'recepcion', 'agente', 'operador', 'hablar con alguien'])) return handoff();
     if (has(t, ['reservar', 'hacer una reserva', 'quiero reserva', 'reservacion', 'agendar', 'quiero una habitacion', 'disponibilidad', 'hay cupo', 'hay espacio'])) return startBooking();
     if (has(t, ['precio', 'tarifa', 'cuesta', 'cuanto', 'costo', 'habitacion', 'habitaciones', 'cuarto', 'cuartos', 'suite', 'room'])) return showRooms();
@@ -288,6 +324,7 @@ export default function ChatWidget() {
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 bg-navy hover:bg-navy-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          style={botCfg?.color ? { backgroundColor: botCfg.color } : undefined}
           aria-label="Abrir chat"
         >
           <MessageCircle className="w-6 h-6" />
@@ -297,11 +334,11 @@ export default function ChatWidget() {
 
       {isOpen && (
         <div className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[370px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col transition-all duration-300 ${isMinimized ? 'h-14' : 'h-[560px] max-h-[calc(100vh-2rem)]'}`}>
-          <div className="flex items-center justify-between px-4 py-3 bg-navy rounded-t-2xl text-white flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-navy rounded-t-2xl text-white flex-shrink-0" style={botCfg?.color ? { backgroundColor: botCfg.color } : undefined}>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center flex-shrink-0"><Bot className="w-4 h-4 text-navy-900" /></div>
               <div>
-                <p className="text-sm font-semibold">Asistente Casagrande</p>
+                <p className="text-sm font-semibold">{botCfg?.name ? `${botCfg.name} · Casagrande` : 'Asistente Casagrande'}</p>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                   <span className="text-xs text-white/70">En linea 24/7</span>
@@ -324,7 +361,11 @@ export default function ChatWidget() {
                     )}
                     <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
                       msg.role === 'user' ? 'bg-navy text-white rounded-br-sm' : 'bg-white text-gray-800 shadow-sm rounded-bl-sm border border-gray-100'
-                    }`}>{msg.content}</div>
+                    }`}>{msg.content.split(/(https?:\/\/[^\s]+)/g).map((part, j) =>
+                      /^https?:\/\//.test(part)
+                        ? <a key={j} href={part} target="_blank" rel="noopener noreferrer" className={msg.role === 'user' ? 'underline text-gold-200' : 'underline text-navy font-medium'}>{part}</a>
+                        : part
+                    )}</div>
                     {msg.role === 'user' && (
                       <div className="w-7 h-7 rounded-full bg-gold-100 flex items-center justify-center flex-shrink-0 mt-0.5"><User className="w-3.5 h-3.5 text-gold-600" /></div>
                     )}

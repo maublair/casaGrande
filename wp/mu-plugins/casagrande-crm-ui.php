@@ -19,6 +19,7 @@ function cg_crm_sections() {
     'cg-crm-cuartos' => 'cuartos',
     'cg-crm-proveedores' => 'proveedores',
     'cg-crm-huespedes' => 'huespedes',
+    'cg-crm-canales' => 'canales',
     'cg-crm-tarifas' => 'tarifas',
     'cg-crm-mantenimiento' => 'mantenimiento',
     'cg-crm-reportes' => 'reportes',
@@ -203,6 +204,7 @@ function cg_crm_shell_start($title, $subtitle, $active) {
     .cg-note{background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:14px;color:#475569;font-size:13px}
   </style>';
   echo '<div class="cg-hero"><h1>' . esc_html($title) . '</h1><p>' . esc_html($subtitle) . '</p>';
+  do_action('cg_shell_help', $active);
   echo '<div class="cg-quick">';
   echo '<a class="cg-btn primary" href="' . esc_url(admin_url('edit.php?post_type=reservation')) . '">Reservas WP</a>';
   echo '<a class="cg-btn soft" href="' . esc_url(admin_url('edit.php?post_type=room')) . '">Habitaciones WP</a>';
@@ -727,7 +729,8 @@ function cg_crm_render_router() {
     'turnos' => ['Turnos', 'Asignacion semanal y turno de hoy.'],
     'almacen' => ['Almacen', 'Insumos hotel, restaurante y catering con movimientos.'],
     'finanzas' => ['Finanzas', 'Ingresos, egresos, IGV e utilidades.'],
-    'whatsapp' => ['WhatsApp / YCloud', 'Inbox operativo con respuesta manual y automatica.'],
+    'whatsapp' => ['Mensajes', 'WhatsApp y chat de la web en cards: ficha del lead, archivos y links de pago.'],
+    'canales' => ['Chatbot & Canales', 'Personaliza y entrena el bot, conecta YCloud y configura links de pago.'],
     'contenido' => ['Contenido', 'Hero, galeria, blog y accesos de edicion.'],
   ];
   [$title, $subtitle] = $titles[$section] ?? $titles['dashboard'];
@@ -739,10 +742,11 @@ function cg_crm_render_router() {
     case 'reservas': cg_crm2_render_reservas(); break;
     case 'almacen': cg_crm2_render_almacen(); break;
     case 'finanzas': cg_crm2_render_finanzas(); break;
-    case 'whatsapp': cg_crm_render_whatsapp(); break;
+    case 'whatsapp': cg8_render_inbox(); break;
     case 'cuartos': cg_crm2_render_cuartos(); break;
     case 'proveedores': cg_crm2_render_proveedores(); break;
     case 'huespedes': cg5_render_huespedes(); break;
+    case 'canales': cg8_render_canales(); break;
     case 'tarifas': cg5_render_tarifas(); break;
     case 'mantenimiento': cg5_render_mantenimiento(); break;
     case 'reportes': cg5_render_reportes(); break;
