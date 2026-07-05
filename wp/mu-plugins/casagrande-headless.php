@@ -276,7 +276,10 @@ add_action('rest_api_init', function () {
       update_post_meta($id, 'cg_code', $code);
       update_post_meta($id, 'cg_status', 'pendiente');
       update_post_meta($id, 'cg_payment', 'por_pagar');
-      return ['reservation_code' => $code, 'id' => (string) $id, 'status' => 'pendiente'];
+      // Reserva por NUMERO de habitacion: asignacion automatica de cuarto fisico libre
+      do_action('cg_reservation_created', $id, $room ? $room->ID : 0, $ci, $co);
+      $assigned = get_post_meta($id, 'cg_room_number', true);
+      return ['reservation_code' => $code, 'id' => (string) $id, 'status' => 'pendiente', 'room_number' => $assigned];
     }]);
 });
 

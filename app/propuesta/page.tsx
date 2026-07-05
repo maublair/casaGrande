@@ -373,8 +373,8 @@ export default function PropuestaPage() {
 
           <div>
             <div>
-              <div className="border-b border-slate-300 w-64 mb-3 pb-1">
-                <img src="/firma-mauricio-blair.png" alt="Firma de Mauricio Blair Farah" className="h-20 object-contain" />
+              <div className="border-b border-slate-300 w-96 max-w-full mb-3 pb-1">
+                <img src="/firma-mauricio-blair.png" alt="Firma de Mauricio Blair Farah" className="h-40 object-contain" />
               </div>
               <p className="text-sm font-bold text-slate-900">Mauricio Blair Farah</p>
               <p className="text-xs text-slate-500">BlairCode AI · B&D Co S.A.C.</p>

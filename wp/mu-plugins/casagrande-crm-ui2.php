@@ -363,14 +363,19 @@ function cg_crm2_render_almacen() {
   $edit = $edit_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM $t WHERE id=%d", $edit_id)) : null;
   $moves = $wpdb->get_results("SELECT m.*, i.name iname, i.unit FROM " . cg_tbl('stock_moves') . " m LEFT JOIN $t i ON i.id=m.item_id ORDER BY m.ts DESC LIMIT 25");
   ?>
-  <div class="cg-card" style="margin-bottom:14px"><h3>Inventario — hotel · restaurante · catering</h3>
-    <table class="widefat striped"><thead><tr><th>Insumo</th><th>Area</th><th>Proveedor</th><th>Stock</th><th>Min</th><th>Costo</th><th>Valor</th><th>Movimiento rapido</th><th></th></tr></thead><tbody>
+  <div class="cg-card" style="margin-bottom:14px"><h3>Inventario y logistica de TODO el inmueble — insumos, herramientas, equipos y activos</h3>
+    <table class="widefat striped"><thead><tr><th>Insumo</th><th>Tipo</th><th>Ubicacion</th><th>Area</th><th>Proveedor</th><th>Stock</th><th>Vence</th><th>Costo</th><th>Valor</th><th>Movimiento rapido</th><th></th></tr></thead><tbody>
     <?php foreach ($rows as $r) : $low = (float) $r->stock <= (float) $r->min_stock; ?>
       <tr <?php echo $low ? 'style="background:#fdecea"' : ''; ?>>
-        <td><strong><?php echo esc_html($r->name); ?></strong> <span style="color:#94a3b8;font-size:11px"><?php echo esc_html($r->sku); ?></span></td>
+        <td><strong><?php echo esc_html($r->name); ?></strong> <span style="color:#94a3b8;font-size:11px"><?php echo esc_html($r->sku); ?></span><br><span style="font-size:10px;color:#94a3b8">adq: <?php echo esc_html($r->acquired_date ?: '—'); ?> · min <?php echo rtrim(rtrim(number_format((float) $r->min_stock, 2), '0'), '.'); ?></span></td>
+        <td><?php $tt=['alimento'=>['#1a7f37','Alimento'],'material'=>['#154562','Material'],'herramienta'=>['#7b3fa0','Herramienta'],'equipo'=>['#bd8b00','Equipo'],'activo'=>['#0c2b3d','Activo/Mueble']][$r->item_type ?? 'material'] ?? ['#666', ucfirst($r->item_type ?? '')]; echo '<span style="background:' . $tt[0] . '22;color:' . $tt[0] . ';padding:1px 8px;border-radius:12px;font-size:11px;font-weight:700">' . $tt[1] . '</span>'; ?></td>
+        <td style="font-size:12px"><?php echo esc_html($r->location ?: 'Almacen general'); ?></td>
         <td><?php echo esc_html(ucfirst($r->area)); ?></td><td><?php echo esc_html($r->sname ?: '—'); ?></td>
         <td><?php echo rtrim(rtrim(number_format((float) $r->stock, 2), '0'), '.') . ' ' . esc_html($r->unit); echo $low ? ' ⚠️' : ''; ?></td>
-        <td><?php echo rtrim(rtrim(number_format((float) $r->min_stock, 2), '0'), '.'); ?></td>
+        <td><?php if ($r->expiry_date) { $dv = (strtotime($r->expiry_date) - time()) / 86400;
+          if ($dv < 0) echo '<b style="color:#c0392b">VENCIDO<br>' . esc_html($r->expiry_date) . '</b>';
+          elseif ($dv <= 15) echo '<b style="color:#bd8b00">' . esc_html($r->expiry_date) . ' ⚠</b>';
+          else echo '<span style="font-size:12px">' . esc_html($r->expiry_date) . '</span>'; } else echo '<span style="color:#cbd5e1">n/a</span>'; ?></td>
         <td>S/ <?php echo number_format((float) $r->cost, 2); ?></td>
         <td>S/ <?php echo number_format((float) $r->stock * (float) $r->cost, 2); ?></td>
         <td><form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:4px;align-items:center">
@@ -397,7 +402,12 @@ function cg_crm2_render_almacen() {
         echo cg2_field('Costo (S/)', '<input type="number" step="0.01" name="cost" value="' . $v('cost', '0') . '">');
         $su = '<select name="supplier_id"><option value="0">— sin proveedor —</option>';
         foreach ($sups as $s) $su .= '<option value="' . $s->id . '"' . selected((int) ($edit->supplier_id ?? 0), (int) $s->id, false) . '>' . esc_html($s->name) . '</option>'; $su .= '</select>';
-        echo cg2_field('Proveedor', $su); ?>
+        echo cg2_field('Proveedor', $su);
+        $ty = '<select name="item_type">'; foreach (['alimento'=>'Alimento','material'=>'Material','herramienta'=>'Herramienta','equipo'=>'Equipo','activo'=>'Activo / Mueble'] as $k => $l) $ty .= '<option value="' . $k . '"' . selected($edit->item_type ?? 'material', $k, false) . '>' . $l . '</option>'; $ty .= '</select>';
+        echo cg2_field('Tipo de item', $ty);
+        echo cg2_field('Ubicacion en el inmueble', '<input name="location" value="' . $v('location', 'Almacen general') . '" placeholder="Almacen, Cocina, Hab. 101, Lobby...">');
+        echo cg2_field('Fecha de adquisicion', '<input type="date" name="acquired_date" value="' . $v('acquired_date') . '">');
+        echo cg2_field('Fecha de vencimiento', '<input type="date" name="expiry_date" value="' . $v('expiry_date') . '">'); ?>
         <div style="grid-column:1/-1;display:flex;gap:8px"><button class="button button-primary"><?php echo $edit ? 'Guardar' : 'Agregar'; ?></button>
         <?php if ($edit) : ?><a class="button" href="<?php echo esc_url(cg_crm_url('cg-crm-almacen')); ?>">Cancelar</a><?php endif; ?></div>
       </form></div>
@@ -417,7 +427,12 @@ add_action('admin_post_cg2_item', function () {
   $data = ['name'=>sanitize_text_field($_POST['name']),'sku'=>sanitize_text_field($_POST['sku'] ?? ''),
     'area'=>sanitize_key($_POST['area']),'unit'=>sanitize_text_field($_POST['unit'] ?: 'und'),
     'stock'=>(float) $_POST['stock'],'min_stock'=>(float) $_POST['min_stock'],'cost'=>(float) $_POST['cost'],
-    'supplier_id'=>(int) ($_POST['supplier_id'] ?? 0),'updated'=>current_time('mysql')];
+    'supplier_id'=>(int) ($_POST['supplier_id'] ?? 0),
+    'item_type'=>sanitize_key($_POST['item_type'] ?? 'material'),
+    'location'=>sanitize_text_field($_POST['location'] ?? 'Almacen general'),
+    'acquired_date'=>(sanitize_text_field($_POST['acquired_date'] ?? '') ?: null),
+    'expiry_date'=>(sanitize_text_field($_POST['expiry_date'] ?? '') ?: null),
+    'updated'=>current_time('mysql')];
   $id = (int) ($_POST['id'] ?? 0);
   if ($id) $wpdb->update(cg_tbl('inventory'), $data, ['id'=>$id]); else $wpdb->insert(cg_tbl('inventory'), $data);
   cg2_redir('cg-crm-almacen');

@@ -65,6 +65,7 @@ export interface ReservationInput {
 export interface ReservationResult {
   ok: boolean;
   reservation_code?: string;
+  room_number?: string;
   id?: string;
   status?: string;
   error?: string;

@@ -157,11 +157,7 @@ function cg_ledger_rows($kind = null, $from = null, $to = null) {
 function cg_finance_summary($from, $to) {
   $ing = array_merge(cg_income_reservations($from, $to), cg_ledger_rows('ingreso', $from, $to));
   $egr = array_merge(cg_expense_purchases($from, $to), cg_ledger_rows('egreso', $from, $to));
-  // Planilla del periodo (meses cubiertos * planilla mensual)
-  $months = 1;
-  if ($from && $to) { $months = max(1, (int) round((strtotime($to) - strtotime($from)) / 2629800)); }
-  $payroll = cg_expense_payroll_monthly() * $months;
-  if ($payroll > 0) $egr[] = ['date' => $to, 'concept' => 'Planilla de personal', 'amount' => $payroll, 'category' => 'Personal'];
+  // Planilla: entra por boletas PAGADAS (ledger, categoria Personal) — sin estimados duplicados.
 
   $ingresos = array_sum(array_column($ing, 'amount'));
   $egresos = array_sum(array_column($egr, 'amount'));
@@ -244,8 +240,15 @@ function cg_wa_classify($text) {
 function cg_wa_bot_reply($text, $service) {
   $t = mb_strtolower($text);
   $s = function ($k, $d = '') { $v = get_option('cg_settings', []); return $v[$k] ?? $d; };
-  if (strpos($t, 'precio') !== false || strpos($t, 'tarifa') !== false || strpos($t, 'cuesta') !== false)
-    return 'Nuestras tarifas van desde S/180 (Simple) a S/520 (Suite con jacuzzi), desayuno incluido. Te comparto disponibilidad para tus fechas si me dices cuando llegas y cuando sales. 🗓️';
+  if (strpos($t, 'precio') !== false || strpos($t, 'tarifa') !== false || strpos($t, 'cuesta') !== false) {
+    // tarifas reales desde el CMS
+    $lines = [];
+    foreach (get_posts(['post_type' => 'room', 'posts_per_page' => -1, 'post_status' => 'publish', 'orderby' => 'meta_value_num', 'meta_key' => 'cg_price', 'order' => 'ASC']) as $rm)
+      $lines[] = $rm->post_title . ': S/' . number_format((float) get_post_meta($rm->ID, 'cg_price', true), 0);
+    return 'Nuestras tarifas por noche (desayuno incluido): ' . implode(' · ', $lines) . '. Dime tus fechas y te confirmo disponibilidad con numero de habitacion. 🗓️';
+  }
+  if (strpos($t, 'capacidad') !== false || strpos($t, 'personas') !== false || strpos($t, 'ninos') !== false || strpos($t, 'niños') !== false)
+    return 'Tenemos 75 habitaciones en 5 pisos (101 al 515). Cada tipo admite entre 1 y 2 adultos con espacio para ninos segun la habitacion (la Suite admite 2 adultos y 2 ninos). ¿Para cuantas personas seria? 👨‍👩‍👧';
   if (strpos($t, 'ubica') !== false || strpos($t, 'direcc') !== false || strpos($t, 'donde') !== false)
     return 'Estamos en Av. Luna Pizarro 202, Vallecito, Arequipa, a minutos del centro historico. 📍 maps.app.goo.gl/SnxbM6dird9A5Y2fA';
   if (strpos($t, 'catering') !== false || $service === 'Catering')
@@ -255,7 +258,7 @@ function cg_wa_bot_reply($text, $service) {
   if (strpos($t, 'hora') !== false && (strpos($t, 'check') !== false || strpos($t, 'entrada') !== false))
     return 'Check-in a partir de las 2:00 pm y check-out hasta las 12:00 pm. Guardamos tu equipaje sin costo si llegas antes. 🧳';
   if (strpos($t, 'gracias') !== false) return '¡Con gusto! Aqui estamos para lo que necesites. 😊';
-  return 'Gracias por escribir al Hotel Boutique Casa Grande. Un asesor te atendera en breve. Mientras tanto, dime en que puedo ayudarte: reservas, restaurante, catering o eventos. 🙌';
+  return 'Gracias por escribir al Hotel Boutique Casa Grande (75 habitaciones en Vallecito, Arequipa). Puedo ayudarte con reservas (te asigno habitacion al confirmar), restaurante, catering o eventos. 🙌';
 }
 function cg_ycloud_send($to, $text) {
   $s = cg_crm_settings();
@@ -642,3 +645,126 @@ function cg_folio_rows($res_id) {
 function cg_folio_total($res_id) {
   global $wpdb; return (float) $wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(total),0) FROM " . cg_tbl('folio') . " WHERE res_id=%d AND settled=0", $res_id));
 }
+
+/* ================= v3: planilla peruana, fichas, almacen total, FKs ================= */
+add_action('init', function () {
+  if (get_option('cg_crm_db4') === '1') return;
+  global $wpdb; $cs = $wpdb->get_charset_collate();
+  require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+  dbDelta("CREATE TABLE " . cg_tbl('payslips') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    staff_id BIGINT UNSIGNED NOT NULL, period CHAR(7) NOT NULL,
+    base DECIMAL(10,2) NOT NULL DEFAULT 0, family_allow DECIMAL(10,2) NOT NULL DEFAULT 0,
+    bonuses DECIMAL(10,2) NOT NULL DEFAULT 0, bonus_note VARCHAR(160) DEFAULT '',
+    gross DECIMAL(10,2) NOT NULL DEFAULT 0,
+    pension_type VARCHAR(10) NOT NULL DEFAULT 'afp', pension_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    net DECIMAL(10,2) NOT NULL DEFAULT 0, essalud DECIMAL(10,2) NOT NULL DEFAULT 0,
+    paid TINYINT(1) NOT NULL DEFAULT 0, paid_date DATE NULL,
+    PRIMARY KEY (id), UNIQUE KEY staff_period (staff_id, period)) $cs;");
+
+  dbDelta("CREATE TABLE " . cg_tbl('staff_children') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    staff_id BIGINT UNSIGNED NOT NULL, name VARCHAR(120) NOT NULL, birthdate DATE NOT NULL,
+    PRIMARY KEY (id), KEY staff_id (staff_id)) $cs;");
+
+  dbDelta("CREATE TABLE " . cg_tbl('attendance') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    staff_id BIGINT UNSIGNED NOT NULL, work_date DATE NOT NULL,
+    status VARCHAR(12) NOT NULL DEFAULT 'presente', note VARCHAR(160) DEFAULT '',
+    PRIMARY KEY (id), UNIQUE KEY staff_date (staff_id, work_date)) $cs;");
+
+  foreach ([
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN duties TEXT NULL",
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN schedule VARCHAR(120) DEFAULT ''",
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN pension_type VARCHAR(10) NOT NULL DEFAULT 'afp'",
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN afp_name VARCHAR(40) DEFAULT ''",
+    "ALTER TABLE " . cg_tbl('inventory') . " ADD COLUMN item_type VARCHAR(20) NOT NULL DEFAULT 'material'",
+    "ALTER TABLE " . cg_tbl('inventory') . " ADD COLUMN location VARCHAR(80) DEFAULT 'Almacen general'",
+    "ALTER TABLE " . cg_tbl('inventory') . " ADD COLUMN acquired_date DATE NULL",
+    "ALTER TABLE " . cg_tbl('inventory') . " ADD COLUMN expiry_date DATE NULL",
+  ] as $sql) { $wpdb->hide_errors(); $wpdb->query($sql); $wpdb->show_errors(); }
+
+  // Relaciones (FOREIGN KEYs) — best effort InnoDB
+  foreach ([
+    ['payslips', 'fk_payslip_staff', 'FOREIGN KEY (staff_id) REFERENCES ' . cg_tbl('staff') . '(id) ON DELETE CASCADE'],
+    ['staff_children', 'fk_child_staff', 'FOREIGN KEY (staff_id) REFERENCES ' . cg_tbl('staff') . '(id) ON DELETE CASCADE'],
+    ['attendance', 'fk_att_staff', 'FOREIGN KEY (staff_id) REFERENCES ' . cg_tbl('staff') . '(id) ON DELETE CASCADE'],
+    ['staff_payments', 'fk_pay_staff', 'FOREIGN KEY (staff_id) REFERENCES ' . cg_tbl('staff') . '(id) ON DELETE CASCADE'],
+    ['shifts', 'fk_shift_staff', 'FOREIGN KEY (staff_id) REFERENCES ' . cg_tbl('staff') . '(id) ON DELETE CASCADE'],
+    ['stock_moves', 'fk_move_item', 'FOREIGN KEY (item_id) REFERENCES ' . cg_tbl('inventory') . '(id) ON DELETE CASCADE'],
+    ['inventory', 'fk_item_supplier', 'FOREIGN KEY (supplier_id) REFERENCES ' . cg_tbl('suppliers') . '(id) ON DELETE SET DEFAULT'],
+    ['wa_messages', 'fk_msg_conv', 'FOREIGN KEY (conv_id) REFERENCES ' . cg_tbl('wa_conversations') . '(id) ON DELETE CASCADE'],
+  ] as [$tbl, $name, $fk]) {
+    $wpdb->hide_errors();
+    $wpdb->query("ALTER TABLE " . cg_tbl($tbl) . " ADD CONSTRAINT $name $fk");
+    $wpdb->show_errors();
+  }
+  update_option('cg_crm_db4', '1');
+}, 6);
+
+/* ---- Motor de planilla (Peru) ---- */
+function cg_payroll_params() {
+  $s = cg_crm_settings();
+  return ['rmv' => (float) ($s['rmv'] ?? 1130), 'afp_rate' => (float) ($s['afp_rate'] ?? 12.5),
+          'onp_rate' => (float) ($s['onp_rate'] ?? 13), 'essalud_rate' => (float) ($s['essalud_rate'] ?? 9)];
+}
+function cg_children_u18($staff_id) {
+  global $wpdb;
+  return (int) $wpdb->get_var($wpdb->prepare(
+    "SELECT COUNT(*) FROM " . cg_tbl('staff_children') . " WHERE staff_id=%d AND birthdate > DATE_SUB(CURDATE(), INTERVAL 18 YEAR)", $staff_id));
+}
+function cg_payslip_calc($staff, $bonuses = 0.0) {
+  $p = cg_payroll_params();
+  $base = (float) $staff->salary;
+  $family = cg_children_u18($staff->id) > 0 ? round($p['rmv'] * 0.10, 2) : 0.0; // asignacion familiar 10% RMV
+  $gross = $base + $family + $bonuses;
+  $rate = ($staff->pension_type ?? 'afp') === 'onp' ? $p['onp_rate'] : $p['afp_rate'];
+  $pension = round($gross * $rate / 100, 2);           // descuento al trabajador
+  $net = round($gross - $pension, 2);                  // neto que recibe
+  $essalud = round(($base + $family) * $p['essalud_rate'] / 100, 2); // aporte ADICIONAL del hotel
+  return ['base' => $base, 'family_allow' => $family, 'bonuses' => $bonuses, 'gross' => $gross,
+          'pension_type' => $staff->pension_type ?? 'afp', 'pension_amount' => $pension,
+          'net' => $net, 'essalud' => $essalud, 'employer_cost' => $gross + $essalud];
+}
+function cg_generate_payslips($period) {
+  global $wpdb; $tp = cg_tbl('payslips'); $n = 0;
+  foreach ($wpdb->get_results("SELECT * FROM " . cg_tbl('staff') . " WHERE active=1") as $s) {
+    if ($wpdb->get_var($wpdb->prepare("SELECT id FROM $tp WHERE staff_id=%d AND period=%s", $s->id, $period))) continue;
+    $c = cg_payslip_calc($s);
+    $wpdb->insert($tp, ['staff_id' => $s->id, 'period' => $period, 'base' => $c['base'],
+      'family_allow' => $c['family_allow'], 'bonuses' => 0, 'gross' => $c['gross'],
+      'pension_type' => $c['pension_type'], 'pension_amount' => $c['pension_amount'],
+      'net' => $c['net'], 'essalud' => $c['essalud'], 'paid' => 0]);
+    $n++;
+  }
+  return $n;
+}
+
+/* ---- Reserva POR NUMERO de habitacion ---- */
+function cg_room_number_free($number, $ci, $co, $exclude_res = 0) {
+  $q = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => -1, 'post_status' => 'publish', 'fields' => 'ids',
+    'meta_query' => [
+      ['key' => 'cg_room_number', 'value' => (string) (int) $number],
+      ['key' => 'cg_status', 'value' => 'cancelada', 'compare' => '!='],
+    ]]);
+  foreach ($q->posts as $rid) {
+    if ($exclude_res && $rid == $exclude_res) continue;
+    $rin = get_post_meta($rid, 'cg_check_in', true); $rout = get_post_meta($rid, 'cg_check_out', true);
+    if ($rin && $rout && cg_ranges_overlap($ci, $co, $rin, $rout)) return false;
+  }
+  return true;
+}
+function cg_pick_free_room($type_id, $ci, $co) {
+  global $wpdb;
+  $nums = $wpdb->get_col($wpdb->prepare("SELECT number FROM " . cg_tbl('rooms') . " WHERE type_id=%d AND active=1 ORDER BY number", $type_id));
+  foreach ($nums as $n) if (cg_room_number_free((int) $n, $ci, $co)) return (int) $n;
+  return 0;
+}
+// Al crear una reserva (web/bot/manual) se asigna habitacion fisica automaticamente
+add_action('cg_reservation_created', function ($res_id, $room_type_id, $ci, $co) {
+  if (!$room_type_id || !$ci || !$co) return;
+  if (get_post_meta($res_id, 'cg_room_number', true)) return;
+  $num = cg_pick_free_room($room_type_id, $ci, $co);
+  if ($num) update_post_meta($res_id, 'cg_room_number', (string) $num);
+}, 10, 4);

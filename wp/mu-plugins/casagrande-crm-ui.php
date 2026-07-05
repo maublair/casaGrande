@@ -715,7 +715,7 @@ function cg_crm_render_router() {
   [$title, $subtitle] = $titles[$section] ?? $titles['dashboard'];
   cg_crm_shell_start($title, $subtitle, $section);
   switch ($section) {
-    case 'personal': cg_crm2_render_personal(); break;
+    case 'personal': cg_crm3_render_personal(); break;
     case 'limpieza': cg_crm_render_limpieza(); break;
     case 'turnos': cg_crm_render_turnos(); break;
     case 'reservas': cg_crm2_render_reservas(); break;

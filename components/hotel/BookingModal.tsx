@@ -45,7 +45,7 @@ export default function BookingModal({ room, onClose, initialCheckIn, initialChe
       name: form.name, email: form.email, phone: form.phone, room: room.name, room_id: room.id,
       check_in: checkIn, check_out: checkOut, adults, total, notes: form.notes, payment_method: form.payment_method, payment_reference: form.payment_reference,
     });
-    if (res.ok && res.reservation_code) { setCode(res.reservation_code); setStatus('done'); }
+    if (res.ok && res.reservation_code) { setCode(res.reservation_code + (res.room_number ? ` · Hab. ${res.room_number}` : '')); setStatus('done'); }
     else if (res.error === 'no_availability') { setErrMsg('Esa habitacion ya no tiene disponibilidad para esas fechas. Prueba con otras fechas o escribenos por WhatsApp.'); setStatus('error'); }
     else { setErrMsg('No pudimos registrar la reserva. Intenta de nuevo o escribenos por WhatsApp.'); setStatus('error'); }
   }

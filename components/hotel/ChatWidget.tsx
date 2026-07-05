@@ -257,7 +257,7 @@ export default function ChatWidget() {
     if (res.ok && res.reservation_code) {
       setStep('done');
       botSay(
-        `¡Reserva registrada! 🎉\n\nCodigo: ${res.reservation_code}\n${draft.roomTypeName} · ${fmtDate(draft.checkIn!)} → ${fmtDate(draft.checkOut!)}\nTotal estimado: ${money(draft.total!)}\n\nNuestra recepcion te contactara para confirmar el pago y los detalles. Si prefieres, puede ser por Izipay, Yape, Plin o transferencia bancaria. ¿Algo mas?`,
+        `¡Reserva registrada! 🎉\n\nCodigo: ${res.reservation_code}${res.room_number ? `\nHabitacion asignada: N° ${res.room_number}` : ''}\n${draft.roomTypeName} · ${fmtDate(draft.checkIn!)} → ${fmtDate(draft.checkOut!)}\nTotal estimado: ${money(draft.total!)}\n\nNuestra recepcion te contactara para confirmar el pago y los detalles. Si prefieres, puede ser por Izipay, Yape, Plin o transferencia bancaria. ¿Algo mas?`,
         [{ label: 'Hacer otra reserva', value: 'book' }, { label: 'WhatsApp recepcion', value: 'handoff' }, { label: 'Menu', value: 'menu' }]
       );
     } else if (res.error === 'no_availability') {
