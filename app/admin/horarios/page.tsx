@@ -44,6 +44,18 @@ function getWeekDates(base: Date) {
 
 const dayNames = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
 
+const operationalWindows = [
+  { title: 'Turno Mañana', hours: '06:00 - 14:00', note: 'Recepción, desayuno y limpieza principal.' },
+  { title: 'Turno Tarde', hours: '14:00 - 22:00', note: 'Check-ins, soporte al huésped y refuerzo de limpieza.' },
+  { title: 'Turno Noche', hours: '22:00 - 06:00', note: 'Auditoría, incidencias y guardia operativa.' },
+];
+
+const cleaningWindows = [
+  { title: 'Ocupadas', hours: '10:00 - 14:00', note: 'Limpieza ligera sin interrumpir al huésped.' },
+  { title: 'Liberadas', hours: '11:30 - 15:30', note: 'Limpieza completa post checkout y cambio de blancos.' },
+  { title: 'Vacias', hours: '08:00 - 10:00', note: 'Repaso preventivo y preparación para ingresos.' },
+];
+
 export default function HorariosPage() {
   const [weekBase, setWeekBase] = useState(new Date());
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -115,6 +127,37 @@ export default function HorariosPage() {
           >
             <Plus className="w-4 h-4" /> Agregar Turno
           </button>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-bold mb-3">Definicion de turnos</p>
+          <div className="space-y-3">
+            {operationalWindows.map(item => (
+              <div key={item.title} className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50/70 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                  <p className="text-xs text-gray-500 mt-1">{item.note}</p>
+                </div>
+                <span className="text-xs font-semibold text-navy whitespace-nowrap">{item.hours}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-bold mb-3">Horarios de limpieza</p>
+          <div className="space-y-3">
+            {cleaningWindows.map(item => (
+              <div key={item.title} className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-amber-50/70 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                  <p className="text-xs text-gray-500 mt-1">{item.note}</p>
+                </div>
+                <span className="text-xs font-semibold text-amber-700 whitespace-nowrap">{item.hours}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -41,6 +41,13 @@ const statusConfig: Record<string, { label: string; cls: string; icon: React.Ele
   omitido: { label: 'Omitido', cls: 'bg-gray-100 text-gray-500', icon: X },
 };
 
+
+const cleaningPolicy = [
+  { title: 'Habitaciones ocupadas', hours: '10:00 - 14:00', note: 'Limpieza ligera, reposicion y orden sin invadir la estancia.' },
+  { title: 'Habitaciones liberadas', hours: '11:30 - 15:30', note: 'Limpieza completa post checkout, cambio de blancos y revision general.' },
+  { title: 'Habitaciones vacias', hours: '08:00 - 10:00', note: 'Repaso preventivo antes del ingreso de nuevos huespedes.' },
+  { title: 'Profunda / mantenimiento', hours: '15:30 - 18:00', note: 'Intervenciones de mayor duracion o con ruido controlado.' },
+];
 export default function LimpiezaPage() {
   const [tasks, setTasks] = useState<CleaningTask[]>([]);
   const [rooms, setRooms] = useState<{ id: string; room_number: string }[]>([]);
@@ -130,6 +137,18 @@ export default function LimpiezaPage() {
               <p className="text-xl font-bold text-gray-900">{counts[key] || 0}</p>
               <p className="text-xs text-gray-500">{cfg.label}</p>
             </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {cleaningPolicy.map(item => (
+          <div key={item.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h2 className="font-semibold text-gray-900">{item.title}</h2>
+              <span className="text-xs font-semibold text-navy whitespace-nowrap">{item.hours}</span>
+            </div>
+            <p className="text-sm text-gray-500 leading-relaxed">{item.note}</p>
           </div>
         ))}
       </div>
