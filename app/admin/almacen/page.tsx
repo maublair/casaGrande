@@ -1,27 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Plus, Package, AlertTriangle, TrendingDown, TrendingUp, Search, X, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Package, AlertTriangle, TrendingDown, TrendingUp, Search, X, Filter } from 'lucide-react';
+import { supabase, InventoryItem } from '@/lib/supabase';
+import { enrichWarehouseItem } from '@/lib/casagrande-demo';
 
 interface InvCategory { id: string; name: string; }
-interface InvItem {
-  id: string; category_id: string | null; name: string; description: string | null;
-  unit: string; current_stock: number; min_stock: number; max_stock: number | null;
-  unit_cost: number | null; supplier: string | null; location: string | null; sku: string | null;
-  is_active: boolean;
-  inventory_categories?: { name: string };
-}
 
 export default function AlmacenPage() {
-  const [items, setItems] = useState<InvItem[]>([]);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InvCategory[]>([]);
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('');
   const [filterAlert, setFilterAlert] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [showMovForm, setShowMovForm] = useState<InvItem | null>(null);
+  const [showMovForm, setShowMovForm] = useState<InventoryItem | null>(null);
   const [movForm, setMovForm] = useState({ type: 'entrada', quantity: '', notes: '' });
   const [form, setForm] = useState({
     category_id: '', name: '', unit: 'unidad', current_stock: '', min_stock: '',
@@ -35,7 +29,7 @@ export default function AlmacenPage() {
       .select('*, inventory_categories(name)')
       .eq('is_active', true)
       .order('name');
-    setItems((data || []) as InvItem[]);
+    setItems((data || []) as InventoryItem[]);
     setLoading(false);
   }
 
@@ -65,9 +59,9 @@ export default function AlmacenPage() {
     const qty = parseFloat(movForm.quantity);
     if (!qty) return;
     const newStock = movForm.type === 'entrada'
-      ? showMovForm.current_stock + qty
+      ? Number(showMovForm.current_stock) + qty
       : movForm.type === 'salida'
-      ? showMovForm.current_stock - qty
+      ? Number(showMovForm.current_stock) - qty
       : qty;
     await supabase.from('inventory_movements').insert({
       item_id: showMovForm.id, type: movForm.type, quantity: qty, notes: movForm.notes || null,
@@ -82,49 +76,54 @@ export default function AlmacenPage() {
     load();
   }
 
-  const filtered = items.filter(item => {
-    const matchSearch = !search || item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.supplier?.toLowerCase().includes(search.toLowerCase()) || item.sku?.includes(search);
+  const enrichedItems = useMemo(() => items.map(item => {
+    const categoryName = item.inventory_categories?.name || categories.find(c => c.id === item.category_id)?.name || 'Sin categoria';
+    const meta = enrichWarehouseItem(item, categoryName);
+    return { item, meta, categoryName };
+  }), [items, categories]);
+
+  const filteredItems = useMemo(() => enrichedItems.filter(({ item, meta, categoryName }) => {
+    const hay = [item.name, item.description || '', item.sku || '', item.supplier || '', categoryName, meta.brand, meta.type, meta.color, meta.presentation].join(' ').toLowerCase();
+    const matchSearch = !search || hay.includes(search.toLowerCase());
     const matchCat = !filterCat || item.category_id === filterCat;
-    const matchAlert = !filterAlert || item.current_stock <= item.min_stock;
+    const expired = meta.expiryDate ? new Date(meta.expiryDate).getTime() < Date.now() : false;
+    const lowStock = meta.currentStock <= meta.minimumStock;
+    const matchAlert = !filterAlert || lowStock || expired;
     return matchSearch && matchCat && matchAlert;
-  });
+  }), [enrichedItems, search, filterCat, filterAlert]);
 
-  const alertCount = items.filter(i => i.current_stock <= i.min_stock).length;
+  const grouped = useMemo(() => filteredItems.reduce<Record<string, typeof filteredItems>>((acc, entry) => {
+    const key = entry.categoryName || 'Sin categoria';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(entry);
+    return acc;
+  }, {}), [filteredItems]);
 
-  function stockStatus(item: InvItem) {
-    if (item.current_stock <= 0) return { label: 'Sin stock', cls: 'bg-red-100 text-red-700', bar: 'bg-red-500' };
-    if (item.current_stock <= item.min_stock) return { label: 'Stock bajo', cls: 'bg-orange-100 text-orange-700', bar: 'bg-orange-500' };
-    return { label: 'Normal', cls: 'bg-green-100 text-green-700', bar: 'bg-green-500' };
-  }
+  const alertCount = enrichedItems.filter(({ meta }) => meta.currentStock <= meta.minimumStock).length;
+  const expiredCount = enrichedItems.filter(({ meta }) => meta.expiryDate && new Date(meta.expiryDate).getTime() < Date.now()).length;
 
-  function stockPct(item: InvItem) {
-    if (!item.max_stock) return Math.min(100, (item.current_stock / (item.min_stock * 3 || 1)) * 100);
-    return Math.min(100, (item.current_stock / item.max_stock) * 100);
-  }
+  const stats = [
+    { label: 'Total insumos', value: items.length, icon: Package, cls: 'bg-navy-50 text-navy' },
+    { label: 'Alertas de stock', value: alertCount, icon: AlertTriangle, cls: alertCount > 0 ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-400' },
+    { label: 'Categorias', value: categories.length, icon: Filter, cls: 'bg-olive-50 text-olive' },
+    { label: 'Vencidos', value: expiredCount, icon: TrendingDown, cls: expiredCount > 0 ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-400' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Almacen e Inventario</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Control de stock y movimientos</p>
+          <p className="text-sm text-gray-500 mt-0.5">Cards por categoria, con busqueda y trazabilidad para hotel, restaurante y catering.</p>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
+        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
           <Plus className="w-4 h-4" /> Nuevo Insumo
         </button>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total insumos', value: items.length, icon: Package, cls: 'bg-navy-50 text-navy' },
-          { label: 'Alertas de stock', value: alertCount, icon: AlertTriangle, cls: alertCount > 0 ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-400' },
-          { label: 'Categorias', value: categories.length, icon: Package, cls: 'bg-olive-50 text-olive' },
-          { label: 'Sin stock', value: items.filter(i => i.current_stock <= 0).length, icon: TrendingDown, cls: 'bg-orange-50 text-orange-600' },
-        ].map(card => (
-          <div key={card.label} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+        {stats.map(card => (
+          <div key={card.label} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.cls}`}>
               <card.icon className="w-5 h-5" />
             </div>
@@ -136,95 +135,124 @@ export default function AlmacenPage() {
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" placeholder="Buscar insumo, proveedor, SKU..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
+          <input type="text" placeholder="Buscar por nombre, marca, SKU, sabor, envase o categoria..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
         </div>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 bg-white">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 bg-white">
           <option value="">Todas las categorias</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <button onClick={() => setFilterAlert(!filterAlert)}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            filterAlert ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}>
+        <button onClick={() => setFilterAlert(!filterAlert)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${filterAlert ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
           <AlertTriangle className="w-4 h-4" />
           Solo alertas {alertCount > 0 && `(${alertCount})`}
         </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-left border-b border-gray-100">
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Insumo</th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoria</th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nivel</th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Costo</th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ubicacion</th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                [...Array(6)].map((_, i) => (
-                  <tr key={i}><td colSpan={8} className="p-3"><div className="h-8 shimmer rounded" /></td></tr>
-                ))
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} className="py-14 text-center text-gray-400">No se encontraron insumos.</td></tr>
-              ) : (
-                filtered.map(item => {
-                  const st = stockStatus(item);
-                  const pct = stockPct(item);
+      <div className="space-y-6">
+        {loading ? (
+          [...Array(3)].map((_, i) => <div key={i} className="h-40 bg-white rounded-2xl animate-pulse" />)
+        ) : Object.keys(grouped).length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-400">
+            No se encontraron insumos con estos filtros.
+          </div>
+        ) : (
+          Object.entries(grouped).map(([categoryName, entries]) => (
+            <section key={categoryName} className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{categoryName}</h2>
+                  <p className="text-xs text-gray-500">{entries.length} producto{entries.length !== 1 ? 's' : ''} en esta categoria</p>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">Cards separadas por categoria</span>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {entries.map(({ item, meta }) => {
+                  const lowStock = meta.currentStock <= meta.minimumStock;
+                  const expired = meta.expiryDate ? new Date(meta.expiryDate).getTime() < Date.now() : false;
                   return (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3.5">
-                        <p className="font-semibold text-gray-800">{item.name}</p>
-                        {item.sku && <p className="text-xs text-gray-400 mt-0.5">SKU: {item.sku}</p>}
-                      </td>
-                      <td className="px-5 py-3.5 text-gray-600 text-xs">{item.inventory_categories?.name || '—'}</td>
-                      <td className="px-5 py-3.5">
-                        <span className="font-bold text-gray-800">{item.current_stock}</span>
-                        <span className="text-gray-400 text-xs ml-1">{item.unit}</span>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Min: {item.min_stock}</p>
-                      </td>
-                      <td className="px-5 py-3.5 min-w-[100px]">
-                        <div className="w-full bg-gray-100 rounded-full h-1.5">
-                          <div className={`h-1.5 rounded-full ${st.bar} transition-all`} style={{ width: `${pct}%` }} />
+                    <article key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="p-5 border-b border-gray-50 bg-gradient-to-br from-white to-slate-50">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div>
+                            <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">{categoryName}</p>
+                            <h3 className="text-lg font-semibold text-gray-900 leading-tight">{item.name}</h3>
+                            <p className="text-xs text-gray-500 mt-1">SKU: {meta.sku}</p>
+                          </div>
+                          <div className={`text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full ${lowStock ? 'bg-red-100 text-red-700' : expired ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                            {lowStock ? 'Stock bajo' : expired ? 'Vencido' : meta.state}
+                          </div>
                         </div>
-                        <p className="text-[10px] text-gray-400 mt-1">{Math.round(pct)}%</p>
-                      </td>
-                      <td className="px-5 py-3.5 text-gray-600 text-xs">
-                        {item.unit_cost ? `S/ ${item.unit_cost.toFixed(2)}` : '—'}
-                      </td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs">{item.location || '—'}</td>
-                      <td className="px-5 py-3.5">
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <button onClick={() => setShowMovForm(item)}
-                          className="flex items-center gap-1 text-xs text-navy hover:bg-navy-50 px-2.5 py-1.5 rounded-lg transition-colors font-medium">
-                          <TrendingUp className="w-3.5 h-3.5" /> Movimiento
-                        </button>
-                      </td>
-                    </tr>
+                        <p className="text-sm text-gray-600 line-clamp-2">{meta.details}</p>
+                      </div>
+
+                      <div className="p-5 space-y-4 text-sm">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Marca</span><span className="font-medium text-gray-800">{meta.brand}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Tipo</span><span className="font-medium text-gray-800">{meta.type}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Sabor</span><span className="font-medium text-gray-800">{meta.flavor}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Envase</span><span className="font-medium text-gray-800">{meta.container}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Presentacion</span><span className="font-medium text-gray-800">{meta.presentation}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Color</span><span className="font-medium text-gray-800">{meta.color}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Valor</span><span className="font-medium text-gray-800">{meta.unitValue}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Cantidad usada</span><span className="font-medium text-gray-800">{meta.usedQuantityLabel}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Ingreso</span><span className="font-medium text-gray-800">{meta.entryDate}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Vencimiento</span><span className="font-medium text-gray-800">{meta.expiryDate || 'No aplica'}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Uso</span><span className="font-medium text-gray-800">{meta.useDate || 'No aplica'}</span></div>
+                          <div><span className="block text-gray-400 uppercase tracking-wider text-[10px]">Cantidad</span><span className="font-medium text-gray-800">{meta.quantityLabel}</span></div>
+                        </div>
+
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-2">Descripcion</p>
+                          <p className="text-sm text-gray-600">{item.description || meta.details}</p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {meta.tags.map(tag => <span key={tag} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{tag}</span>)}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-xs text-gray-500">
+                          <div>
+                            <p className="text-gray-400 uppercase tracking-wider text-[10px] mb-1">Documentos</p>
+                            <p>{meta.documents.join(' · ')}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400 uppercase tracking-wider text-[10px] mb-1">Ubicacion</p>
+                            <p>{meta.location}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-xs text-gray-500">
+                          <div>
+                            <p className="text-gray-400 uppercase tracking-wider text-[10px] mb-1">Mantenimiento</p>
+                            <ul className="space-y-1">
+                              {meta.maintenanceHistory.map((entry, index) => <li key={`${meta.sku}-m-${index}`}>{entry}</li>)}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-gray-400 uppercase tracking-wider text-[10px] mb-1">Danos</p>
+                            <ul className="space-y-1">
+                              {meta.damageHistory.map((entry, index) => <li key={`${meta.sku}-d-${index}`}>{entry}</li>)}
+                            </ul>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button onClick={() => setShowMovForm(item)} className="flex items-center gap-1 text-xs text-navy hover:bg-navy-50 px-2.5 py-1.5 rounded-lg transition-colors font-medium">
+                            <TrendingUp className="w-3.5 h-3.5" /> Movimiento
+                          </button>
+                        </div>
+                      </div>
+                    </article>
                   );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                })}
+              </div>
+            </section>
+          ))
+        )}
       </div>
 
-      {/* Movement modal */}
       {showMovForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
@@ -275,7 +303,6 @@ export default function AlmacenPage() {
         </div>
       )}
 
-      {/* New item modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-4">

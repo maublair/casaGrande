@@ -187,6 +187,7 @@ export interface InventoryItem {
   last_restocked_at: string | null;
   created_at: string;
   updated_at: string;
+  inventory_categories?: { name: string };
 }
 
 export interface CleaningTask {

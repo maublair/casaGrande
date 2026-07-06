@@ -7,7 +7,7 @@ import { Printer, Check, ShieldCheck, RefreshCw, FileText } from 'lucide-react';
    Propuesta técnica y económica — Hotel Boutique Casa Grande
    Estructura: plantilla oficial BlairCode (14 secciones, formato CMFB).
    Precio: S/ 850.00 incluido IGV — pago único, sin recurrencias.
-   No incluye hosting ni dominio (se instala en el hosting del cliente).
+   Para este proyecto no se considera hosting ni dominio en la tarifa base; a pedido del cliente se cotiza aparte.
    ========================================================================== */
 
 const TOTAL = 850;
@@ -43,6 +43,29 @@ const stackPropuesto = [
   ['Imagenes', 'Mediateca de WordPress con texto alternativo', 'Seleccion por modal visual; SEO de imagenes cumplido.'],
 ];
 
+const analisisConsola = [
+  ['Perf', '62', 'Carga reportada de 12068 ms y LCP 8.9 s.', 'Front estatico, eliminacion de recursos pesados y optimizacion de imagenes.'],
+  ['SEO', '100', 'Meta description muy corta.', 'Redaccion SEO completa, schema Hotel y snippets claros.'],
+  ['A11y', '93', '5/5 imagenes sin alt.', 'Alt text en toda la mediateca y piezas editoriales.'],
+  ['BP', '69', '12 errores de consola y 12 requests fallidos.', 'Depuracion de mixed content, scripts y assets rotos.'],
+  ['LCP', '8.9 s', 'Demasiado alto para conversion hotelera.', 'Hero estatico rapido y contenido precargado.'],
+  ['CLS', '0', 'Sin saltos visuales relevantes.', 'Se conserva la estabilidad visual actual.'],
+  ['TBT', '20 ms', 'Bloqueo de interaccion bajo.', 'Se mantiene y mejora con menos JS.'],
+  ['Problema clave', 'Mixed Content', 'Fuentes bloqueadas por http:// en una pagina https://.', 'Servir todo por HTTPS y limpiar fuentes inseguros.'],
+  ['Impresion general', 'Lento y friccionado', 'La pagina carga cerca de 12 s y rompe funciones.', 'Reducir CSS/JS no usado y optimizar la entrega.'],
+];
+
+const comparativaPropuesta = [
+  ['Carga inicial', 'Aproximadamente 12 s y con errores', 'Carga en menos de 3 s con front estatico'],
+  ['Herramientas', 'Varias piezas separadas y licencias dispersas', 'Un solo software propio del hotel'],
+  ['Mensualidades', 'Dependencia de herramientas externas', 'Sin mensualidades por herramientas ajenas'],
+  ['Control operativo', 'Datos repartidos en plugins y paneles sueltos', 'CRM unico con recepcion, almacen y restaurante'],
+  ['Personalizacion', 'Ajustes limitados por el constructor', 'Flujo adaptado a como maneja el hotel su negocio'],
+  ['Habitaciones', 'Listado simple', 'Mapa vivo con ficha, reservas, inventario y mantenimiento'],
+  ['Almacen', 'Tabla generica', 'Cards por categoria con filtros y trazabilidad'],
+  ['Restaurante', 'Carta aislada', 'Pedidos, consumos y cargos a la reserva'],
+];
+
 const modulosCRM = [
   ['Dashboard', 'KPIs en vivo: ingresos, egresos, utilidad, IGV, ocupacion, ADR, RevPAR, WhatsApp; graficos de 6 meses.'],
   ['Recepcion', 'Llegadas y salidas del dia, reservas recientes con estado y pago.'],
@@ -50,6 +73,7 @@ const modulosCRM = [
   ['Limpieza', 'Estado por habitacion (limpio, sucio, en limpieza, ocupado, mantenimiento) y asignacion de personal.'],
   ['Personal y turnos', 'Equipo con roles y sueldos; turnos manana/tarde/noche por dia.'],
   ['Almacen', 'Inventario de hotel, restaurante y catering; entradas/salidas; alertas de stock minimo.'],
+  ['Restaurante', 'Pedidos a habitaciones, recetas, consumos por SKU y cargos directos a la reserva.'],
   ['Finanzas', 'Ingresos, egresos, utilidad e IGV estimado calculados solos desde reservas, compras y planilla.'],
   ['Mensajes', 'WhatsApp + chat web en cards; al abrir una conversacion se muestra la ficha del lead con historial, respuesta manual, archivos y links de pago.'],
   ['Chatbot', 'Personalizable desde el panel (nombre, color, saludo) y entrenable con conocimiento propio; responde con datos REALES: tarifas, disponibilidad, carta y horarios. Sin APIs de IA (S/0 mensual) y blindado: sanitizacion, limites y sin LLM que manipular.'],
@@ -112,7 +136,7 @@ const presupuesto = [
 const opcionales = [
   ['Pasarela de pago en vivo (cobro online real)', 'Cotizacion segun pasarela elegida'],
   ['Channel manager (Booking, Expedia)', 'Cotizacion segun proveedor'],
-  ['Mantenimiento mensual continuo posterior a la garantia', 'Desde S/ 150.00 mensual'],
+  ['Mantenimiento mensual continuo posterior a la garantia', 'Desde S/ 120.00 mensual (puede incluir cambios y mejoras segun alcance y costo)'],
   ['Funcionalidades adicionales a pedido', 'Conversable segun alcance'],
 ];
 
@@ -204,6 +228,16 @@ export default function PropuestaPage() {
             y el stock, la planilla se agrega sola y los KPIs se calculan en vivo — sin copiar informacion de un cuadro a otro y
             sin depender de inteligencia artificial. La demo esta operativa en <strong>casagrande.bcode.work</strong> con usuario de prueba restringido.
           </p>
+          <p className="text-slate-600 leading-relaxed text-sm">
+            La idea es reunir en un solo software propio todas las herramientas digitales que hoy usa por separado el hotel:
+            web, CRM, reservas, almacen, restaurante, WhatsApp y reportes. No se pagan mensualidades por herramientas ajenas;
+            solo el hosting y el dominio, contratados por el cliente. A partir de como maneja hoy su negocio, levantamos lo que
+            le falta y lo ajustamos a sus necesidades reales, con todo personalizado para su operacion.
+          </p>
+          <p className="text-slate-600 leading-relaxed text-sm">
+            Para construir esta demo usamos imagenes y datos publicos del hotel. Si el cliente decide no continuar con nuestros
+            servicios, eliminaremos esos datos de nuestros servidores de trabajo cuando nos lo confirme.
+          </p>
         </Sec>
 
         <Sec n="2" title="Alcance general del servicio">
@@ -239,6 +273,8 @@ export default function PropuestaPage() {
           </p>
           <h3 className="font-semibold text-slate-950 mb-2 text-sm">3.3 Problemas identificados y accion propuesta</h3>
           <Tabla head={['Area', 'Problema observado', 'Accion propuesta']} rows={problemas} />
+          <h3 className="font-semibold text-slate-950 mt-6 mb-2 text-sm">3.4 Analisis de consola y rendimiento</h3>
+          <Tabla head={['Metrica', 'Actual', 'Hallazgo', 'Respuesta propuesta']} rows={analisisConsola} />
         </Sec>
 
         <Sec n="4" title="Propuesta tecnica">
@@ -258,7 +294,9 @@ export default function PropuestaPage() {
           </p>
           <h3 className="font-semibold text-slate-950 mb-2 text-sm">4.4 Modulos del CRM hotelero</h3>
           <div className="mb-2"><Tabla head={['Modulo', 'Funcion']} rows={modulosCRM} /></div>
-          <p className="text-xs text-slate-500">Referencia funcional: sistemas PMS hoteleros (front desk, housekeeping, inventario, reportes) implementados a la medida, sin licencias mensuales de terceros.</p>
+          <p className="text-xs text-slate-500">Referencia funcional: sistemas PMS hoteleros (front desk, housekeeping, inventario, restaurante y reportes) implementados a la medida, sin licencias mensuales de terceros.</p>
+          <h3 className="font-semibold text-slate-950 mt-6 mb-2 text-sm">4.5 Comparativa directa: hoy vs propuesta</h3>
+          <Tabla head={['Area', 'Sitio actual', 'Propuesta BlairCode']} rows={comparativaPropuesta} />
         </Sec>
 
         <Sec n="5" title="Arquitectura de informacion propuesta">
@@ -292,9 +330,9 @@ export default function PropuestaPage() {
           </div>
         </Sec>
 
-        <Sec n="8" title="Alojamiento web y dominio (no incluidos)">
+        <Sec n="8" title="Alojamiento web y dominio (cotizable)">
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-sm text-amber-900/90 space-y-2">
-            <p><strong>BlairCode NO vende hosting ni dominio: esta propuesta no los incluye</strong>, y por eso no genera ningun pago recurrente hacia BlairCode. El hotel contrata su hosting y dominio directamente (o usa los que ya tiene) y mantiene el control total.</p>
+            <p><strong>Para este proyecto no esta considerado hosting ni dominio en la tarifa base</strong>, pero a peticion del cliente lo podemos cotizar aparte. El hotel contrata su hosting y dominio directamente (o usa los que ya tiene) y mantiene el control total.</p>
             <p><strong>Incluido en el precio:</strong> asesoria para elegir el plan adecuado, instalacion completa y puesta en produccion en ese hosting.</p>
             <p><strong>Requisitos minimos del hosting:</strong> PHP 8.2+, MySQL/MariaDB, SSL incluido (los planes compartidos estandar en Peru los cumplen).</p>
             <p><strong>Nota critica:</strong> antes de cualquier cambio de DNS validamos los registros MX/SPF/DKIM para que el correo corporativo del hotel no sufra ninguna interrupcion.</p>
@@ -333,7 +371,7 @@ export default function PropuestaPage() {
           <h3 className="font-semibold text-slate-950 mb-2 text-sm">11.2 WhatsApp con YCloud — atencion sin costo</h3>
           <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 text-sm text-emerald-900/90 mb-5 space-y-2">
             <p>Ofrecemos la <strong>configuracion gratuita</strong> de la linea de WhatsApp del hotel con YCloud (API oficial de WhatsApp Business) y su uso para <strong>responder manualmente desde el CRM</strong> los mensajes que llegan.</p>
-            <p>Responder dentro de la <strong>ventana de servicio de WhatsApp</strong> (que se renueva con cada mensaje del cliente) <strong>no tiene costo por mensaje</strong>. Fuera de esa ventana, WhatsApp exige plantillas pagadas — el CRM lo indica en cada conversacion para que el equipo siempre sepa cuando responder gratis.</p>
+            <p>Responder dentro de la <strong>ventana de servicio de WhatsApp</strong> (que se renueva con cada mensaje del cliente y puede cambiar segun las normativas de Meta/Facebook/WhatsApp) <strong>no tiene costo por mensaje</strong>. Fuera de esa ventana, WhatsApp exige plantillas pagadas — el CRM lo indica en cada conversacion para que el equipo siempre sepa cuando responder gratis.</p>
             <p>El bot de respuesta automatica por reglas (sin IA, sin costos de terceros) atiende consultas frecuentes de todos los servicios: reservas, restaurante, catering y eventos.</p>
           </div>
 
@@ -363,7 +401,8 @@ export default function PropuestaPage() {
           <p className="text-sm text-slate-600 mb-8">
             BlairCode AI · B&D Co S.A.C. declara que ejecutara el servicio conforme a lo descrito en esta propuesta,
             mantendra confidencialidad sobre la informacion del hotel, no insertara publicidad ni codigo malicioso,
-            utilizara recursos con licencias validas y brindara soporte tecnico durante el periodo de garantia ofrecido.
+            utilizara recursos con licencias validas y, si el hotel nos da la oportunidad de mejorar su presencia digital,
+            implementara la solucion comprometida para cumplir con ese objetivo de forma personalizada y verificable.
           </p>
           <p className="text-sm text-slate-500 mb-10">Arequipa, 04 de julio del 2026</p>
 

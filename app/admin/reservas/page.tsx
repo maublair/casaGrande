@@ -27,7 +27,7 @@ export default function ReservasAdmin() {
     setLoading(true);
     const { data } = await supabase
       .from('reservations')
-      .select('*, customers(first_name, last_name, email, phone), rooms(room_number, room_types(name))')
+      .select('*, customers(first_name, last_name, email, phone, document_type, document_number, nationality), rooms(room_number, room_types(name))')
       .order('created_at', { ascending: false });
     setReservations((data || []) as Reservation[]);
     setLoading(false);

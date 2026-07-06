@@ -69,7 +69,7 @@ export default function HistorySection() {
                 El Hotel Boutique Casagrande nacio del sueno de ofrecer a Lima una experiencia de alojamiento distinta: intima, elegante y profundamente peruana. Desde 2003, nuestra casona historica de San Isidro ha sido el hogar transitorio de miles de viajeros que buscaban algo mas que una habitacion.
               </p>
               <p>
-                Cada rincon del hotel cuenta una historia. Los jardines centenarios, la arquitectura de estilo europeo y la calidez del servicio personalizado crean una atmosfera unica que nuestros huespedes describen como "sentirse en casa, pero en un sueno".
+                Cada rincon del hotel cuenta una historia. Los jardines centenarios, la arquitectura de estilo europeo y la calidez del servicio personalizado crean una atmosfera unica que nuestros huespedes describen como &quot;sentirse en casa, pero en un sueno&quot;.
               </p>
               <p>
                 Hoy, con 13 habitaciones cuidadosamente disenadas, un restaurante boutique y un equipo de profesionales apasionados, seguimos comprometidos con hacer de cada estancia un recuerdo que dure para siempre.

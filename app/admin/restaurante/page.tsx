@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Plus, UtensilsCrossed, Eye, EyeOff, Star, StarOff, X, Edit2, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, UtensilsCrossed, Eye, EyeOff, Star, StarOff, X, Edit2, Trash2, ReceiptText, ArrowRightLeft, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface MenuCategory { id: string; name: string; display_order: number; icon: string; is_active: boolean; }
@@ -18,6 +18,45 @@ const emptyForm = {
   tags: '', prep_time_minutes: '15', display_order: '0',
 };
 
+const demoRecipeCharges = [
+  {
+    id: 'room-205', room: '205', guest: 'Ana Maria Quispe', reservation: 'CG-205-01', dish: 'Lomo saltado', amount: 58,
+    status: 'Pendiente', ingredients: [
+      'Papa amarilla SKU PAPA-001 · 2 kg',
+      'Salsa de tomate SKU SALSA-050 · 1 lata de 50 gr',
+      'Carne SKU CARNE-120 · 300 gr',
+    ],
+  },
+  {
+    id: 'room-312', room: '312', guest: 'Carlos Soto', reservation: 'CG-312-02', dish: 'Desayuno completo', amount: 32,
+    status: 'Cargado', ingredients: [
+      'Huevos SKU HUEVO-010 · 2 u',
+      'Pan SKU PAN-020 · 4 u',
+      'Jugo SKU JUGO-250 · 2 vasos',
+    ],
+  },
+  {
+    id: 'room-101', room: '101', guest: 'Valeria Bustamante', reservation: 'CG-101-03', dish: 'Pollo a la plancha', amount: 46,
+    status: 'Pendiente', ingredients: [
+      'Pechuga SKU POLLO-180 · 220 gr',
+      'Papa amarilla SKU PAPA-001 · 1 kg',
+      'Ensalada SKU MIX-01 · 1 porcion',
+    ],
+  },
+];
+
+const recipeReference = [
+  {
+    dish: 'Lomo saltado', destination: 'Restaurante', note: 'El consumo sale del almacen y luego se suma a la cuenta del huesped encargado del pago.',
+  },
+  {
+    dish: 'Papa amarilla con salsa', destination: 'Room service', note: 'Se registra la salida exacta por receta, no por cuarto inventado.',
+  },
+  {
+    dish: 'Menu ejecutivo', destination: 'Restaurante', note: 'El cierre consolida consumos y deja el monto listo para cargar a la reserva.',
+  },
+];
+
 export default function RestauranteAdminPage() {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -26,6 +65,8 @@ export default function RestauranteAdminPage() {
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [roomCharges, setRoomCharges] = useState(demoRecipeCharges);
+  const [chargeForm, setChargeForm] = useState({ room: '205', guest: 'Ana Maria Quispe', reservation: 'CG-205-01', dish: 'Lomo saltado', amount: '58' });
 
   async function load() {
     setLoading(true);
@@ -102,43 +143,73 @@ export default function RestauranteAdminPage() {
     setItems(prev => prev.filter(i => i.id !== id));
   }
 
-  const filtered = activeTab === 'all' ? items : items.filter(i => i.category_id === activeTab);
+  function addCharge() {
+    setRoomCharges(prev => ([
+      {
+        id: `room-${Date.now()}`,
+        room: chargeForm.room,
+        guest: chargeForm.guest,
+        reservation: chargeForm.reservation,
+        dish: chargeForm.dish,
+        amount: Number(chargeForm.amount) || 0,
+        status: 'Pendiente',
+        ingredients: ['Se cargara al folio de la reserva con consumo exacto por receta.'],
+      },
+      ...prev,
+    ]));
+    setChargeForm({ room: '205', guest: 'Ana Maria Quispe', reservation: 'CG-205-01', dish: 'Lomo saltado', amount: '58' });
+  }
+
+  const filtered = useMemo(() => activeTab === 'all' ? items : items.filter(i => i.category_id === activeTab), [activeTab, items]);
+  const availableCount = items.filter(i => i.is_available).length;
+  const featuredCount = items.filter(i => i.is_featured).length;
+  const pendingCharges = roomCharges.filter(c => c.status === 'Pendiente').length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Gestion del Menu</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{items.length} platos — {items.filter(i => i.is_available).length} disponibles</p>
+          <p className="text-sm text-gray-500 mt-0.5">Menu, pedidos a habitacion, consumos por receta y cargos a la reserva dentro del CRM.</p>
         </div>
-        <button onClick={openNew}
-          className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
+        <button onClick={openNew} className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
           <Plus className="w-4 h-4" /> Nuevo Plato
         </button>
       </div>
 
-      {/* Category tabs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Platos totales', value: items.length, icon: UtensilsCrossed, cls: 'bg-navy-50 text-navy' },
+          { label: 'Disponibles', value: availableCount, icon: CheckCircle2, cls: 'bg-green-50 text-green-600' },
+          { label: 'Destacados', value: featuredCount, icon: Star, cls: 'bg-gold-50 text-gold-700' },
+          { label: 'Cargos pendientes', value: pendingCharges, icon: ArrowRightLeft, cls: 'bg-amber-50 text-amber-600' },
+        ].map(card => (
+          <div key={card.label} className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.cls}`}>
+              <card.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+              <p className="text-sm text-gray-500">{card.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        <button onClick={() => setActiveTab('all')}
-          className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-            activeTab === 'all' ? 'bg-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}>
+        <button onClick={() => setActiveTab('all')} className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${activeTab === 'all' ? 'bg-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
           Todos ({items.length})
         </button>
         {categories.map(cat => {
           const count = items.filter(i => i.category_id === cat.id).length;
           return (
-            <button key={cat.id} onClick={() => setActiveTab(cat.id)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                activeTab === cat.id ? 'bg-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}>
+            <button key={cat.id} onClick={() => setActiveTab(cat.id)} className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${activeTab === cat.id ? 'bg-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
               {cat.name} ({count})
             </button>
           );
         })}
       </div>
 
-      {/* Items table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -176,31 +247,23 @@ export default function RestauranteAdminPage() {
                     <td className="px-5 py-3.5 font-bold text-navy">S/ {item.price.toFixed(2)}</td>
                     <td className="px-5 py-3.5 text-gray-500 text-xs">{item.prep_time_minutes} min</td>
                     <td className="px-5 py-3.5">
-                      <button onClick={() => toggleAvailable(item)}
-                        className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
-                          item.is_available ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                        }`}>
+                      <button onClick={() => toggleAvailable(item)} className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${item.is_available ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                         {item.is_available ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                         {item.is_available ? 'Si' : 'No'}
                       </button>
                     </td>
                     <td className="px-5 py-3.5">
-                      <button onClick={() => toggleFeatured(item)}
-                        className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
-                          item.is_featured ? 'bg-gold-100 text-gold-700 hover:bg-gold-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                        }`}>
+                      <button onClick={() => toggleFeatured(item)} className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${item.is_featured ? 'bg-gold-100 text-gold-700 hover:bg-gold-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                         {item.is_featured ? <Star className="w-3 h-3 fill-current" /> : <StarOff className="w-3 h-3" />}
                         {item.is_featured ? 'Si' : 'No'}
                       </button>
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1.5">
-                        <button onClick={() => openEdit(item)}
-                          className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy rounded-lg transition-colors">
+                        <button onClick={() => openEdit(item)} className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy rounded-lg transition-colors">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => deleteItem(item.id)}
-                          className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors">
+                        <button onClick={() => deleteItem(item.id)} className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -213,7 +276,94 @@ export default function RestauranteAdminPage() {
         </div>
       </div>
 
-      {/* Form modal */}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px] items-start">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">CRM restaurante</p>
+              <h2 className="text-lg font-semibold text-gray-900">Consumos y cargos a reserva</h2>
+            </div>
+            <ReceiptText className="w-5 h-5 text-navy" />
+          </div>
+          <div className="space-y-3">
+            {roomCharges.map(charge => (
+              <div key={charge.id} className="rounded-2xl border border-gray-100 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div>
+                    <p className="font-semibold text-gray-900">{charge.dish}</p>
+                    <p className="text-xs text-gray-500">Hab. {charge.room} · {charge.guest} · {charge.reservation}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full ${charge.status === 'Cargado' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{charge.status}</span>
+                    <span className="font-bold text-navy">S/ {charge.amount.toFixed(2)}</span>
+                  </div>
+                </div>
+                <ul className="space-y-1 text-xs text-gray-600 mb-3">
+                  {charge.ingredients.map((ingredient, index) => <li key={`${charge.id}-${index}`}>• {ingredient}</li>)}
+                </ul>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Destino: restaurante / room service</span>
+                  <button className="text-navy font-semibold hover:underline" onClick={() => setChargeForm({ room: charge.room, guest: charge.guest, reservation: charge.reservation, dish: charge.dish, amount: String(charge.amount) })}>
+                    Usar como base
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Nueva carga</p>
+              <h2 className="text-lg font-semibold text-gray-900">Agregar pedido a la reserva</h2>
+            </div>
+            <Plus className="w-5 h-5 text-navy" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Habitacion</label>
+              <input value={chargeForm.room} onChange={e => setChargeForm(f => ({ ...f, room: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-navy/30" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Huesped</label>
+              <input value={chargeForm.guest} onChange={e => setChargeForm(f => ({ ...f, guest: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-navy/30" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Reserva</label>
+              <input value={chargeForm.reservation} onChange={e => setChargeForm(f => ({ ...f, reservation: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-navy/30" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Plato</label>
+              <input value={chargeForm.dish} onChange={e => setChargeForm(f => ({ ...f, dish: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-navy/30" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Monto (S/)</label>
+              <input type="number" value={chargeForm.amount} onChange={e => setChargeForm(f => ({ ...f, amount: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-navy/30" />
+            </div>
+          </div>
+          <button onClick={addCharge} className="w-full bg-navy hover:bg-navy-700 text-white font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2">
+            <Plus className="w-4 h-4" /> Cargar a la reserva
+          </button>
+
+          <div className="rounded-2xl border border-gray-100 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-gray-800 mb-2">Ejemplos de consumo por receta</p>
+            <div className="space-y-3">
+              {recipeReference.map(recipe => (
+                <div key={recipe.dish} className="rounded-xl bg-white border border-gray-100 p-3">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="font-medium text-gray-900">{recipe.dish}</p>
+                    <ArrowRightLeft className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <p className="text-xs text-gray-500">Destino: {recipe.destination}</p>
+                  <p className="text-xs text-gray-500 mt-1">{recipe.note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-4">
