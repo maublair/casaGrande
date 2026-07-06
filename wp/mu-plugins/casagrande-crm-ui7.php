@@ -149,9 +149,7 @@ function cg7_render_guia() {
     echo '<div style="background:#fff;border:1px solid #e3e6ea;border-radius:12px;padding:14px 16px"><b style="color:#0c2b3d;display:block;margin-bottom:6px">' . $t . '</b><span style="font-size:13px;color:#50575e">' . $d . '</span></div>';
   echo '</div></div>';
 }
-add_action('admin_menu', function () {
-  add_submenu_page('cg-crm', 'Guia rapida', '📖 Guia rapida', 'manage_hotel', 'cg-crm-guia', 'cg7_render_guia');
-}, 12);
+/* Menu: registrado centralmente en casagrande-crm-ui.php (categorias con desplegable) */
 
 /* ================= BACKUP completo (JSON de todas las tablas cg_*) ================= */
 add_action('admin_post_cg7_backup', function () {

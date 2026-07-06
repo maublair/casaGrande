@@ -65,26 +65,29 @@ function cg_crm2_render_cuartos() {
     <?php foreach ($floors as $f) : ?>
       <a href="<?php echo esc_url(add_query_arg(['page'=>'cg-crm-cuartos','piso'=>$f], admin_url('admin.php'))); ?>" style="padding:6px 14px;border-radius:8px;text-decoration:none;font-weight:700;<?php echo $f===$cur?'background:#0c2b3d;color:#fff':'background:#eef0f2;color:#50575e'; ?>">Piso <?php echo $f; ?></a>
     <?php endforeach; ?></div>
-    <table class="widefat striped" style="max-width:1100px">
-      <thead><tr><th>N°</th><th>Tipo</th><th>Adultos</th><th>Niños</th><th>Limpieza</th><th>Activa</th><th></th></tr></thead><tbody>
+    <table class="widefat striped" style="max-width:1280px">
+      <thead><tr><th>N°</th><th>Tipo</th><th>Adultos</th><th>Niños</th><th>Caracteristicas</th><th>Estado real (ocupacion + limpieza)</th><th>Activa</th><th></th></tr></thead><tbody>
       <?php foreach (cg_rack_rows($cur) as $r) : ?>
         <tr><form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
           <?php wp_nonce_field('cg2_room','_n'); ?><input type="hidden" name="action" value="cg2_room"><input type="hidden" name="id" value="<?php echo (int) $r->id; ?>"><input type="hidden" name="piso" value="<?php echo $cur; ?>">
-          <td><strong style="font-size:15px"><?php echo (int) $r->number; ?></strong></td>
+          <td><strong style="font-size:16px;color:#0c2b3d">Hab. <?php echo (int) $r->number; ?></strong></td>
           <td><select name="type_id"><?php foreach ($types as $t) echo '<option value="'.$t->ID.'"'.selected($r->type_id,$t->ID,false).'>'.esc_html($t->post_title).'</option>'; ?></select></td>
           <td><input type="number" name="cap_adults" value="<?php echo (int) $r->cap_adults; ?>" min="1" max="6" style="width:58px"></td>
           <td><input type="number" name="cap_children" value="<?php echo (int) $r->cap_children; ?>" min="0" max="4" style="width:58px"></td>
-          <td><?php echo cg2_badge(cg2_hk_status_of($r->number)); ?></td>
+          <td><input name="features" value="<?php echo esc_attr($r->features ?? ''); ?>" placeholder="Bano privado, desayuno, balcon..." style="width:180px"></td>
+          <td><?php echo cg_room_status_badge($r->number); ?></td>
           <td><label><input type="checkbox" name="active" value="1" <?php checked($r->active,1); ?>> si</label></td>
           <td><button class="button button-small button-primary">Guardar</button></td>
         </form></tr>
-      <?php endforeach; ?></tbody></table></div>
+      <?php endforeach; ?></tbody></table>
+    <p style="font-size:11px;color:#64748b;margin-top:8px">Cada habitacion se identifica por su <b>numero</b> (el huesped reserva "Hab. 212", no "una doble"). El tipo, capacidad y caracteristicas son atributos de esa habitacion fisica. El estado se calcula solo: ocupacion real (segun reservas activas hoy) x limpieza (gestionada en la seccion Limpieza).</p></div>
   <?php
 }
 add_action('admin_post_cg2_room', function () {
   check_admin_referer('cg2_room','_n'); cg2_can(); global $wpdb;
   $wpdb->update(cg_tbl('rooms'), ['type_id'=>(int)$_POST['type_id'],'cap_adults'=>max(1,(int)$_POST['cap_adults']),
-    'cap_children'=>max(0,(int)$_POST['cap_children']),'active'=>isset($_POST['active'])?1:0], ['id'=>(int)$_POST['id']]);
+    'cap_children'=>max(0,(int)$_POST['cap_children']),'features'=>sanitize_text_field($_POST['features'] ?? ''),
+    'active'=>isset($_POST['active'])?1:0], ['id'=>(int)$_POST['id']]);
   cg2_redir('cg-crm-cuartos', ['piso'=>(int)$_POST['piso']]);
 });
 
@@ -151,7 +154,7 @@ function cg_crm2_render_reservas() {
       <tr style="<?php echo $inhouse ? 'background:#eaf6ff' : ''; ?>">
         <td><strong><?php echo esc_html(get_post_meta($id,'cg_code',true) ?: $p->post_title); ?></strong><br><span style="font-size:11px;color:#64748b"><?php echo esc_html(get_post_meta($id,'cg_name',true) ?: trim(explode('-',$p->post_title)[1] ?? '')); ?></span></td>
         <td style="font-size:12px"><?php echo esc_html(get_post_meta($id,'cg_room',true) ?: '—'); ?></td>
-        <td><?php echo $num ? '<strong style="font-size:15px">' . esc_html($num) . '</strong>' : '<span style="color:#94a3b8">—</span>'; ?></td>
+        <td><?php echo $num ? '<strong style="font-size:15px">Hab. ' . esc_html($num) . '</strong><br>' . cg_room_status_badge($num) : '<span style="color:#94a3b8">— sin asignar</span>'; ?></td>
         <td style="font-size:12px"><?php echo esc_html(get_post_meta($id,'cg_check_in',true) . ' → ' . get_post_meta($id,'cg_check_out',true)); ?></td>
         <td>S/ <?php echo number_format((float) get_post_meta($id,'cg_total',true), 0); ?></td>
         <td><?php echo $folio > 0 ? '<strong style="color:#a87214">S/ ' . number_format($folio, 2) . '</strong>' : '—'; ?></td>

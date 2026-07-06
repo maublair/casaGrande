@@ -53,7 +53,7 @@ function cg_crm3_fichas() {
       <h2 style="margin:0"><?php echo esc_html($s->name); ?> <span style="font-size:13px;color:#64748b">(<?php echo esc_html($s->role); ?>)</span></h2>
       <span><?php echo $s->active ? '<b style="color:#1a7f37;font-size:15px">● DE ALTA</b>' : '<b style="color:#c0392b;font-size:15px">● DE BAJA</b>'; ?></span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:14px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:14px">
       <div>
         <h4 style="margin:0 0 6px;color:#0c2b3d">Datos y contrato</h4>
         <table class="widefat" style="font-size:12px">
@@ -64,6 +64,7 @@ function cg_crm3_fichas() {
           <tr><td><b>Contrato</b></td><td><?php echo $s->contract_att ? '<a target="_blank" href="' . esc_url(wp_get_attachment_url($s->contract_att)) . '">📄 Ver PDF</a>' : 'sin archivo'; ?></td></tr>
           <tr><td><b>Horario</b></td><td><?php echo esc_html($s->schedule ?: '—'); ?></td></tr>
           <tr><td><b>Pension</b></td><td><?php echo esc_html(strtoupper($s->pension_type ?: 'afp') . ($s->afp_name ? ' — ' . $s->afp_name : '')); ?></td></tr>
+          <tr><td><b>Regimen laboral</b></td><td><?php echo esc_html(cg_regimen_label($s->regimen ?: 'general')); ?></td></tr>
         </table>
         <h4 style="margin:12px 0 6px;color:#0c2b3d">Obligaciones del puesto</h4>
         <div style="background:#f6f7f9;border-radius:8px;padding:10px;font-size:12px;white-space:pre-line"><?php echo esc_html($s->duties ?: 'Sin descripcion registrada.'); ?></div>
@@ -71,17 +72,20 @@ function cg_crm3_fichas() {
       </div>
       <div>
         <h4 style="margin:0 0 6px;color:#0c2b3d">Hijos menores de 18 (asignacion familiar)</h4>
-        <?php if ($children) : ?><table class="widefat striped" style="font-size:12px"><tr><th>Nombre</th><th>Nacimiento</th><th></th></tr>
+        <?php if ($children) : ?><table class="widefat striped" style="font-size:12px"><tr><th>Nombre</th><th>DNI</th><th>Nacimiento</th><th></th></tr>
           <?php foreach ($children as $c) : $u18 = strtotime($c->birthdate) > strtotime('-18 years'); ?>
-            <tr><td><?php echo esc_html($c->name); ?></td><td><?php echo esc_html($c->birthdate); echo $u18 ? ' <b style="color:#1a7f37">✔<18</b>' : ' <span style="color:#94a3b8">18+</span>'; ?></td>
+            <tr><td><?php echo esc_html($c->name); ?></td><td><?php echo esc_html($c->dni ?: '—'); ?></td><td><?php echo esc_html($c->birthdate); echo $u18 ? ' <b style="color:#1a7f37">✔<18</b>' : ' <span style="color:#94a3b8">18+</span>'; ?></td>
               <td><a style="color:#c0392b" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg3_childdel&id=' . $c->id . '&staff=' . $sel), 'cg3_childdel_' . $c->id)); ?>">✕</a></td></tr>
           <?php endforeach; ?></table>
         <?php else : ?><p style="font-size:12px;color:#64748b">Sin hijos registrados → sin asignacion familiar.</p><?php endif; ?>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:6px;margin-top:8px">
           <?php wp_nonce_field('cg3_child', '_n'); ?><input type="hidden" name="action" value="cg3_child"><input type="hidden" name="staff" value="<?php echo $sel; ?>">
-          <input name="name" placeholder="Nombre del hijo" required style="flex:1"><input type="date" name="birthdate" required>
+          <input name="name" placeholder="Nombre del hijo" required style="flex:1.4">
+          <input name="dni" placeholder="DNI (8 digitos)" required pattern="[0-9]{8}" maxlength="8" title="El DNI debe tener 8 digitos" style="flex:1">
+          <input type="date" name="birthdate" required>
           <button class="button button-small">Agregar</button>
         </form>
+        <p style="font-size:11px;color:#64748b;margin-top:4px">El DNI del hijo es obligatorio para la asignacion familiar (sin DNI valido no se registra).</p>
         <h4 style="margin:14px 0 6px;color:#0c2b3d">Asistencia — <?php echo esc_html($month); ?> <span style="color:#c0392b">(<?php echo $faltas; ?> faltas)</span></h4>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:6px;margin-bottom:8px">
           <?php wp_nonce_field('cg3_att', '_n'); ?><input type="hidden" name="action" value="cg3_att"><input type="hidden" name="staff" value="<?php echo $sel; ?>">
@@ -116,6 +120,35 @@ function cg_crm3_fichas() {
           <?php endforeach; if (!$slips) echo '<tr><td colspan="4" style="color:#64748b">Sin boletas — generalas en Planilla.</td></tr>'; ?>
         </table></div>
       </div>
+      <div>
+        <?php $regimen = $s->regimen ?: 'general'; $cts = cg_cts_accrued($s); $grats = $wpdb->get_results($wpdb->prepare("SELECT * FROM " . cg_tbl('gratificaciones') . " WHERE staff_id=%d ORDER BY period DESC", $sel)); ?>
+        <h4 style="margin:0 0 6px;color:#0c2b3d">Beneficios sociales (<?php echo esc_html(cg_regimen_label($regimen)); ?>)</h4>
+        <?php if ($regimen === 'micro') : ?>
+          <p style="font-size:12px;color:#64748b;background:#f6f7f9;border-radius:8px;padding:10px">Microempresa (REMYPE): por ley <b>no corresponde gratificacion ni CTS</b>. Solo sueldo + EsSalud 9%.</p>
+        <?php else : ?>
+          <table class="widefat" style="font-size:12px;margin-bottom:10px">
+            <tr style="background:#fdf8ec"><td><b>CTS acumulada (no se paga en mano)</b></td><td style="text-align:right"><b>S/ <?php echo number_format($cts['amount'], 2); ?></b></td></tr>
+            <tr><td>Proximo deposito a su cuenta CTS</td><td style="text-align:right"><?php echo esc_html($cts['period']); ?> <?php echo $cts['deposited'] ? '<b style="color:#1a7f37">✔ depositado</b>' : ''; ?></td></tr>
+          </table>
+          <?php if (!$cts['deposited'] && $cts['amount'] > 0) : ?>
+            <a class="button button-small" style="margin-bottom:12px" onclick="return confirm('¿Registrar el deposito de CTS de <?php echo esc_js($cts['period']); ?> por S/ <?php echo esc_js(number_format($cts['amount'], 2)); ?> en la cuenta del trabajador?')"
+               href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg9_ctsdeposit&staff=' . $sel), 'cg9_cts_' . $sel)); ?>">🏦 Registrar deposito CTS</a>
+          <?php endif; ?>
+          <h4 style="margin:10px 0 6px;color:#0c2b3d">Gratificacion (Julio / Diciembre)</h4>
+          <table class="widefat striped" style="font-size:12px">
+            <tr><th>Periodo</th><th>Meses</th><th>Neto</th><th></th></tr>
+            <?php foreach ($grats as $g) : ?>
+              <tr><td><?php echo esc_html($g->period); ?></td><td><?php echo (int) $g->months_worked; ?>/6</td>
+                <td>S/ <?php echo number_format((float) $g->net, 2); ?></td>
+                <td><?php if ($g->paid) : ?><b style="color:#1a7f37">Pagada</b>
+                  <a class="button button-small" target="_blank" href="<?php echo esc_url(add_query_arg(['page' => 'cg-crm-boleta-grat', 'id' => $g->id], admin_url('admin.php'))); ?>">🧾</a>
+                <?php else : ?>
+                  <a class="button button-small" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg9_gratpay&id=' . $g->id), 'cg9_gratpay_' . $g->id)); ?>">Pagar</a>
+                <?php endif; ?></td></tr>
+            <?php endforeach; if (!$grats) echo '<tr><td colspan="4" style="color:#64748b">Sin gratificaciones generadas — usa el boton de Julio/Diciembre en Planilla.</td></tr>'; ?>
+          </table>
+        <?php endif; ?>
+      </div>
     </div>
 
     <?php if (isset($_GET['editar'])) : ?>
@@ -134,6 +167,8 @@ function cg_crm3_fichas() {
           $F('Fin contrato', '<input type="date" name="contract_end" value="' . esc_attr($s->contract_end) . '">');
           $pp = '<select name="pension_type"><option value="afp"' . selected($s->pension_type, 'afp', false) . '>AFP</option><option value="onp"' . selected($s->pension_type, 'onp', false) . '>ONP</option></select>'; $F('Sistema de pension', $pp);
           $F('AFP (nombre)', '<input name="afp_name" value="' . esc_attr($s->afp_name) . '" placeholder="Integra, Prima...">');
+          $rg = '<select name="regimen">'; foreach (cg_regimen_options() as $k => $l) $rg .= '<option value="' . $k . '"' . selected($s->regimen, $k, false) . '>' . $l . '</option>'; $rg .= '</select>';
+          $F('Regimen laboral (gratificacion/CTS)', $rg);
           $att2 = (int) $s->contract_att;
           $F('Contrato PDF', '<input type="hidden" name="contract_att" id="cg3-ct" value="' . $att2 . '"><span style="display:flex;gap:6px"><button type="button" class="button cg-pick-pdf" data-target="#cg3-ct" data-label="#cg3-ctn">📄 PDF</button><em id="cg3-ctn" style="font-size:11px;color:#64748b">' . ($att2 ? 'cargado' : 'ninguno') . '</em></span>');
           ?>
@@ -172,8 +207,16 @@ function cg_crm3_planilla() {
         <label style="font-size:12px;font-weight:600;display:flex;flex-direction:column;gap:3px">Generar boletas del mes<input type="month" name="period" value="<?php echo esc_attr($today_m); ?>"></label>
         <button class="button button-primary">Generar</button>
       </form>
+      <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:8px;align-items:flex-end;border-left:2px solid #e3e6ea;padding-left:10px">
+        <?php wp_nonce_field('cg9_gengrat', '_n'); ?><input type="hidden" name="action" value="cg9_gengrat">
+        <label style="font-size:12px;font-weight:600;display:flex;flex-direction:column;gap:3px">Gratificacion (segun regimen de cada trabajador)
+          <select name="mes"><option value="julio">🇵🇪 Julio — Fiestas Patrias</option><option value="diciembre">🎄 Diciembre — Navidad</option></select>
+        </label>
+        <button class="button button-primary">Generar gratificaciones</button>
+      </form>
       <a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg4_csv_planilla&period=' . $today_m), 'cg4_csv')); ?>">⬇ Exportar planilla CSV</a>
     </div>
+    <p style="font-size:11px;color:#64748b;margin-top:-6px">La gratificacion incluye 1 sueldo (o medio, en pequeña empresa) proporcional a los meses trabajados en el semestre + bonificacion extraordinaria 9% (Ley 29351) libre de descuentos. Microempresa no genera gratificacion ni CTS por ley. El detalle de CTS acumulada esta en la ficha de cada trabajador.</p>
     <div style="overflow-x:auto">
     <table class="widefat" style="border-collapse:collapse;min-width:760px">
       <thead><tr><th style="text-align:left;position:sticky;left:0;background:#fff">Trabajador</th>
@@ -242,6 +285,44 @@ function cg_crm3_render_boleta() {
   <?php
 }
 
+/* ---------- BOLETA de gratificacion imprimible ---------- */
+function cg_crm3_render_boleta_grat() {
+  if (!current_user_can('manage_hotel')) wp_die('Sin permiso');
+  global $wpdb;
+  $id = (int) ($_GET['id'] ?? 0);
+  $g = $wpdb->get_row($wpdb->prepare("SELECT g.*, s.name, s.doc_id, s.role, s.hire_date FROM " . cg_tbl('gratificaciones') . " g JOIN " . cg_tbl('staff') . " s ON s.id=g.staff_id WHERE g.id=%d", $id));
+  if (!$g) { echo 'Boleta no encontrada'; return; }
+  $biz = cg_crm_settings()['biz_name'];
+  $mes_label = strpos($g->period, '-julio') !== false ? 'FIESTAS PATRIAS (JULIO)' : 'NAVIDAD (DICIEMBRE)';
+  ?>
+  <style>#adminmenumain,#wpadminbar,#wpfooter{display:none!important}#wpcontent{margin-left:0!important}
+  .boleta{max-width:720px;margin:24px auto;background:#fff;border:2px solid #0c2b3d;padding:28px;font-family:Georgia,serif}
+  .boleta table{width:100%;border-collapse:collapse;font-size:13px}.boleta td,.boleta th{border:1px solid #94a3b8;padding:7px 10px}
+  .boleta h1{font-size:18px;margin:0;text-align:center}.boleta .tag{text-align:center;color:#64748b;font-size:12px;margin:4px 0 16px}
+  @media print {.no-print{display:none}}</style>
+  <div class="boleta">
+    <h1>BOLETA DE GRATIFICACION — <?php echo esc_html($mes_label); ?> <?php echo esc_html(substr($g->period, 0, 4)); ?></h1>
+    <div class="tag"><?php echo esc_html($biz); ?> · Av. Luna Pizarro 202, Vallecito, Arequipa</div>
+    <table style="margin-bottom:14px">
+      <tr><td><b>Trabajador</b></td><td><?php echo esc_html($g->name); ?></td><td><b>DNI/CE</b></td><td><?php echo esc_html($g->doc_id ?: '—'); ?></td></tr>
+      <tr><td><b>Cargo</b></td><td><?php echo esc_html($g->role); ?></td><td><b>Regimen</b></td><td><?php echo esc_html(cg_regimen_label($g->regimen)); ?></td></tr>
+      <tr><td><b>Meses computables</b></td><td><?php echo (int) $g->months_worked; ?> / 6</td><td><b>Estado</b></td><td><?php echo $g->paid ? 'PAGADA el ' . esc_html($g->paid_date) : 'PENDIENTE'; ?></td></tr>
+    </table>
+    <table>
+      <tr style="background:#eef2f7"><th colspan="2">CONCEPTO</th><th>MONTO</th></tr>
+      <tr><td colspan="2">Gratificacion proporcional (<?php echo (int) $g->months_worked; ?>/6 meses)</td><td style="text-align:right">S/ <?php echo number_format((float) $g->base_amount, 2); ?></td></tr>
+      <tr><td colspan="2">Bonificacion extraordinaria 9% (Ley 29351)</td><td style="text-align:right">S/ <?php echo number_format((float) $g->bonif_extra, 2); ?></td></tr>
+      <tr style="background:#dff5e5"><td colspan="2"><b>NETO A PAGAR (concepto inafecto, sin descuento de AFP/ONP)</b></td><td style="text-align:right;font-size:16px"><b>S/ <?php echo number_format((float) $g->net, 2); ?></b></td></tr>
+    </table>
+    <table style="margin-top:26px;border:0"><tr>
+      <td style="border:0;text-align:center;padding-top:34px"><div style="border-top:1px solid #333;width:200px;margin:0 auto">Empleador</div></td>
+      <td style="border:0;text-align:center;padding-top:34px"><div style="border-top:1px solid #333;width:200px;margin:0 auto">Trabajador</div></td>
+    </tr></table>
+    <p class="no-print" style="text-align:center;margin-top:18px"><button class="button button-primary" onclick="window.print()">🖨 Imprimir boleta</button></p>
+  </div>
+  <?php
+}
+
 /* ---------- Handlers personal v3 ---------- */
 add_action('admin_post_cg3_staff', function () {
   check_admin_referer('cg3_staff', '_n');
@@ -256,6 +337,7 @@ add_action('admin_post_cg3_staff', function () {
     'contract_end' => (sanitize_text_field($_POST['contract_end'] ?? '') ?: null),
     'pension_type' => $_POST['pension_type'] === 'onp' ? 'onp' : 'afp',
     'afp_name' => sanitize_text_field($_POST['afp_name'] ?? ''),
+    'regimen' => in_array($_POST['regimen'] ?? '', ['general', 'pequena', 'micro']) ? $_POST['regimen'] : 'general',
     'duties' => sanitize_textarea_field($_POST['duties'] ?? ''),
     'contract_att' => (int) ($_POST['contract_att'] ?? 0),
     'active' => isset($_POST['active']) ? 1 : 0,
@@ -266,7 +348,9 @@ add_action('admin_post_cg3_child', function () {
   check_admin_referer('cg3_child', '_n');
   if (!current_user_can('manage_hotel')) wp_die('Sin permiso');
   global $wpdb; $sid = (int) $_POST['staff'];
-  $wpdb->insert(cg_tbl('staff_children'), ['staff_id' => $sid, 'name' => sanitize_text_field($_POST['name']), 'birthdate' => sanitize_text_field($_POST['birthdate'])]);
+  $dni = preg_replace('/\D/', '', $_POST['dni'] ?? '');
+  if (strlen($dni) !== 8) wp_die('El DNI del hijo debe tener exactamente 8 digitos. Vuelve atras e intentalo de nuevo.', 'DNI invalido', ['back_link' => true]);
+  $wpdb->insert(cg_tbl('staff_children'), ['staff_id' => $sid, 'name' => sanitize_text_field($_POST['name']), 'dni' => $dni, 'birthdate' => sanitize_text_field($_POST['birthdate'])]);
   wp_safe_redirect(add_query_arg(['page' => 'cg-crm-personal', 'vista' => 'fichas', 'ficha' => $sid, 'done' => 1], admin_url('admin.php'))); exit;
 });
 add_action('admin_post_cg3_childdel', function () {
@@ -309,8 +393,38 @@ add_action('admin_post_cg3_pay', function () {
   wp_safe_redirect(add_query_arg(['page' => 'cg-crm-personal', 'vista' => 'planilla',
     'pm_from' => sanitize_text_field($_GET['pm_from'] ?? ''), 'pm_to' => sanitize_text_field($_GET['pm_to'] ?? ''), 'done' => 1], admin_url('admin.php'))); exit;
 });
+add_action('admin_post_cg9_gengrat', function () {
+  check_admin_referer('cg9_gengrat', '_n');
+  if (!current_user_can('manage_hotel')) wp_die('Sin permiso');
+  $mes = ($_POST['mes'] ?? '') === 'diciembre' ? 'diciembre' : 'julio';
+  cg_generate_gratificaciones($mes);
+  wp_safe_redirect(add_query_arg(['page' => 'cg-crm-personal', 'vista' => 'planilla', 'done' => 1], admin_url('admin.php'))); exit;
+});
+add_action('admin_post_cg9_gratpay', function () {
+  $id = (int) ($_GET['id'] ?? 0);
+  check_admin_referer('cg9_gratpay_' . $id);
+  if (!current_user_can('manage_hotel')) wp_die('Sin permiso');
+  global $wpdb; $tg = cg_tbl('gratificaciones');
+  $g = $wpdb->get_row($wpdb->prepare("SELECT g.*, s.name FROM $tg g JOIN " . cg_tbl('staff') . " s ON s.id=g.staff_id WHERE g.id=%d", $id));
+  if ($g && !$g->paid) {
+    $wpdb->update($tg, ['paid' => 1, 'paid_date' => current_time('Y-m-d')], ['id' => $id]);
+    $wpdb->insert(cg_tbl('ledger'), ['kind' => 'egreso', 'category' => 'Personal',
+      'concept' => 'Gratificacion ' . $g->period . ' — ' . $g->name . ' (base ' . number_format((float) $g->base_amount, 2) . ' + bonif. 9% ' . number_format((float) $g->bonif_extra, 2) . ')',
+      'amount' => (float) $g->net, 'taxable' => 0, 'ref_type' => 'gratificacion', 'ref_id' => (string) $g->id]);
+    if (function_exists('cg_log')) cg_log('gratificacion_pagada', $g->name . ' ' . $g->period . ' S/' . number_format((float) $g->net, 2));
+  }
+  wp_safe_redirect(add_query_arg(['page' => 'cg-crm-personal', 'vista' => 'fichas', 'ficha' => $g->staff_id ?? 0, 'done' => 1], admin_url('admin.php'))); exit;
+});
+add_action('admin_post_cg9_ctsdeposit', function () {
+  $sid = (int) ($_GET['staff'] ?? 0);
+  check_admin_referer('cg9_cts_' . $sid);
+  if (!current_user_can('manage_hotel')) wp_die('Sin permiso');
+  cg_cts_mark_deposit($sid);
+  wp_safe_redirect(add_query_arg(['page' => 'cg-crm-personal', 'vista' => 'fichas', 'ficha' => $sid, 'done' => 1], admin_url('admin.php'))); exit;
+});
 
 /* Pagina boleta (oculta del menu) */
 add_action('admin_menu', function () {
   add_submenu_page('', 'Boleta de pago', 'Boleta', 'manage_hotel', 'cg-crm-boleta', 'cg_crm3_render_boleta');
+  add_submenu_page('', 'Boleta de gratificacion', 'Boleta gratif.', 'manage_hotel', 'cg-crm-boleta-grat', 'cg_crm3_render_boleta_grat');
 }, 20);

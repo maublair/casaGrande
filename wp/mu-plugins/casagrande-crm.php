@@ -547,12 +547,15 @@ function cg_today_movements() {
         ['key' => 'cg_status', 'value' => 'cancelada', 'compare' => '!='],
       ]]);
     $out = [];
-    foreach ($q->posts as $p) $out[] = [
-      'code' => get_post_meta($p->ID, 'cg_code', true) ?: $p->post_title,
-      'name' => get_post_meta($p->ID, 'cg_name', true) ?: trim(explode('-', $p->post_title)[1] ?? ''),
-      'room' => get_post_meta($p->ID, 'cg_room', true) ?: '—',
-      'edit' => get_edit_post_link($p->ID, 'raw'),
-    ];
+    foreach ($q->posts as $p) {
+      $num = get_post_meta($p->ID, 'cg_room_number', true);
+      $out[] = [
+        'code' => get_post_meta($p->ID, 'cg_code', true) ?: $p->post_title,
+        'name' => get_post_meta($p->ID, 'cg_name', true) ?: trim(explode('-', $p->post_title)[1] ?? ''),
+        'room' => $num ? ('Hab. ' . $num) : (get_post_meta($p->ID, 'cg_room', true) ?: '—'),
+        'edit' => get_edit_post_link($p->ID, 'raw'),
+      ];
+    }
     return $out;
   };
   return ['arrivals' => $mk('cg_check_in'), 'departures' => $mk('cg_check_out')];
@@ -626,6 +629,55 @@ function cg_rack_rows($floor = 0) {
 }
 function cg_rack_floors() {
   global $wpdb; return array_map('intval', $wpdb->get_col("SELECT DISTINCT floor FROM " . cg_tbl('rooms') . " ORDER BY floor"));
+}
+
+/* ================= Identidad de habitacion: el ID es el NUMERO, el tipo es un atributo =================
+   El huesped reserva la habitacion 212 (que ademas es doble, tiene bano privado, etc), NO "una doble".
+   Estado real = ocupacion (segun reservas activas hoy) x limpieza (segun housekeeping). */
+function cg_room_type_name($type_id) {
+  $p = get_post((int) $type_id);
+  return $p ? $p->post_title : '—';
+}
+function cg_room_row($number) {
+  global $wpdb;
+  return $wpdb->get_row($wpdb->prepare("SELECT * FROM " . cg_tbl('rooms') . " WHERE number=%d", (int) $number));
+}
+function cg_room_occupied_today($number) {
+  $today = current_time('Y-m-d');
+  $q = new WP_Query(['post_type' => 'reservation', 'posts_per_page' => -1, 'post_status' => 'publish', 'fields' => 'ids',
+    'meta_query' => [
+      ['key' => 'cg_room_number', 'value' => (string) (int) $number],
+      ['key' => 'cg_status', 'value' => 'cancelada', 'compare' => '!='],
+    ]]);
+  foreach ($q->posts as $rid) {
+    $ci = get_post_meta($rid, 'cg_check_in', true); $co = get_post_meta($rid, 'cg_check_out', true);
+    if ($ci && $co && $ci <= $today && $today < $co) return true;
+  }
+  return false;
+}
+// Los 4 estados reales de una habitacion: libre/ocupada x limpia/sucia (mas mantenimiento aparte)
+function cg_room_status_combo($number) {
+  $occ = cg_room_occupied_today($number);
+  $hk = function_exists('cg2_hk_status_of') ? cg2_hk_status_of($number) : 'limpio';
+  if ($hk === 'mantenimiento') return ['code' => 'mantenimiento', 'label' => 'Mantenimiento', 'color' => '#7b3fa0'];
+  if ($hk === 'en_limpieza') return ['code' => 'en_limpieza', 'label' => ($occ ? 'Ocupada · ' : 'Libre · ') . 'En limpieza', 'color' => '#bd8b00'];
+  // 'ocupado' es el marcador que deja el check-in (la habitacion estaba limpia al asignarse); solo 'sucio' es sucia real
+  $clean = ($hk !== 'sucio');
+  $cleanLabel = $clean ? 'Limpia' : 'Sucia';
+  if ($occ) return ['code' => $clean ? 'ocupada_limpia' : 'ocupada_sucia', 'label' => 'Ocupada · ' . $cleanLabel, 'color' => $clean ? '#154562' : '#c0392b'];
+  return ['code' => $clean ? 'libre_limpia' : 'libre_sucia', 'label' => 'Libre · ' . $cleanLabel, 'color' => $clean ? '#1a7f37' : '#bd8b00'];
+}
+function cg_room_status_badge($number) {
+  $s = cg_room_status_combo($number);
+  return '<span style="background:' . $s['color'] . '22;color:' . $s['color'] . ';padding:1px 8px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap">' . esc_html($s['label']) . '</span>';
+}
+// Identificador para cualquier lista: el N° es lo primero, el tipo/estado son atributos secundarios
+function cg_room_badge_admin($res_id) {
+  $num = get_post_meta($res_id, 'cg_room_number', true);
+  if (!$num) return '<span style="color:#94a3b8">Sin asignar aun</span>';
+  $row = cg_room_row($num);
+  $type = $row ? cg_room_type_name($row->type_id) : (get_post_meta($res_id, 'cg_room', true) ?: '—');
+  return '<strong style="font-size:15px;color:#0c2b3d">' . esc_html($num) . '</strong> <span style="font-size:11px;color:#64748b">' . esc_html($type) . '</span><br>' . cg_room_status_badge($num);
 }
 
 /* ============ Folio / cuenta del cuarto ============ */
@@ -770,6 +822,133 @@ add_action('cg_reservation_created', function ($res_id, $room_type_id, $ci, $co)
   $num = cg_pick_free_room($room_type_id, $ci, $co);
   if ($num) update_post_meta($res_id, 'cg_room_number', (string) $num);
 }, 10, 4);
+
+/* ================= v8: regimen laboral, DNI de hijos, gratificacion, CTS ================= */
+add_action('init', function () {
+  if (get_option('cg_crm_db8') === '1') return;
+  global $wpdb; $cs = $wpdb->get_charset_collate();
+  require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+  dbDelta("CREATE TABLE " . cg_tbl('gratificaciones') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    staff_id BIGINT UNSIGNED NOT NULL, period VARCHAR(12) NOT NULL,
+    regimen VARCHAR(20) NOT NULL DEFAULT 'general', months_worked TINYINT UNSIGNED NOT NULL DEFAULT 6,
+    base_amount DECIMAL(10,2) NOT NULL DEFAULT 0, bonif_extra DECIMAL(10,2) NOT NULL DEFAULT 0,
+    net DECIMAL(10,2) NOT NULL DEFAULT 0,
+    paid TINYINT(1) NOT NULL DEFAULT 0, paid_date DATE NULL,
+    PRIMARY KEY (id), UNIQUE KEY staff_period (staff_id, period)) $cs;");
+
+  dbDelta("CREATE TABLE " . cg_tbl('cts_deposits') . " (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    staff_id BIGINT UNSIGNED NOT NULL, period VARCHAR(12) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL DEFAULT 0, deposited TINYINT(1) NOT NULL DEFAULT 0, deposit_date DATE NULL,
+    PRIMARY KEY (id), UNIQUE KEY staff_period (staff_id, period)) $cs;");
+
+  foreach ([
+    "ALTER TABLE " . cg_tbl('staff') . " ADD COLUMN regimen VARCHAR(20) NOT NULL DEFAULT 'general'",
+    "ALTER TABLE " . cg_tbl('staff_children') . " ADD COLUMN dni VARCHAR(8) DEFAULT ''",
+    "ALTER TABLE " . cg_tbl('rooms') . " ADD COLUMN features VARCHAR(255) DEFAULT ''",
+  ] as $sql) { $wpdb->hide_errors(); $wpdb->query($sql); $wpdb->show_errors(); }
+
+  update_option('cg_crm_db8', '1');
+}, 6);
+
+function cg_regimen_options() {
+  return ['general' => 'Regimen General', 'pequena' => 'Pequeña empresa (REMYPE)', 'micro' => 'Microempresa (REMYPE)'];
+}
+function cg_regimen_label($r) { return cg_regimen_options()[$r] ?? cg_regimen_options()['general']; }
+
+// Cuantos meses completos trabajo el colaborador dentro de [from, to] (tope 6, para gratificacion/CTS semestral)
+function cg_months_worked_in_range($hire_date, $from, $to) {
+  $start = ($hire_date && $hire_date > $from) ? $hire_date : $from;
+  if ($start > $to) return 0;
+  $months = 0; $cur = date('Y-m-01', strtotime($start));
+  while ($cur <= $to) { $months++; $cur = date('Y-m-d', strtotime($cur . ' +1 month')); }
+  return min(6, $months);
+}
+
+/* ---- Gratificacion (Fiestas Patrias = julio, Navidad = diciembre) ----
+   Regimen general: 1 sueldo completo por semestre + bonificacion extraordinaria 9% (Ley 29351, reemplaza el EsSalud
+   de ese monto y se paga integro al trabajador, sin descuento de AFP/ONP por ser inafecta).
+   Pequeña empresa (REMYPE): medio sueldo por semestre (mismo % de bonificacion).
+   Microempresa (REMYPE): SIN gratificacion por ley. */
+function cg_gratificacion_calc($staff, $mes) {
+  $regimen = $staff->regimen ?: 'general';
+  if ($regimen === 'micro') return null;
+
+  $year = date('Y');
+  if ($mes === 'julio') { $from = "$year-01-01"; $to = "$year-06-30"; }
+  else { $from = "$year-07-01"; $to = "$year-12-31"; }
+  $hoy = current_time('Y-m-d');
+  $meses = cg_months_worked_in_range($staff->hire_date, $from, $to < $hoy ? $to : $hoy);
+
+  $p = cg_payroll_params();
+  $family = cg_children_u18($staff->id) > 0 ? round($p['rmv'] * 0.10, 2) : 0.0;
+  $remun = (float) $staff->salary + $family; // remuneracion computable
+  $full = $regimen === 'pequena' ? $remun / 2 : $remun;
+  $base = round($full * ($meses / 6), 2);
+  $bonif = round($base * 0.09, 2); // Ley 29351: 9% equivalente al EsSalud, va integro al trabajador
+  return ['regimen' => $regimen, 'months_worked' => $meses, 'base_amount' => $base,
+          'bonif_extra' => $bonif, 'net' => round($base + $bonif, 2)];
+}
+function cg_generate_gratificaciones($mes) {
+  global $wpdb; $t = cg_tbl('gratificaciones'); $period = date('Y') . '-' . $mes; $n = 0;
+  foreach ($wpdb->get_results("SELECT * FROM " . cg_tbl('staff') . " WHERE active=1") as $s) {
+    if ($wpdb->get_var($wpdb->prepare("SELECT id FROM $t WHERE staff_id=%d AND period=%s", $s->id, $period))) continue;
+    $c = cg_gratificacion_calc($s, $mes);
+    if (!$c) continue; // microempresa: no aplica
+    $wpdb->insert($t, ['staff_id' => $s->id, 'period' => $period, 'regimen' => $c['regimen'],
+      'months_worked' => $c['months_worked'], 'base_amount' => $c['base_amount'],
+      'bonif_extra' => $c['bonif_extra'], 'net' => $c['net'], 'paid' => 0]);
+    $n++;
+  }
+  return $n;
+}
+
+/* ---- CTS: se ACUMULA pero no se entrega en mano; se deposita en la cuenta CTS del trabajador
+   (1a quincena de mayo y 1a quincena de noviembre). Regimen general: 1/12 de la remuneracion computable
+   por mes trabajado. Pequeña empresa: la mitad. Microempresa: no aplica por ley. */
+function cg_cts_rate($regimen) {
+  return ['general' => 1 / 12, 'pequena' => (1 / 12) / 2, 'micro' => 0.0][$regimen] ?? 1 / 12;
+}
+function cg_cts_current_period($today = null) {
+  $today = $today ?: current_time('Y-m-d');
+  $y = (int) date('Y', strtotime($today)); $m = (int) date('n', strtotime($today));
+  if ($m >= 11) { $from = "$y-11-01"; $to = ($y + 1) . "-04-30"; $label = 'MAY-' . ($y + 1); }
+  elseif ($m <= 4) { $from = ($y - 1) . "-11-01"; $to = "$y-04-30"; $label = "MAY-$y"; }
+  else { $from = "$y-05-01"; $to = "$y-10-31"; $label = "NOV-$y"; }
+  return ['from' => $from, 'to' => $to, 'label' => $label];
+}
+function cg_cts_accrued($staff) {
+  $regimen = $staff->regimen ?: 'general';
+  $rate = cg_cts_rate($regimen);
+  $per = cg_cts_current_period();
+  if ($rate <= 0) return ['amount' => 0, 'period' => $per['label'], 'regimen' => $regimen, 'deposited' => false];
+  $hoy = current_time('Y-m-d');
+  $meses = cg_months_worked_in_range($staff->hire_date, $per['from'], $per['to'] < $hoy ? $per['to'] : $hoy);
+  $p = cg_payroll_params();
+  $family = cg_children_u18($staff->id) > 0 ? round($p['rmv'] * 0.10, 2) : 0.0;
+  $base = (float) $staff->salary + $family;
+  $remun_computable = $base + ($base / 6); // + 1/6 de gratificacion promedio, segun ley
+  $amount = round($remun_computable * $rate * $meses, 2);
+  global $wpdb;
+  $dep = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . cg_tbl('cts_deposits') . " WHERE staff_id=%d AND period=%s", $staff->id, $per['label']));
+  return ['amount' => $amount, 'period' => $per['label'], 'regimen' => $regimen, 'deposited' => $dep ? (bool) $dep->deposited : false];
+}
+function cg_cts_mark_deposit($staff_id) {
+  global $wpdb;
+  $staff = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . cg_tbl('staff') . " WHERE id=%d", $staff_id));
+  if (!$staff) return false;
+  $c = cg_cts_accrued($staff);
+  if ($c['amount'] <= 0 || $c['deposited']) return false;
+  $wpdb->replace(cg_tbl('cts_deposits'), ['staff_id' => $staff_id, 'period' => $c['period'],
+    'amount' => $c['amount'], 'deposited' => 1, 'deposit_date' => current_time('Y-m-d')]);
+  $wpdb->insert(cg_tbl('ledger'), ['kind' => 'egreso', 'category' => 'Personal',
+    'concept' => 'CTS depositada — ' . $staff->name . ' (' . $c['period'] . ')', 'amount' => $c['amount'], 'taxable' => 0,
+    'ref_type' => 'cts', 'ref_id' => (string) $staff_id]);
+  if (function_exists('cg_log')) cg_log('cts_deposito', $staff->name . ' ' . $c['period'] . ' S/' . number_format($c['amount'], 2));
+  return true;
+}
 
 /* ================= v4: tarifas, mantenimiento, actividad, huespedes ================= */
 add_action('init', function () {

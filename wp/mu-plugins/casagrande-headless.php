@@ -22,9 +22,12 @@ add_action('rest_api_init', function () {
 
 /* ============ Custom Post Types ============ */
 add_action('init', function () {
+  // "room" es el CATALOGO de TIPOS (Doble, Suite...) para precios/marketing de la web.
+  // La habitacion FISICA real (101-515, con su propio numero) se administra en Operaciones > Cuartos.
   register_post_type('room', [
-    'labels' => ['name' => 'Habitaciones', 'singular_name' => 'Habitacion', 'add_new_item' => 'Agregar habitacion', 'edit_item' => 'Editar habitacion'],
-    'public' => true, 'show_in_rest' => true, 'rest_base' => 'rooms',
+    'labels' => ['name' => 'Tipos de Habitacion', 'singular_name' => 'Tipo de habitacion', 'menu_name' => 'Tipos de Habitacion',
+                 'add_new_item' => 'Agregar tipo de habitacion', 'edit_item' => 'Editar tipo de habitacion'],
+    'public' => true, 'show_in_rest' => true, 'rest_base' => 'rooms', 'show_in_menu' => 'cg-crm',
     'menu_icon' => 'dashicons-bank', 'supports' => ['title', 'editor', 'thumbnail', 'page-attributes'],
     'has_archive' => false,
   ]);
@@ -34,8 +37,8 @@ add_action('init', function () {
     'menu_icon' => 'dashicons-food', 'supports' => ['title', 'editor', 'thumbnail', 'page-attributes'],
   ]);
   register_post_type('reservation', [
-    'labels' => ['name' => 'Reservas', 'singular_name' => 'Reserva'],
-    'public' => false, 'show_ui' => true, 'show_in_rest' => false,
+    'labels' => ['name' => 'Reservas', 'singular_name' => 'Reserva', 'menu_name' => 'Reservas (registro WP)'],
+    'public' => false, 'show_ui' => true, 'show_in_rest' => false, 'show_in_menu' => 'cg-crm',
     'menu_icon' => 'dashicons-calendar-alt', 'supports' => ['title'],
     'capability_type' => 'post',
   ]);
@@ -372,11 +375,11 @@ add_action('admin_post_cg_res_action', function () {
 
 /* ---- Columnas de la lista de reservas ---- */
 add_filter('manage_reservation_posts_columns', function ($c) {
-  return ['cb' => $c['cb'], 'title' => 'Codigo / Nombre', 'cg_room' => 'Habitacion', 'cg_dates' => 'Fechas',
+  return ['cb' => $c['cb'], 'title' => 'Codigo / Nombre', 'cg_room' => 'N° Habitacion', 'cg_dates' => 'Fechas',
           'cg_total' => 'Total', 'cg_payment' => 'Pago', 'cg_status' => 'Estado', 'date' => 'Creada'];
 });
 add_action('manage_reservation_posts_custom_column', function ($col, $id) {
-  if ($col === 'cg_room') echo esc_html(get_post_meta($id, 'cg_room', true) ?: '—');
+  if ($col === 'cg_room') echo function_exists('cg_room_badge_admin') ? cg_room_badge_admin($id) : esc_html(get_post_meta($id, 'cg_room_number', true) ?: '—');
   if ($col === 'cg_dates') echo esc_html(get_post_meta($id, 'cg_check_in', true) . ' → ' . get_post_meta($id, 'cg_check_out', true));
   if ($col === 'cg_total') { $t = get_post_meta($id, 'cg_total', true); echo $t !== '' ? 'S/ ' . esc_html(number_format((float) $t, 0)) : '—'; }
   if ($col === 'cg_payment') {

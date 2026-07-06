@@ -423,12 +423,4 @@ add_action('cg_dashboard_bottom', function () {
   echo '</table></div>';
 });
 
-/* ================= Menu + secciones nuevas ================= */
-add_action('admin_menu', function () {
-  $cap = 'manage_hotel';
-  add_submenu_page('cg-crm', 'Huespedes', 'Huespedes', $cap, 'cg-crm-huespedes', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Tarifas', 'Tarifas', $cap, 'cg-crm-tarifas', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Mantenimiento', 'Mantenimiento', $cap, 'cg-crm-mantenimiento', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Reportes', 'Reportes', $cap, 'cg-crm-reportes', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Chatbot & Canales', '🤖 Chatbot & Canales', $cap, 'cg-crm-canales', 'cg_crm_render_router');
-}, 11);
+/* Menu: registrado centralmente en casagrande-crm-ui.php (categorias con desplegable) */

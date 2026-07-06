@@ -498,13 +498,13 @@ function cg_crm_render_reservas() {
     <div class="cg-card">
       <h3>Reservas recientes</h3>
       <table class="cg-table">
-        <thead><tr><th>Codigo</th><th>Huesped</th><th>Habitacion</th><th>Fechas</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Codigo</th><th>Huesped</th><th>N° Habitacion</th><th>Fechas</th><th>Estado</th></tr></thead>
         <tbody>
         <?php foreach ($rows as $res) : ?>
           <tr>
             <td><?php echo esc_html(get_post_meta($res->ID, 'cg_code', true) ?: $res->post_title); ?></td>
             <td><?php echo esc_html(get_post_meta($res->ID, 'cg_name', true)); ?></td>
-            <td><?php echo esc_html(get_post_meta($res->ID, 'cg_room', true)); ?></td>
+            <td><?php echo function_exists('cg_room_badge_admin') ? cg_room_badge_admin($res->ID) : esc_html(get_post_meta($res->ID, 'cg_room_number', true) ?: '—'); ?></td>
             <td><?php echo esc_html(get_post_meta($res->ID, 'cg_check_in', true) . ' → ' . get_post_meta($res->ID, 'cg_check_out', true)); ?></td>
             <td><?php echo esc_html(get_post_meta($res->ID, 'cg_status', true)); ?></td>
           </tr>
@@ -756,20 +756,37 @@ function cg_crm_render_router() {
   cg_crm_shell_end();
 }
 
+// Menu del CRM organizado por CATEGORIAS (cada una es su propio menu con desplegable),
+// en vez de una sola lista plana de 17 items.
 add_action('admin_menu', function () {
   $cap = 'manage_hotel';
-  add_menu_page('CRM Casa Grande', 'CRM Casa Grande', $cap, 'cg-crm', 'cg_crm_render_router', 'dashicons-chart-area', 3);
+
+  add_menu_page('Operaciones — Casa Grande', '🏨 Operaciones', $cap, 'cg-crm', 'cg_crm_render_router', 'dashicons-chart-area', 3);
   add_submenu_page('cg-crm', 'Dashboard', 'Dashboard', $cap, 'cg-crm', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Personal', 'Personal', $cap, 'cg-crm-personal', 'cg_crm_render_router');
+  add_submenu_page('cg-crm', 'Reservas (front desk)', 'Reservas', $cap, 'cg-crm-reservas', 'cg_crm_render_router');
+  add_submenu_page('cg-crm', 'Cuartos (habitaciones 101-515)', 'Cuartos', $cap, 'cg-crm-cuartos', 'cg_crm_render_router');
   add_submenu_page('cg-crm', 'Limpieza', 'Limpieza', $cap, 'cg-crm-limpieza', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Turnos', 'Turnos', $cap, 'cg-crm-turnos', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Reservas', 'Reservas', $cap, 'cg-crm-reservas', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Cuartos', 'Cuartos', $cap, 'cg-crm-cuartos', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Proveedores', 'Proveedores', $cap, 'cg-crm-proveedores', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Almacen', 'Almacen', $cap, 'cg-crm-almacen', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Finanzas', 'Finanzas', $cap, 'cg-crm-finanzas', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'WhatsApp', 'WhatsApp', $cap, 'cg-crm-whatsapp', 'cg_crm_render_router');
-  add_submenu_page('cg-crm', 'Contenido', 'Contenido', $cap, 'cg-crm-contenido', 'cg_crm_render_router');
+  add_submenu_page('cg-crm', 'Mantenimiento', 'Mantenimiento', $cap, 'cg-crm-mantenimiento', 'cg_crm_render_router');
+  add_submenu_page('cg-crm', 'Huespedes', 'Huespedes', $cap, 'cg-crm-huespedes', 'cg_crm_render_router');
+
+  add_menu_page('Personal — Casa Grande', '👥 Personal', $cap, 'cg-crm-personal', 'cg_crm_render_router', 'dashicons-groups', 3.1);
+  add_submenu_page('cg-crm-personal', 'Fichas y planilla', 'Fichas y planilla', $cap, 'cg-crm-personal', 'cg_crm_render_router');
+  add_submenu_page('cg-crm-personal', 'Turnos', 'Turnos', $cap, 'cg-crm-turnos', 'cg_crm_render_router');
+
+  add_menu_page('Finanzas — Casa Grande', '💰 Finanzas', $cap, 'cg-crm-finanzas', 'cg_crm_render_router', 'dashicons-chart-line', 3.2);
+  add_submenu_page('cg-crm-finanzas', 'Finanzas', 'Finanzas', $cap, 'cg-crm-finanzas', 'cg_crm_render_router');
+  add_submenu_page('cg-crm-finanzas', 'Almacen y logistica', 'Almacen', $cap, 'cg-crm-almacen', 'cg_crm_render_router');
+  add_submenu_page('cg-crm-finanzas', 'Proveedores', 'Proveedores', $cap, 'cg-crm-proveedores', 'cg_crm_render_router');
+  add_submenu_page('cg-crm-finanzas', 'Tarifas', 'Tarifas', $cap, 'cg-crm-tarifas', 'cg_crm_render_router');
+
+  add_menu_page('Mensajeria — Casa Grande', '💬 Mensajeria', $cap, 'cg-crm-whatsapp', 'cg_crm_render_router', 'dashicons-format-chat', 3.3);
+  add_submenu_page('cg-crm-whatsapp', 'Bandeja de chats', 'Bandeja de chats', $cap, 'cg-crm-whatsapp', 'cg_crm_render_router');
+  add_submenu_page('cg-crm-whatsapp', 'Chatbot & Canales', '🤖 Chatbot & Canales', $cap, 'cg-crm-canales', 'cg_crm_render_router');
+
+  add_menu_page('Reportes y Contenido — Casa Grande', '📊 Reportes', $cap, 'cg-crm-reportes', 'cg_crm_render_router', 'dashicons-analytics', 3.4);
+  add_submenu_page('cg-crm-reportes', 'Reportes', 'Reportes', $cap, 'cg-crm-reportes', 'cg_crm_render_router');
+  add_submenu_page('cg-crm-reportes', 'Contenido de la web', 'Contenido', $cap, 'cg-crm-contenido', 'cg_crm_render_router');
+  add_submenu_page('cg-crm-reportes', 'Guia rapida', '📖 Guia rapida', 'manage_hotel', 'cg-crm-guia', 'cg7_render_guia');
 });
 
 add_action('admin_post_cg_crm_save_staff', function () {
