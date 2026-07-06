@@ -1,0 +1,26 @@
+# ==================================================================
+# Stack: casagrande (Hotel Boutique Casa Grande) — independiente.
+# Ingreso SIEMPRE por: cloudflared -> NPM (bcode_gateway) -> casagrande-web.
+# Sin `ports`: NPM la alcanza por nombre dentro de bcode_gateway.
+# Datos en Supabase externo (NEXT_PUBLIC_SUPABASE_* en .env).
+# ==================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    image: casagrande-web:local
+    container_name: casagrande-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - bcode_gateway
+
+networks:
+  bcode_gateway:
+    external: true
