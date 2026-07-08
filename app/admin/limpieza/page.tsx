@@ -41,13 +41,6 @@ const statusConfig: Record<string, { label: string; cls: string; icon: React.Ele
   omitido: { label: 'Omitido', cls: 'bg-gray-100 text-gray-500', icon: X },
 };
 
-
-const cleaningPolicy = [
-  { title: 'Habitaciones ocupadas', hours: '10:00 - 14:00', note: 'Limpieza ligera, reposicion y orden sin invadir la estancia.' },
-  { title: 'Habitaciones liberadas', hours: '11:30 - 15:30', note: 'Limpieza completa post checkout, cambio de blancos y revision general.' },
-  { title: 'Habitaciones vacias', hours: '08:00 - 10:00', note: 'Repaso preventivo antes del ingreso de nuevos huespedes.' },
-  { title: 'Profunda / mantenimiento', hours: '15:30 - 18:00', note: 'Intervenciones de mayor duracion o con ruido controlado.' },
-];
 export default function LimpiezaPage() {
   const [tasks, setTasks] = useState<CleaningTask[]>([]);
   const [rooms, setRooms] = useState<{ id: string; room_number: string }[]>([]);
@@ -55,6 +48,17 @@ export default function LimpiezaPage() {
   const [loading, setLoading] = useState(true);
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
   const [showForm, setShowForm] = useState(false);
+  const [checklistTask, setChecklistTask] = useState<CleaningTask | null>(null);
+  const [checklistType, setChecklistType] = useState<'check_in' | 'check_out' | null>(null);
+  const [checklistNotes, setChecklistNotes] = useState('');
+  const [checklistForm, setChecklistForm] = useState<Record<string, 'ok' | 'missing' | 'damaged'>>({
+    'Sabanas': 'ok',
+    'Toallas': 'ok',
+    'Control TV': 'ok',
+    'Almohadas': 'ok',
+    'Papel Higienico': 'ok',
+    'Jabones': 'ok',
+  });
   const [form, setForm] = useState({
     room_id: '', assigned_to: '', task_type: 'limpieza_diaria',
     priority: 'normal', scheduled_date: new Date().toISOString().split('T')[0],
@@ -80,11 +84,74 @@ export default function LimpiezaPage() {
   useEffect(() => { load(); }, [filterDate]);
 
   async function updateStatus(id: string, status: string) {
+    if (status === 'en_proceso') {
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        setChecklistTask(task);
+        setChecklistType('check_in');
+        setChecklistNotes('');
+        setChecklistForm({
+          'Sabanas': 'ok',
+          'Toallas': 'ok',
+          'Control TV': 'ok',
+          'Almohadas': 'ok',
+          'Papel Higienico': 'ok',
+          'Jabones': 'ok',
+        });
+        return;
+      }
+    }
+    if (status === 'completado') {
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        setChecklistTask(task);
+        setChecklistType('check_out');
+        setChecklistNotes('');
+        setChecklistForm({
+          'Sabanas': 'ok',
+          'Toallas': 'ok',
+          'Control TV': 'ok',
+          'Almohadas': 'ok',
+          'Papel Higienico': 'ok',
+          'Jabones': 'ok',
+        });
+        return;
+      }
+    }
+
     await supabase.from('cleaning_tasks').update({
       status,
       completed_at: status === 'completado' ? new Date().toISOString() : null,
       updated_at: new Date().toISOString(),
     }).eq('id', id);
+    load();
+  }
+
+  async function saveChecklist() {
+    if (!checklistTask || !checklistType) return;
+    
+    const checklistData = {
+      type: checklistType,
+      timestamp: new Date().toISOString(),
+      items: checklistForm,
+      notes: checklistNotes,
+    };
+
+    const updatedNotes = checklistTask.notes 
+      ? `${checklistTask.notes} \n[Checklist ${checklistType.toUpperCase()}: ${JSON.stringify(checklistData)}]`
+      : `[Checklist ${checklistType.toUpperCase()}: ${JSON.stringify(checklistData)}]`;
+
+    const newStatus = checklistType === 'check_in' ? 'en_proceso' : 'completado';
+
+    await supabase.from('cleaning_tasks').update({
+      status: newStatus,
+      notes: updatedNotes,
+      completed_at: newStatus === 'completado' ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', checklistTask.id);
+
+    setChecklistTask(null);
+    setChecklistType(null);
     load();
   }
 
@@ -115,11 +182,11 @@ export default function LimpiezaPage() {
             type="date"
             value={filterDate}
             onChange={e => setFilterDate(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30"
           />
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-navy hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-navy-DEFAULT hover:bg-navy-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" /> Nueva Tarea
           </button>
@@ -137,18 +204,6 @@ export default function LimpiezaPage() {
               <p className="text-xl font-bold text-gray-900">{counts[key] || 0}</p>
               <p className="text-xs text-gray-500">{cfg.label}</p>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        {cleaningPolicy.map(item => (
-          <div key={item.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-start justify-between gap-4 mb-2">
-              <h2 className="font-semibold text-gray-900">{item.title}</h2>
-              <span className="text-xs font-semibold text-navy whitespace-nowrap">{item.hours}</span>
-            </div>
-            <p className="text-sm text-gray-500 leading-relaxed">{item.note}</p>
           </div>
         ))}
       </div>
@@ -234,7 +289,7 @@ export default function LimpiezaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Habitacion</label>
                   <select value={form.room_id} onChange={e => setForm(f => ({ ...f, room_id: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
                     <option value="">Sin habitacion</option>
                     {rooms.map(r => <option key={r.id} value={r.id}>Hab. {r.room_number}</option>)}
                   </select>
@@ -242,7 +297,7 @@ export default function LimpiezaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Asignado a</label>
                   <select value={form.assigned_to} onChange={e => setForm(f => ({ ...f, assigned_to: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
                     <option value="">Sin asignar</option>
                     {staff.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>)}
                   </select>
@@ -252,14 +307,14 @@ export default function LimpiezaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tipo de tarea</label>
                   <select value={form.task_type} onChange={e => setForm(f => ({ ...f, task_type: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
                     {Object.entries(taskTypeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Prioridad</label>
                   <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30">
                     {Object.entries(priorityConfig).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
                   </select>
                 </div>
@@ -268,18 +323,18 @@ export default function LimpiezaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fecha</label>
                   <input type="date" value={form.scheduled_date} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Hora</label>
                   <input type="time" value={form.scheduled_time} onChange={e => setForm(f => ({ ...f, scheduled_time: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30" />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Notas</label>
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 resize-none"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-DEFAULT/30 resize-none"
                   placeholder="Instrucciones adicionales..." />
               </div>
             </div>
@@ -287,8 +342,79 @@ export default function LimpiezaPage() {
               <button onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
                 Cancelar
               </button>
-              <button onClick={saveTask} className="flex-1 bg-navy hover:bg-navy-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+              <button onClick={saveTask} className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
                 Guardar Tarea
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {checklistTask && checklistType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="font-bold text-gray-900">
+                {checklistType === 'check_in' ? 'Control de Inventario (Check-in)' : 'Control de Inventario (Check-out)'}
+              </h3>
+              <button onClick={() => { setChecklistTask(null); setChecklistType(null); }} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 text-sm">
+              <div className="rounded-xl bg-gray-50 p-3.5 border border-gray-100">
+                <p className="font-bold text-gray-900">Habitación {checklistTask.rooms?.room_number || 'Sin número'}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Responsable: {checklistTask.staff?.first_name} {checklistTask.staff?.last_name} · Tipo: {taskTypeLabels[checklistTask.task_type]}
+                </p>
+              </div>
+
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Verificación de elementos de la Habitación:</p>
+              
+              <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
+                {Object.keys(checklistForm).map(item => (
+                  <div key={item} className="flex items-center justify-between gap-3 p-2 rounded-xl bg-gray-50/50 border border-gray-100">
+                    <span className="font-medium text-gray-800">{item}</span>
+                    <div className="flex bg-white rounded-lg border border-gray-200 p-0.5">
+                      {(['ok', 'missing', 'damaged'] as const).map(state => (
+                        <button
+                          key={state}
+                          onClick={() => setChecklistForm(f => ({ ...f, [item]: state }))}
+                          className={`text-xs font-semibold px-2 py-1 rounded-md transition-all ${
+                            checklistForm[item] === state
+                              ? state === 'ok'
+                                ? 'bg-green-500 text-white shadow-sm'
+                                : state === 'missing'
+                                ? 'bg-red-500 text-white shadow-sm'
+                                : 'bg-orange-500 text-white shadow-sm'
+                              : 'text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {state === 'ok' ? 'OK' : state === 'missing' ? 'Falta' : 'Dañado'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Notas del estado de entrega / observaciones</label>
+                <textarea
+                  value={checklistNotes}
+                  onChange={e => setChecklistNotes(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 resize-none"
+                  rows={2}
+                  placeholder="Ej: sábanas limpias y tendidas, toalla cambiada..."
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => { setChecklistTask(null); setChecklistType(null); }} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button onClick={saveChecklist} className="flex-1 bg-navy hover:bg-navy-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                Confirmar Control
               </button>
             </div>
           </div>

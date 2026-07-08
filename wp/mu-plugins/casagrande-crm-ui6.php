@@ -15,7 +15,10 @@ add_action('cg_frontdesk_top', function () {
       <?php wp_nonce_field('cg6_newres', '_n'); ?><input type="hidden" name="action" value="cg6_newres">
       <?php $F = function ($l, $i) { echo '<label style="display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:600;color:#50575e">' . $l . $i . '</label>'; };
       $F('Nombre del huesped *', '<input name="name" required>');
-      $F('DNI / CE', '<input name="doc">');
+      $doc_types = '<select name="doc_type"><option value="DNI">DNI</option><option value="Pasaporte">Pasaporte</option><option value="CE">Cédula Extranjería</option></select>';
+      $F('Tipo Documento', $doc_types);
+      $F('Número Documento *', '<input name="doc_number" required>');
+      $F('Nacionalidad *', '<input name="nationality" value="Peruano" required>');
       $F('Telefono (recibe confirmacion WA)', '<input name="phone" placeholder="+51 9...">');
       $F('Email', '<input name="email" type="email">');
       $ty = '<select name="room_id">';
@@ -51,7 +54,11 @@ add_action('admin_post_cg6_newres', function () {
   $total = (float) ($_POST['total'] ?? 0);
   if ($total <= 0) $total = function_exists('cg_stay_total') ? cg_stay_total($room->ID, $ci, $co)
     : max(1, (int) ((strtotime($co) - strtotime($ci)) / 86400)) * (float) get_post_meta($room->ID, 'cg_price', true);
-  foreach (['cg_code' => $code, 'cg_name' => $name, 'cg_doc' => sanitize_text_field($_POST['doc'] ?? ''),
+  foreach (['cg_code' => $code, 'cg_name' => $name,
+    'cg_doc' => sanitize_text_field($_POST['doc_number'] ?? ''),
+    'cg_doc_type' => sanitize_text_field($_POST['doc_type'] ?? 'DNI'),
+    'cg_doc_number' => sanitize_text_field($_POST['doc_number'] ?? ''),
+    'cg_nationality' => sanitize_text_field($_POST['nationality'] ?? 'Peruano'),
     'cg_phone' => sanitize_text_field($_POST['phone'] ?? ''), 'cg_email' => sanitize_email($_POST['email'] ?? ''),
     'cg_room_id' => $room->ID, 'cg_room' => $room->post_title, 'cg_check_in' => $ci, 'cg_check_out' => $co,
     'cg_adults' => (int) ($_POST['adults'] ?? 2), 'cg_children' => (int) ($_POST['children'] ?? 0),

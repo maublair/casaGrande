@@ -17,6 +17,13 @@ Fecha: 2026-07-04
 - Se removió toda mención comercial de hosting de la propuesta.
 - Se registró en RNA la decisión de no ofrecer hosting como servicio comercial.
 
+
+## Update 2026-07-06
+
+- La experiencia pública de `habitaciones` quedó reforzada para mostrar cada tipo como card con modal flotante, galería, animaciones de iconos de características y formulario/botón de reserva.
+- La documentación de memoria se alineó en RNA y en este handoff local para evitar drift entre la propuesta, el CRM demo y el contexto operativo.
+- Typecheck verificado después de los ajustes de horarios, turnos y propuesta comercial.
+
 ## Archivos clave
 
 - `app/propuesta/page.tsx`

@@ -11,6 +11,11 @@ interface Props {
 }
 
 export default function StaffFormModal({ staff, onClose, onSave }: Props) {
+  const initialNotes = staff?.notes || '';
+  const regimeMatch = initialNotes.match(/\[Regimen:\s*(\w+)\]/);
+  const initialRegime = regimeMatch ? regimeMatch[1] : 'regimen_privado';
+  const cleanNotes = initialNotes.replace(/\[Regimen:\s*\w+\]/, '').trim();
+
   const [form, setForm] = useState({
     first_name: staff?.first_name || '',
     last_name: staff?.last_name || '',
@@ -21,7 +26,8 @@ export default function StaffFormModal({ staff, onClose, onSave }: Props) {
     salary: staff?.salary?.toString() || '',
     hire_date: staff?.hire_date || new Date().toISOString().split('T')[0],
     is_active: staff?.is_active ?? true,
-    notes: staff?.notes || '',
+    notes: cleanNotes,
+    regime: initialRegime,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,6 +37,12 @@ export default function StaffFormModal({ staff, onClose, onSave }: Props) {
     if (!form.first_name || !form.last_name || !form.role) { setError('Nombre, apellido y cargo son requeridos.'); return; }
     setLoading(true);
     setError('');
+    
+    // Embed [Regimen: type] at the end of the notes
+    const finalNotes = form.notes.trim() 
+      ? `${form.notes.trim()} [Regimen: ${form.regime}]` 
+      : `[Regimen: ${form.regime}]`;
+
     const payload = {
       first_name: form.first_name,
       last_name: form.last_name,
@@ -41,7 +53,7 @@ export default function StaffFormModal({ staff, onClose, onSave }: Props) {
       salary: form.salary ? Number(form.salary) : null,
       hire_date: form.hire_date,
       is_active: form.is_active,
-      notes: form.notes || null,
+      notes: finalNotes,
     };
     const { error: err } = staff
       ? await supabase.from('staff').update(payload).eq('id', staff.id)
@@ -101,17 +113,26 @@ export default function StaffFormModal({ staff, onClose, onSave }: Props) {
             <input type="date" value={form.hire_date} onChange={e => setForm(f => ({ ...f, hire_date: e.target.value }))} className={inputCls} />
           </div>
           <div className="col-span-2">
+            <label className={labelCls}>Tipo de Contrato / Régimen Laboral</label>
+            <select value={form.regime} onChange={e => setForm(f => ({ ...f, regime: e.target.value }))} className={inputCls}>
+              <option value="regimen_privado">Régimen laboral privado</option>
+              <option value="plazo_fijo">Contrato a plazo fijo</option>
+              <option value="tiempo_parcial">Tiempo parcial</option>
+              <option value="servicios_no_personales">Servicios no personales (Recibo Honorarios)</option>
+            </select>
+          </div>
+          <div className="col-span-2">
             <label className={labelCls}>Notas</label>
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={inputCls + ' resize-none'} rows={2} />
           </div>
           <div className="col-span-2 flex items-center gap-2">
-            <input type="checkbox" id="active" checked={form.is_active} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} className="w-4 h-4 accent-navy" />
+            <input type="checkbox" id="active" checked={form.is_active} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} className="w-4 h-4 accent-navy-DEFAULT" />
             <label htmlFor="active" className="text-sm text-gray-600 cursor-pointer">Empleado activo</label>
           </div>
           {error && <p className="col-span-2 text-red-500 text-sm">{error}</p>}
           <div className="col-span-2 flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 border-2 border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl hover:border-gray-300 transition-colors">Cancelar</button>
-            <button type="submit" disabled={loading} className="flex-1 bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
+            <button type="submit" disabled={loading} className="flex-1 bg-navy-DEFAULT hover:bg-navy-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors">
               {loading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>

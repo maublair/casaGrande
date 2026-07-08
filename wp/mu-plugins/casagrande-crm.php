@@ -237,8 +237,8 @@ function cg_wa_classify($text) {
   if ($has(['salon', 'reunion', 'boda', 'matrimonio', 'conferencia'])) return 'Eventos';
   return 'General';
 }
-function cg_wa_bot_reply($text, $service) {
-  $maybe = apply_filters('cg_bot_reply_override', null, $text, $service);
+function cg_wa_bot_reply($text, $service, $conv = 0) {
+  $maybe = apply_filters('cg_bot_reply_override', null, $text, $service, $conv);
   if ($maybe !== null) return $maybe;
   $t = mb_strtolower($text);
   $s = function ($k, $d = '') { $v = get_option('cg_settings', []); return $v[$k] ?? $d; };
@@ -312,7 +312,7 @@ add_action('rest_api_init', function () {
       global $wpdb; $tc = cg_tbl('wa_conversations');
       $bot_on = (int) $wpdb->get_var($wpdb->prepare("SELECT bot_enabled FROM $tc WHERE id=%d", $conv));
       if ($s['bot_enabled'] === '1' && $bot_on) {
-        $reply = cg_wa_bot_reply($text, $service);
+        $reply = cg_wa_bot_reply($text, $service, $conv);
         $via = cg_ycloud_send($from, $reply);
         cg_wa_add_message($conv, 'out', $reply, $via === 'ycloud' ? 'ycloud' : ($via === 'demo' ? 'bot' : 'bot'));
       }
@@ -421,7 +421,7 @@ add_action('init', function () {
       [$phone, $name, $service, $body] = $thread;
       $conv = cg_wa_upsert_conversation($phone, $name, $service);
       cg_wa_add_message($conv, 'in', $body, 'human');
-      $reply = cg_wa_bot_reply($body, $service);
+      $reply = cg_wa_bot_reply($body, $service, $conv);
       cg_wa_add_message($conv, 'out', $reply, 'bot');
     }
   }
@@ -1153,7 +1153,7 @@ add_action('rest_api_init', function () {
       $bot_on = (int) $wpdb->get_var($wpdb->prepare("SELECT bot_enabled FROM " . cg_tbl('wa_conversations') . " WHERE id=%d", $conv));
       $bw = cg_bot_settings();
       if ($bw['bot_enabled_web'] === '1' && $bot_on) {
-        $reply = cg_wa_bot_reply($text, cg_wa_classify($text));
+        $reply = cg_wa_bot_reply($text, cg_wa_classify($text), $conv);
         cg_wa_add_message($conv, 'out', $reply, 'bot');
       }
       $last = (int) $wpdb->get_var($wpdb->prepare("SELECT MAX(id) FROM " . cg_tbl('wa_messages') . " WHERE conv_id=%d", $conv));
@@ -1192,8 +1192,7 @@ add_action('rest_api_init', function () {
   register_rest_route('casagrande/v1', '/chat/config', ['methods' => 'GET', 'permission_callback' => '__return_true',
     'callback' => function () {
       $b = cg_bot_settings();
-      return ['name' => $b['bot_name'], 'color' => $b['bot_color'], 'greeting' => $b['bot_greeting'],
-              'enabled' => $b['bot_enabled_web'] === '1'];
+      return ['name' => $b['bot_name'], 'color' => $b['bot_color'], 'greeting' => $b['bot_greeting']];
     }]);
 });
 
@@ -1207,10 +1206,447 @@ function cg_chat_guard($session, $text) {
   return null;
 }
 
+function cg_bot_is_manipulation($text, &$state) {
+  $t = trim(mb_strtolower(wp_strip_all_tags($text)));
+  if (in_array($t, ['asdf', 'qwer', 'qwerty', 'test', 'testing', 'prueba', 'probando', '12345', 'holaaaa'])) {
+    return true;
+  }
+  if (isset($state['last_text']) && $state['last_text'] === $t) {
+    $state['dup_count'] = ($state['dup_count'] ?? 0) + 1;
+    if ($state['dup_count'] >= 3) {
+      return true;
+    }
+  } else {
+    $state['last_text'] = $t;
+    $state['dup_count'] = 0;
+  }
+  return false;
+}
+
+function cg_bot_parse_date($text) {
+  $text = mb_strtolower(trim($text));
+  $today = current_time('Y-m-d');
+  if (strpos($text, 'hoy') !== false) return $today;
+  if (strpos($text, 'mañana') !== false || strpos($text, 'manana') !== false) {
+    return date('Y-m-d', strtotime('+1 day'));
+  }
+  if (preg_match('/\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/', $text, $matches)) {
+    $d = (int)$matches[1]; $m = (int)$matches[2]; $y = (int)$matches[3];
+    if ($y < 100) $y = 2000 + $y;
+    return sprintf('%04d-%02d-%02d', $y, $m, $d);
+  }
+  if (preg_match('/\b(\d{1,2})[\/\-\.](\d{1,2})\b/', $text, $matches)) {
+    $d = (int)$matches[1]; $m = (int)$matches[2]; $y = (int)date('Y');
+    return sprintf('%04d-%02d-%02d', $y, $m, $d);
+  }
+  $months = [
+    'enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5, 'junio' => 6,
+    'julio' => 7, 'agosto' => 8, 'septiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12,
+    'ene' => 1, 'feb' => 2, 'mar' => 3, 'abr' => 4, 'may' => 5, 'jun' => 6, 'jul' => 7, 'ago' => 8, 'sep' => 9, 'oct' => 10, 'nov' => 11, 'dic' => 12
+  ];
+  foreach ($months as $name => $num) {
+    if (strpos($text, $name) !== false) {
+      if (preg_match('/\b(\d{1,2})\b/', $text, $matches)) {
+        return sprintf('%04d-%02d-%02d', (int)date('Y'), $num, (int)$matches[1]);
+      }
+    }
+  }
+  return null;
+}
+
 /* Cerebro por reglas con CONOCIMIENTO REAL de las bases de datos */
-function cg_bot_brain($text, $service = 'General') {
+function cg_bot_brain($text, $service = 'General', $conv = 0) {
   $t = mb_strtolower(wp_strip_all_tags($text));
   $has = function ($arr) use ($t) { foreach ($arr as $w) if (strpos($t, $w) !== false) return true; return false; };
+
+  // Conversational state machine
+  $state = [];
+  if ($conv > 0) {
+    $state = get_transient('cg_bot_state_' . $conv);
+    if (!is_array($state)) {
+      $state = ['step' => 'idle', 'spam_count' => 0];
+    }
+
+    // Anti-Spam / Manipulation Guard ("hacer un pare")
+    if (cg_bot_is_manipulation($text, $state)) {
+      $state['spam_count'] = ($state['spam_count'] ?? 0) + 1;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      if ($state['spam_count'] >= 3) {
+        global $wpdb;
+        $wpdb->update(cg_tbl('wa_conversations'), ['bot_enabled' => 0], ['id' => $conv]);
+        if (function_exists('cg_log')) {
+          cg_log('bot_desactivado_spam', 'Conv#' . $conv . ' desactivada por sospecha de spam/manipulacion');
+        }
+        return 'He detectado comportamiento inusual o consultas repetitivas. Por políticas de seguridad, pausaré el bot automático en este chat. Un agente de recepción revisará su historial para asistirle a la brevedad. 📱';
+      }
+      return 'Por favor, indícame tu consulta de manera clara. Si deseas información de tarifas, disponibilidad o restaurante, puedes pedírmela directamente. 🙏';
+    }
+  }
+
+  // State-Machine transitions
+  if (!empty($state['step']) && $state['step'] !== 'idle') {
+    global $wpdb;
+
+    if ($has(['salir', 'cancelar', 'abortar', 'parar'])) {
+      $state['step'] = 'idle';
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return 'Entendido. He cancelado el proceso actual. ¿En qué más puedo ayudarte? 🤖';
+    }
+
+    // Awaiting room number (Room Service)
+    if ($state['step'] === 'awaiting_room') {
+      preg_match('/\b(\d{3})\b/', $text, $matches);
+      $room_num = $matches ? $matches[1] : '';
+      if (!$room_num) {
+        $state['spam_count'] = ($state['spam_count'] ?? 0) + 1;
+        set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+        return 'Por favor, indícame un número de habitación válido de 3 dígitos (ej: 101, 114). 🏨';
+      }
+
+      if (!cg_room_occupied_today($room_num)) {
+        $state['step'] = 'idle';
+        set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+        return "Disculpe, la habitación {$room_num} figura como vacía actualmente en nuestro sistema. Si se trata de un error o requiere asistencia, por favor consulte con la recepción al (054) 214000. 📞";
+      }
+
+      $state['step'] = 'awaiting_identity';
+      $state['room'] = $room_num;
+      $state['fail_count'] = 0;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return "Para registrar tu pedido a la habitación {$room_num}, por favor indícame el Nombre y Apellido completo registrado en la reserva. ✍️";
+    }
+
+    // Awaiting identity (Room Service)
+    if ($state['step'] === 'awaiting_identity') {
+      $room_num = $state['room'];
+      $guest_name_input = trim(mb_strtolower(wp_strip_all_tags($text)));
+      $today = current_time('Y-m-d');
+
+      $q = new WP_Query([
+        'post_type' => 'reservation',
+        'posts_per_page' => 20,
+        'post_status' => 'publish',
+        'meta_query' => [
+          ['key' => 'cg_room_number', 'value' => (string)(int)$room_num],
+          ['key' => 'cg_status', 'value' => 'cancelada', 'compare' => '!='],
+        ]
+      ]);
+
+      $matched_reservation = null;
+      $matched_name = '';
+      foreach ($q->posts as $p) {
+        $ci = get_post_meta($p->ID, 'cg_check_in', true);
+        $co = get_post_meta($p->ID, 'cg_check_out', true);
+        if ($ci && $co && $ci <= $today && $today < $co) {
+          $matched_reservation = $p->ID;
+          $matched_name = get_post_meta($p->ID, 'cg_name', true);
+          break;
+        }
+      }
+
+      if (!$matched_reservation) {
+        $state['step'] = 'idle';
+        set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+        return "Disculpe, la habitación {$room_num} figura como vacía actualmente en nuestro sistema. Si se trata de un error o requiere asistencia, por favor consulte con la recepción al (054) 214000. 📞";
+      }
+
+      // Fuzzy matching name
+      $name_words_input = array_filter(explode(' ', preg_replace('/[^\w]/u', ' ', $guest_name_input)));
+      $name_words_real = array_filter(explode(' ', preg_replace('/[^\w]/u', ' ', mb_strtolower($matched_name))));
+
+      $match_count = 0;
+      foreach ($name_words_input as $win) {
+        foreach ($name_words_real as $wreal) {
+          $win_norm = remove_accents($win);
+          $wreal_norm = remove_accents($wreal);
+          if (strpos($wreal_norm, $win_norm) !== false || strpos($win_norm, $wreal_norm) !== false) {
+            $match_count++;
+            break;
+          }
+        }
+      }
+
+      if ($match_count >= 2 || (count($name_words_input) === 1 && $match_count >= 1)) {
+        $state['step'] = 'identity_verified';
+        $state['res_id'] = $matched_reservation;
+        $state['guest_name'] = $matched_name;
+
+        if (!empty($state['dish'])) {
+          $state['step'] = 'awaiting_order_confirm';
+          set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+          return "¡Identidad confirmada, Sr(a). " . ucwords($matched_name) . "! Desea ordenar: {$state['dish']}. ¿Desea confirmar el pedido a la habitación {$room_num}? Responda SÍ o NO. 👍";
+        } else {
+          $state['step'] = 'awaiting_dish';
+          set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+          return "¡Identidad confirmada, Sr(a). " . ucwords($matched_name) . "! ¿Qué plato o bebida de nuestra carta le gustaría ordenar para la habitación {$room_num}? 🍽️";
+        }
+      } else {
+        $state['fail_count'] = ($state['fail_count'] ?? 0) + 1;
+        set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+        if ($state['fail_count'] >= 3) {
+          $wpdb->update(cg_tbl('wa_conversations'), ['bot_enabled' => 0], ['id' => $conv]);
+          if (function_exists('cg_log')) {
+            cg_log('bot_desactivado_identidad', 'Conv#' . $conv . ' desactivada tras 3 fallos de identidad');
+          }
+          return 'Lo siento, no he podido confirmar su identidad. Por motivos de seguridad del huésped, desactivaré el bot automático y transferiré este chat a recepción para asistencia personalizada. 📞';
+        }
+        return "El nombre proporcionado no coincide con el titular de la habitación {$room_num}. Por favor, indíqueme su Nombre y Apellido completo tal como figura en su reserva. ⚠️";
+      }
+    }
+
+    // Awaiting dish choice (Room Service)
+    if ($state['step'] === 'awaiting_dish') {
+      $dish_input = trim($text);
+      $q = new WP_Query([
+        'post_type' => 'dish',
+        'posts_per_page' => 1,
+        'post_status' => 'publish',
+        's' => $dish_input
+      ]);
+
+      if ($q->have_posts()) {
+        $dish = $q->posts[0];
+        $dish_name = $dish->post_title;
+        $dish_price = (float)get_post_meta($dish->ID, 'cg_price', true);
+
+        $state['step'] = 'awaiting_order_confirm';
+        $state['dish_id'] = $dish->ID;
+        $state['dish'] = $dish_name;
+        $state['price'] = $dish_price;
+        set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+
+        return "Desea ordenar: {$dish_name} (S/{$dish_price}). ¿Desea confirmar este pedido para la habitación {$state['room']}? Responda SÍ o NO. 👍";
+      } else {
+        return "No logré encontrar '{$dish_input}' en nuestro menú. ¿Podrías indicarme otro plato o bebida de la carta? (Ejemplo: Cuy chactado, Pisco sour). 🍽️";
+      }
+    }
+
+    // Awaiting order confirmation (Room Service)
+    if ($state['step'] === 'awaiting_order_confirm') {
+      if ($has(['si', 'sí', 'confirm', 'acept', 'claro', 'dale'])) {
+        $res_id = $state['res_id'];
+        $room_num = $state['room'];
+        $dish_name = $state['dish'];
+        $price = $state['price'] ?? 0;
+
+        if (!$price && !empty($state['dish_id'])) {
+          $price = (float)get_post_meta($state['dish_id'], 'cg_price', true);
+        }
+        if (!$price) {
+          if (strpos(strtolower($dish_name), 'cuy') !== false) $price = 48;
+          if (strpos(strtolower($dish_name), 'pisco') !== false) $price = 22;
+          if (strpos(strtolower($dish_name), 'queso') !== false) $price = 14;
+          if (strpos(strtolower($dish_name), 'ocopa') !== false) $price = 20;
+        }
+
+        $wpdb->insert(cg_tbl('folio'), [
+          'res_id' => $res_id,
+          'concept' => "Pedido Bot: {$dish_name} (Por Confirmar)",
+          'qty' => 1,
+          'unit_price' => $price,
+          'total' => $price,
+          'settled' => 0
+        ]);
+
+        if (function_exists('cg_log')) {
+          cg_log('pedido_habitacion', "Hab. {$room_num}: {$dish_name} por S/{$price} - {$state['guest_name']}");
+        }
+
+        $state['step'] = 'idle';
+        set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+
+        return "¡Excelente! Tu pedido de **{$dish_name}** ha sido registrado como **por confirmar** para la habitación {$room_num}. Recepción se comunicará por teléfono con usted para la confirmación final antes de enviarlo a cocina. ¡Gracias! 🍽️😊";
+      } else if ($has(['no', 'cancel', 'rechaz'])) {
+        $state['step'] = 'idle';
+        set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+        return "Entendido, he cancelado el pedido. ¿Hay algo más en lo que pueda ayudarte? 🤖";
+      } else {
+        return "Por favor, responde SÍ para confirmar el pedido o NO para cancelarlo. ⚠️";
+      }
+    }
+
+    // Awaiting Event/Catering Date
+    if ($state['step'] === 'awaiting_event_date') {
+      $dt = cg_bot_parse_date($text);
+      if (!$dt) {
+        return 'No logré entender la fecha. Por favor, indícame la fecha en un formato simple, como "20 de julio" o "15-08-2026". 🗓️';
+      }
+      $state['step'] = 'awaiting_event_pax';
+      $state['event_date'] = $dt;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return '¡Perfecto! ¿Para cuántas personas (aforo aproximado) estimas tu evento/catering? 👥';
+    }
+
+    // Awaiting Event/Catering Pax
+    if ($state['step'] === 'awaiting_event_pax') {
+      preg_match('/\b(\d+)\b/', $text, $matches);
+      $pax = $matches ? (int)$matches[1] : 0;
+      if ($pax <= 0) {
+        return 'Por favor, indícame un número aproximado de asistentes (ej: 40). 👥';
+      }
+      $state['step'] = 'awaiting_event_contact';
+      $state['event_pax'] = $pax;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return 'Entendido. Por último, indícame tu Nombre completo y Teléfono para que nuestro asesor de eventos se comunique contigo con una cotización personalizada. ☎️';
+    }
+
+    // Awaiting Event/Catering Contact
+    if ($state['step'] === 'awaiting_event_contact') {
+      $contact = sanitize_text_field($text);
+      if (strlen($contact) < 5) {
+        return 'Por favor, indícame tu Nombre y Teléfono válidos para podernos comunicar contigo. ✍️';
+      }
+      if (function_exists('cg_log')) {
+        cg_log('lead_evento', "Evento/Catering: {$state['event_pax']} pax para el {$state['event_date']} - Contacto: {$contact}");
+      }
+      $state['step'] = 'idle';
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return "¡Excelente! He registrado tu solicitud para el evento del **{$state['event_date']}** para **{$state['event_pax']} personas**. Un asesor de eventos del hotel se comunicará contigo a la brevedad al número proporcionado. ¡Muchas gracias! 🤝😊";
+    }
+
+    // Awaiting Booking Dates (Check-in)
+    if ($state['step'] === 'awaiting_booking_dates') {
+      $dt = cg_bot_parse_date($text);
+      if (!$dt) {
+        return 'Por favor, indícame tu fecha de ingreso (Check-in) de forma clara, como "20 de julio" o "15-08-2026". 🗓️';
+      }
+      $state['step'] = 'awaiting_booking_checkout';
+      $state['check_in'] = $dt;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return '¡Entendido! ¿Cuál sería tu fecha de salida (Check-out)? (Ejemplo: "25 de julio" o "22-08-2026"). 🗓️';
+    }
+
+    // Awaiting Booking Checkout Date
+    if ($state['step'] === 'awaiting_booking_checkout') {
+      $dt = cg_bot_parse_date($text);
+      if (!$dt) {
+        return 'Por favor, indícame tu fecha de salida (Check-out) de forma clara, como "25 de julio" o "22-08-2026". 🗓️';
+      }
+      $ci = $state['check_in'];
+      $co = $dt;
+      if ($co <= $ci) {
+        return 'La fecha de salida debe ser posterior a la de ingreso. Por favor, indícame una fecha válida. ⚠️';
+      }
+
+      $avail = function_exists('cg_availability') ? cg_availability($ci, $co) : [];
+      $lines = [];
+      foreach ($avail as $r) {
+        if ($r['available'] > 0) {
+          $lines[] = "• " . $r['name'] . " (S/" . number_format($r['base_price'], 0) . ") - " . $r['available'] . " disponibles";
+        }
+      }
+
+      if (empty($lines)) {
+        $state['step'] = 'idle';
+        set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+        return "Lo sentimos, no contamos con habitaciones disponibles del {$ci} al {$co}. ¿Deseas consultar para otras fechas? 😔";
+      }
+
+      $state['step'] = 'awaiting_booking_confirm_room';
+      $state['check_out'] = $co;
+      $state['avail_rooms'] = $avail;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+
+      return "Habitaciones disponibles del **{$ci}** al **{$co}**:\n" . implode("\n", $lines) . "\n\n¿Cuál de ellas te gustaría pre-reservar? Por favor escribe el nombre de la habitación, o escribe SALIR para cancelar. 🏨";
+    }
+
+    // Awaiting Booking Confirm Room selection
+    if ($state['step'] === 'awaiting_booking_confirm_room') {
+      $selected = trim($text);
+      $matched = null;
+      if (!empty($state['avail_rooms'])) {
+        foreach ($state['avail_rooms'] as $r) {
+          if (strpos(mb_strtolower($r['name']), mb_strtolower($selected)) !== false) {
+            $matched = $r;
+            break;
+          }
+        }
+      }
+
+      if (!$matched) {
+        return "Por favor, indícame cuál de las opciones deseas pre-reservar de forma clara (ejemplo: Suite, Simple). ⚠️";
+      }
+
+      $state['step'] = 'awaiting_booking_pax';
+      $state['selected_room'] = $matched['name'];
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return "¡Excelente elección! ¿Cuántos adultos y niños serían en total para la habitación {$matched['name']}? (Ejemplo: 2 adultos y 1 niño). 👨‍👩‍👧";
+    }
+
+    // Awaiting Booking Pax count
+    if ($state['step'] === 'awaiting_booking_pax') {
+      $pax_info = sanitize_text_field($text);
+      $state['step'] = 'awaiting_booking_name';
+      $state['booking_pax'] = $pax_info;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return 'Perfecto. Por último, indícame tu Nombre completo y un Correo de contacto para registrar tu solicitud. ✍️';
+    }
+
+    // Awaiting Booking Contact details
+    if ($state['step'] === 'awaiting_booking_name') {
+      $contact = sanitize_text_field($text);
+      if (strlen($contact) < 5) {
+        return 'Por favor, indícame tu Nombre y Correo válidos para registrar tu solicitud. ⚠️';
+      }
+
+      if (function_exists('cg_log')) {
+        cg_log('lead_reserva', "Pre-Reserva: {$state['selected_room']} del {$state['check_in']} al {$state['check_out']} - Pax: {$state['booking_pax']} - Contacto: {$contact}");
+      }
+
+      $state['step'] = 'idle';
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+
+      return "¡Todo listo! He registrado tu solicitud de pre-reserva de una **{$state['selected_room']}** del **{$state['check_in']}** al **{$state['check_out']}** para **{$state['booking_pax']}**. Recepción te contactará en breve para formalizar tu reserva. ¡Te esperamos! 🏨😊";
+    }
+
+  }
+
+  // Event/Catering trigger detection
+  $is_event_service = $has(['catering', 'evento', 'boda', 'matrimonio', 'conferencia', 'reunion', 'salon']);
+  if ($is_event_service && $conv > 0) {
+    $state['step'] = 'awaiting_event_date';
+    set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+    return 'Con gusto te ayudo a cotizar tu evento o catering en el Hotel Boutique Casa Grande. ¿Para qué fecha tienes planificado tu evento? (Ejemplo: 20 de julio). 🗓️';
+  }
+
+  // Room service trigger detection
+  $is_room_service = $has(['pedido a la', 'pedido al', 'enviar a la', 'llevar a la', 'cuy a la', 'pisco sour a la', 'queso helado a la', 'ocopa a la', 'servicio al cuarto', 'servicio a la habitacion']);
+  if ($is_room_service && $conv > 0) {
+    preg_match('/(?:habitaci[oó]n|cuarto|hab|h)?\s*(\d{3})\b/i', $text, $matches);
+    $room_num = $matches ? $matches[1] : '';
+
+    $dish_ordered = '';
+    if ($has(['cuy'])) $dish_ordered = 'Cuy chactado';
+    if ($has(['pisco'])) $dish_ordered = 'Pisco sour';
+    if ($has(['queso'])) $dish_ordered = 'Queso helado arequipeno';
+    if ($has(['ocopa'])) $dish_ordered = 'Ocopa arequipena';
+
+    if (!$room_num) {
+      $state['step'] = 'awaiting_room';
+      $state['dish'] = $dish_ordered;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return 'Con gusto te ayudo con tu pedido del restaurante a la habitación. ¿A qué número de habitación (ej: 101) deseas realizar el pedido? 🍽️';
+    } else {
+      if (!cg_room_occupied_today($room_num)) {
+        return "Disculpe, la habitación {$room_num} figura como vacía actualmente en nuestro sistema. Si se trata de un error o requiere asistencia, por favor consulte con la recepción al (054) 214000. 📞";
+      }
+
+      $state['step'] = 'awaiting_identity';
+      $state['room'] = $room_num;
+      $state['dish'] = $dish_ordered;
+      $state['fail_count'] = 0;
+      set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+      return "Para registrar tu pedido a la habitación {$room_num}, por favor indícame el Nombre y Apellido completo registrado en la reserva. ✍️";
+    }
+  }
+
+  // Room booking trigger detection
+  $is_booking_service = $has(['reserva', 'reservar', 'habitacion', 'cuarto', 'disponib', 'estadia', 'estadía', 'noches']);
+  if ($is_booking_service && $conv > 0) {
+    $state['step'] = 'awaiting_booking_dates';
+    set_transient('cg_bot_state_' . $conv, $state, 2 * HOUR_IN_SECONDS);
+    return 'Con gusto te ayudo a buscar disponibilidad y reservar en el Hotel Boutique Casa Grande. ¿Para qué fecha tienes planificado tu ingreso (Check-in)? (Ejemplo: 15 de julio). 🗓️';
+  }
 
   // 1) Conocimiento personalizado (entrenado desde wp-admin) — prioridad maxima
   foreach (cg_bot_faq() as $row) {
@@ -1256,11 +1692,72 @@ function cg_bot_brain($text, $service = 'General') {
   if ($has(['wifi', 'internet'])) return 'WiFi de fibra optica gratuito en todo el hotel. 📶';
   if ($has(['cochera', 'estacionamiento', 'parking'])) return 'Contamos con estacionamiento privado gratuito con vigilancia. 🚗';
   if ($has(['catering', 'evento', 'boda', 'reunion', 'salon']) || $service === 'Catering')
-    return 'Hacemos eventos y catering: salones con montaje auditorio/escuela/en U, coffee breaks y banquetes. ¿Para cuantas personas y que fecha? �elicitamos';
+    return 'Hacemos eventos y catering: salones con montaje auditorio/escuela/en U, coffee breaks y banquetes. ¿Para cuantas personas y que fecha? elicitamos';
   if ($has(['gracias'])) return '¡Con gusto! Aqui estamos para lo que necesites. 😊';
   if ($has(['reserva', 'reservar'])) return 'Con gusto te ayudo a reservar: dime la fecha de llegada, la de salida y cuantas personas son, y te confirmo disponibilidad real con numero de habitacion. ✍️';
   $b = cg_bot_settings();
   return 'Soy ' . $b['bot_name'] . ' 🤖 Puedo darte tarifas, disponibilidad real, la carta del restaurante, como llegar y ayudarte a reservar. ¿Que necesitas?';
 }
-// El bot de WhatsApp y del webchat usan el mismo cerebro
-add_filter('cg_bot_reply_override', function ($reply, $text, $service) { return cg_bot_brain($text, $service); }, 10, 3);
+// El bot de WhatsApp y del webchat usan el mismo cerebro (pasa el ID de conversacion)
+add_filter('cg_bot_reply_override', function ($reply, $text, $service, $conv = 0) { return cg_bot_brain($text, $service, $conv); }, 10, 4);
+
+/* ================= INVENTARIO DE HABITACIONES (DUCHAS, INODORO, TV, ETC) ================= */
+add_action('init', function () {
+  global $wpdb;
+  if (get_option('cg_crm_db_room_inventory') !== '1') {
+    $charset = $wpdb->get_charset_collate();
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta("CREATE TABLE " . cg_tbl('room_inventory') . " (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      room_number INT NOT NULL,
+      item_name VARCHAR(60) NOT NULL,
+      item_type VARCHAR(40) NOT NULL DEFAULT 'mueble',
+      serial_number VARCHAR(50) DEFAULT '',
+      brand VARCHAR(40) DEFAULT '',
+      description VARCHAR(200) DEFAULT '',
+      acq_year INT DEFAULT NULL,
+      docs TEXT DEFAULT NULL,
+      status VARCHAR(30) DEFAULT 'ok',
+      damage_log TEXT DEFAULT NULL,
+      tags VARCHAR(100) DEFAULT '',
+      PRIMARY KEY (id), KEY room_number (room_number)) $charset;");
+    
+    // Auto-populate default assets if empty
+    $tbl_inv = cg_tbl('room_inventory');
+    $count = (int) $wpdb->get_var("SELECT COUNT(*) FROM $tbl_inv");
+    if ($count == 0) {
+      $rooms = $wpdb->get_col("SELECT number FROM " . cg_tbl('rooms'));
+      if (!empty($rooms)) {
+        $defaults = [
+          ['item_name' => 'Inodoro Premium', 'item_type' => 'baño', 'brand' => 'Vainsa', 'description' => 'Inodoro de bajo consumo ecológico', 'acq_year' => 2024],
+          ['item_name' => 'Ducha Española con Monocomando', 'item_type' => 'baño', 'brand' => 'Sole', 'description' => 'Termotanque eléctrico y monocomando cromado', 'acq_year' => 2024],
+          ['item_name' => 'Caño de lavamanos monocomando', 'item_type' => 'baño', 'brand' => 'Vainsa', 'description' => 'Grifería cromada monocontrol para lavatorio', 'acq_year' => 2024],
+          ['item_name' => 'Llave de paso principal de agua', 'item_type' => 'baño', 'brand' => 'Vainsa', 'description' => 'Llave de paso de bola cromada', 'acq_year' => 2024],
+          ['item_name' => 'Smart TV LED 4K', 'item_type' => 'entretenimiento', 'brand' => 'Samsung', 'description' => 'Pantalla Smart TV con soporte de pared', 'acq_year' => 2025],
+          ['item_name' => 'Decodificador de Cable', 'item_type' => 'entretenimiento', 'brand' => 'Movistar', 'description' => 'Decodificador HD con control remoto', 'acq_year' => 2024],
+          ['item_name' => 'Cama principal y Colchón', 'item_type' => 'mobiliario', 'brand' => 'Paraíso', 'description' => 'Cuna/colchón ortopédico premium', 'acq_year' => 2024],
+          ['item_name' => 'Caja fuerte digital', 'item_type' => 'seguridad', 'brand' => 'Yale', 'description' => 'Caja fuerte con teclado numérico', 'acq_year' => 2025],
+          ['item_name' => 'Cerradura electrónica de tarjeta', 'item_type' => 'seguridad', 'brand' => 'Kwikset', 'description' => 'Cerradura de proximidad RFID', 'acq_year' => 2024]
+        ];
+        foreach ($rooms as $room) {
+          foreach ($defaults as $d) {
+            $wpdb->insert($tbl_inv, [
+              'room_number' => (int) $room,
+              'item_name' => $d['item_name'],
+              'item_type' => $d['item_type'],
+              'brand' => $d['brand'],
+              'description' => $d['description'],
+              'acq_year' => $d['acq_year'],
+              'status' => 'ok',
+              'tags' => '',
+              'damage_log' => '[]',
+              'docs' => ''
+            ]);
+          }
+        }
+      }
+    }
+    update_option('cg_crm_db_room_inventory', '1');
+  }
+}, 6);
+

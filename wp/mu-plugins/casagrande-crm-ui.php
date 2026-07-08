@@ -145,6 +145,7 @@ function cg_crm_tabs($active) {
     'limpieza' => ['cg-crm-limpieza', 'Limpieza'],
     'turnos' => ['cg-crm-turnos', 'Turnos'],
     'almacen' => ['cg-crm-almacen', 'Almacen'],
+    'restaurante' => ['cg-crm-restaurante', 'Restaurante'],
     'finanzas' => ['cg-crm-finanzas', 'Finanzas'],
     'whatsapp' => ['cg-crm-whatsapp', 'WhatsApp'],
     'contenido' => ['cg-crm-contenido', 'Contenido'],
@@ -728,6 +729,7 @@ function cg_crm_render_router() {
     'limpieza' => ['Limpieza', 'Estado de habitaciones y mantenimiento.'],
     'turnos' => ['Turnos', 'Asignacion semanal y turno de hoy.'],
     'almacen' => ['Almacen', 'Insumos hotel, restaurante y catering con movimientos.'],
+    'restaurante' => ['Restaurante y Recetas', 'Platos de la carta y descuento automático de insumos.'],
     'finanzas' => ['Finanzas', 'Ingresos, egresos, IGV e utilidades.'],
     'whatsapp' => ['Mensajes', 'WhatsApp y chat de la web en cards: ficha del lead, archivos y links de pago.'],
     'canales' => ['Chatbot & Canales', 'Personaliza y entrena el bot, conecta YCloud y configura links de pago.'],
@@ -741,6 +743,7 @@ function cg_crm_render_router() {
     case 'turnos': cg5_render_turnos(); break;
     case 'reservas': cg_crm2_render_reservas(); break;
     case 'almacen': cg_crm2_render_almacen(); break;
+    case 'restaurante': cg_crm2_render_restaurante(); break;
     case 'finanzas': cg_crm2_render_finanzas(); break;
     case 'whatsapp': cg8_render_inbox(); break;
     case 'cuartos': cg_crm2_render_cuartos(); break;
@@ -776,6 +779,7 @@ add_action('admin_menu', function () {
   add_menu_page('Finanzas — Casa Grande', '💰 Finanzas', $cap, 'cg-crm-finanzas', 'cg_crm_render_router', 'dashicons-chart-line', 3.2);
   add_submenu_page('cg-crm-finanzas', 'Finanzas', 'Finanzas', $cap, 'cg-crm-finanzas', 'cg_crm_render_router');
   add_submenu_page('cg-crm-finanzas', 'Almacen y logistica', 'Almacen', $cap, 'cg-crm-almacen', 'cg_crm_render_router');
+  add_submenu_page('cg-crm-finanzas', 'Restaurante y Recetas', 'Restaurante', $cap, 'cg-crm-restaurante', 'cg_crm_render_router');
   add_submenu_page('cg-crm-finanzas', 'Proveedores', 'Proveedores', $cap, 'cg-crm-proveedores', 'cg_crm_render_router');
   add_submenu_page('cg-crm-finanzas', 'Tarifas', 'Tarifas', $cap, 'cg-crm-tarifas', 'cg_crm_render_router');
 

@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Plus, Search, Mail, Phone, Edit2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Search, Mail, Phone, Edit2, ToggleLeft, ToggleRight, BadgeInfo, UserCog } from 'lucide-react';
 import { supabase, Staff, Department } from '@/lib/supabase';
 import StaffFormModal from '@/components/admin/StaffFormModal';
+import StaffDetailModal from '@/components/admin/StaffDetailModal';
+import { buildStaffProfile, staffCodeFor, staffColorFor } from '@/lib/casagrande-demo';
 
 const deptColors: Record<Department, string> = {
   recepcion:     'bg-blue-100 text-blue-700',
@@ -30,6 +32,7 @@ export default function PersonalAdmin() {
   const [filterDept, setFilterDept] = useState<Department | 'all'>('all');
   const [showForm, setShowForm] = useState(false);
   const [editStaff, setEditStaff] = useState<Staff | null>(null);
+  const [detailStaff, setDetailStaff] = useState<Staff | null>(null);
 
   async function load() {
     setLoading(true);
@@ -45,25 +48,27 @@ export default function PersonalAdmin() {
     setStaff(prev => prev.map(s => s.id === id ? { ...s, is_active: !active } : s));
   }
 
-  const filtered = staff.filter(s => {
+  const filtered = useMemo(() => staff.filter(s => {
     const matchSearch = !search || `${s.first_name} ${s.last_name} ${s.role}`.toLowerCase().includes(search.toLowerCase());
     const matchDept = filterDept === 'all' || s.department === filterDept;
     return matchSearch && matchDept;
-  });
+  }), [staff, search, filterDept]);
 
   const totalSalary = staff.filter(s => s.is_active).reduce((sum, s) => sum + (s.salary || 0), 0);
   const depts = Object.keys(deptLabels) as Department[];
+  const activeCount = staff.filter(s => s.is_active).length;
+  const inactiveCount = staff.filter(s => !s.is_active).length;
+  const roster = useMemo(() => filtered.map(s => ({ staff: s, code: staffCodeFor(s), tone: staffColorFor(s), profile: buildStaffProfile(s) })), [filtered]);
 
   return (
     <div className="space-y-5">
-      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-          <p className="text-2xl font-bold text-navy">{staff.filter(s => s.is_active).length}</p>
+          <p className="text-2xl font-bold text-navy">{activeCount}</p>
           <p className="text-xs text-gray-500 mt-1">Personal Activo</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-          <p className="text-2xl font-bold text-gray-400">{staff.filter(s => !s.is_active).length}</p>
+          <p className="text-2xl font-bold text-gray-400">{inactiveCount}</p>
           <p className="text-xs text-gray-500 mt-1">Personal Inactivo</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
@@ -76,9 +81,8 @@ export default function PersonalAdmin() {
         </div>
       </div>
 
-      {/* Toolbar */}
       <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -105,80 +109,104 @@ export default function PersonalAdmin() {
         </button>
       </div>
 
-      {/* Staff table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Empleado</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cargo</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Departamento</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contacto</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Salario</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ingreso</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                [...Array(5)].map((_, i) => (
-                  <tr key={i}>
-                    {[...Array(8)].map((_, j) => <td key={j} className="px-4 py-4"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>)}
-                  </tr>
-                ))
-              ) : filtered.map(s => (
-                <tr key={s.id} className={`hover:bg-gray-50 transition-colors ${!s.is_active ? 'opacity-50' : ''}`}>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-navy rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {s.first_name[0]}{s.last_name[0]}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">{s.first_name} {s.last_name}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-gray-600">{s.role}</td>
-                  <td className="px-4 py-4">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${deptColors[s.department]}`}>
-                      {deptLabels[s.department]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-gray-500 text-xs">
-                    <div className="space-y-0.5">
-                      {s.email && <p className="flex items-center gap-1"><Mail className="w-3 h-3" /> {s.email}</p>}
-                      {s.phone && <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> {s.phone}</p>}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 font-semibold text-gray-800">
-                    {s.salary ? `S/ ${s.salary.toLocaleString()}` : '—'}
-                  </td>
-                  <td className="px-4 py-4 text-gray-500 text-xs">{s.hire_date}</td>
-                  <td className="px-4 py-4">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {s.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => { setEditStaff(s); setShowForm(true); }} className="p-1.5 hover:bg-navy-50 text-gray-400 hover:text-navy rounded-lg transition-colors">
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => toggleActive(s.id, s.is_active)} className="p-1.5 hover:bg-gray-100 text-gray-400 rounded-lg transition-colors">
-                        {s.is_active ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-gray-400" />}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <UserCog className="w-4 h-4 text-navy" />
+          <h2 className="font-semibold text-gray-800">Mapa de personal</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+          {roster.map(({ staff: person, code, tone }) => (
+            <button
+              key={person.id}
+              onClick={() => setDetailStaff(person)}
+              className={`text-left rounded-2xl border p-3 transition-all hover:shadow-md ${tone.soft} ${tone.border} ${!person.is_active ? 'opacity-60' : ''}`}
+            >
+              <div className={`w-10 h-10 rounded-2xl ${tone.bg} flex items-center justify-center text-white text-sm font-extrabold`}>{code}</div>
+              <p className="font-semibold text-gray-900 mt-3 truncate">{person.first_name} {person.last_name}</p>
+              <p className="text-xs text-gray-500 truncate">{deptLabels[person.department]}</p>
+            </button>
+          ))}
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? (
+          [...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+              <div className="h-4 bg-gray-100 rounded animate-pulse" />
+              <div className="h-20 bg-gray-100 rounded animate-pulse" />
+              <div className="h-10 bg-gray-100 rounded animate-pulse" />
+            </div>
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="md:col-span-2 xl:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-400">
+            No se encontro personal con estos filtros.
+          </div>
+        ) : (
+          filtered.map(s => {
+            const profile = buildStaffProfile(s);
+            const tone = staffColorFor(s);
+            return (
+              <article key={s.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-shadow hover:shadow-md ${!s.is_active ? 'opacity-60' : ''}`}>
+                <div className={`px-5 py-4 ${tone.soft} border-b ${tone.border}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${tone.soft} ${tone.text} border ${tone.border}`}>{profile.code}</span>
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${deptColors[s.department]}`}>{deptLabels[s.department]}</span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mt-2 leading-tight">{s.first_name} {s.last_name}</h3>
+                      <p className="text-sm text-gray-500">{s.role}</p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${s.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{s.is_active ? 'Activo' : 'Inactivo'}</span>
+                  </div>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <span className="block text-gray-400 uppercase tracking-wider text-[10px]">Contacto</span>
+                      <p className="font-medium text-gray-800 mt-1 truncate">{s.email || s.phone || 'Sin datos'}</p>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <span className="block text-gray-400 uppercase tracking-wider text-[10px]">Ingreso</span>
+                      <p className="font-medium text-gray-800 mt-1">{s.hire_date}</p>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <span className="block text-gray-400 uppercase tracking-wider text-[10px]">Salario</span>
+                      <p className="font-medium text-gray-800 mt-1">{s.salary ? `S/ ${s.salary.toLocaleString()}` : '—'}</p>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <span className="block text-gray-400 uppercase tracking-wider text-[10px]">Turno</span>
+                      <p className="font-medium text-gray-800 mt-1">{profile.currentShift}</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-gray-100 bg-slate-50 p-4 text-sm space-y-2">
+                    <p className="flex items-center gap-2 font-semibold text-gray-900"><BadgeInfo className="w-4 h-4 text-navy" /> Gratificacion estimada</p>
+                    <p className="text-gray-600 text-xs leading-relaxed">{profile.gratification.regimeLabel} · {profile.gratification.monthsWorked} meses · {profile.gratification.eligible ? `S/ ${profile.gratification.total.toFixed(2)}` : 'No aplica'}</p>
+                    <p className="text-gray-500 text-xs">Formula: {profile.gratification.formula}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                    <button onClick={() => setDetailStaff(s)} className="flex items-center gap-1 text-xs text-navy hover:bg-navy-50 px-2.5 py-1.5 rounded-lg transition-colors font-medium">
+                      <BadgeInfo className="w-3.5 h-3.5" /> Ficha
+                    </button>
+                    <button onClick={() => { setEditStaff(s); setShowForm(true); }} className="flex items-center gap-1 text-xs text-gray-600 hover:bg-gray-100 px-2.5 py-1.5 rounded-lg transition-colors font-medium">
+                      <Edit2 className="w-3.5 h-3.5" /> Editar
+                    </button>
+                    <button onClick={() => toggleActive(s.id, s.is_active)} className="flex items-center gap-1 text-xs text-gray-600 hover:bg-gray-100 px-2.5 py-1.5 rounded-lg transition-colors font-medium">
+                      {s.is_active ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-gray-400" />} Estado
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
       {showForm && <StaffFormModal staff={editStaff} onClose={() => setShowForm(false)} onSave={() => { setShowForm(false); load(); }} />}
+      {detailStaff && <StaffDetailModal staff={detailStaff} onClose={() => setDetailStaff(null)} />}
     </div>
   );
 }

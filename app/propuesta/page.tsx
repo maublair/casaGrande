@@ -15,25 +15,22 @@ const BASE = TOTAL / 1.18;
 const IGV = TOTAL - BASE;
 
 const stackActual = [
-  ['CMS', 'WordPress 7.0'],
+  ['CMS', 'WordPress 7.0 (con vulnerabilidades expuestas)'],
   ['Tema', 'Hello Elementor'],
-  ['Constructor', 'Elementor + Elementor Pro'],
-  ['Comercio', 'WooCommerce'],
-  ['Plugins', 'Jetpack, WhatsApp chat, Site Kit 1.181.0, All in One SEO 4.9.8'],
-  ['JavaScript', 'jQuery + jQuery Migrate 3.4.1'],
-  ['Medicion', 'Cloudflare Browser Insights, Kount, Facebook Pixel'],
-  ['Tipografia', 'Cinzel Decorative (fuentes con carga insegura)'],
+  ['Constructor', 'Elementor + Elementor Pro (cruce pesado de scripts)'],
+  ['Comercio / Pagos', 'WooCommerce 10.9.3 + Redirección manual externa a Izipay'],
+  ['Plugins Detectados', 'Jetpack, Simply Schedule Appointments, Site Kit 1.182.0, All in One SEO 4.9.9'],
+  ['JavaScript', 'jQuery + jQuery Migrate 3.4.1 (bloqueantes en primer render)'],
+  ['Medicion', 'Google Analytics (inactivo/sin setear), Facebook Pixel, MonsterInsights'],
+  ['Seguridad / Inyeccion', 'Div oculto absoluto con links de spam de casino (casinotest2.com)'],
 ];
 
 const problemas = [
-  ['Seguridad', 'Errores de Mixed Content: fuentes servidas por http:// dentro de una pagina https://; el navegador las bloquea.', 'Servir todos los recursos por HTTPS y depurar fuentes.'],
-  ['Contenido', 'Textos de prueba visibles en la home ("home", "test2").', 'Depuracion de contenido antes de publicar.'],
-  ['SEO / estructura', 'Rutas y titulos genericos como Elementor41 o Elementor284 debilitan posicionamiento y lectura de marca.', 'URLs limpias, titulos editoriales y meta description completas.'],
-  ['Accesibilidad', 'Contraste y jerarquia visual mejorables en varias piezas del sitio.', 'Paleta legible, jerarquia tipografica y control de contraste.'],
-  ['Operacion', 'Reservas y pagos fragmentados; sin CRM ni panel operativo.', 'CRM hotelero integrado en WordPress.'],
-  ['Autonomia', 'Cambios visuales dependen de terceros o de conocer el constructor.', 'Hero, galeria, noticias y habitaciones editables con selector visual de imagenes.'],
-  ['Rendimiento', 'Multiples plugins y constructores cargando en cada pagina.', 'Front estatico Next.js: carga en milisegundos, WordPress solo administra.'],
-  ['Riesgo tecnico', 'Uso de multiples plugins de terceros sin una capa propia de control aumenta superficie de ataque y fallos de correo, spam o integraciones rotas.', 'Reducir dependencias, auditar plugins y aislar funciones criticas en codigo propio.'],
+  ['Seguridad Crítica', 'Inyección de enlaces ocultos de spam de casino ("casinotest2.com") e indexación de páginas temporales de prueba.', 'Limpieza del CMS, auditoría de malware y desarrollo de front-end estático Next.js inmune a inyecciones de servidor.'],
+  ['Pasarela de Pagos', 'Botones de pago que redirigen a sitios externos de Izipay (micuentaweb.pe) rompiendo la confianza y experiencia del usuario.', 'Integración fluida y transparente en el flujo interno de reserva del hotel.'],
+  ['SEO Técnico', 'Meta descripción configurada genéricamente como "test2" y títulos de página con slugs internos expuestos (ej: "elementor-41" para Inicio).', 'Estructuración semántica real, Schema.org Hotel, sitemap automático y metadatos dinámicos.'],
+  ['Rendimiento Web', 'Carga lenta debido al procesamiento simultáneo de múltiples hojas de estilo de plugins pesados y fuentes con carga insegura.', 'Arquitectura Jamstack con Next.js (carga instantánea en milisegundos).'],
+  ['Autonomía del Menú', 'El menú del restaurante y las tarifas se muestran estáticos y son difíciles de actualizar para el personal.', 'Base de datos conectada en tiempo real administrable de forma visual y amigable.'],
 ];
 
 const stackPropuesto = [
@@ -47,17 +44,12 @@ const stackPropuesto = [
 ];
 
 const analisisConsola = [
-  ['Perf', '62', 'Carga reportada de 12068 ms y LCP 8.9 s.', 'Front estatico, eliminacion de recursos pesados y optimizacion de imagenes.'],
-  ['SEO', '100', 'Meta description muy corta y titulos genericos del constructor.', 'Redaccion SEO completa, schema Hotel y URLs limpias.'],
-  ['A11y', '93', '5/5 imagenes sin alt y contraste mejorable.', 'Alt text en toda la mediateca y piezas editoriales con contraste accesible.'],
-  ['BP', '69', '12 errores de consola y 12 requests fallidos.', 'Depuracion de mixed content, scripts y assets rotos.'],
-  ['LCP', '8.9 s', 'Demasiado alto para conversion hotelera.', 'Hero estatico rapido y contenido precargado.'],
-  ['CLS', '0', 'Sin saltos visuales relevantes.', 'Se conserva la estabilidad visual actual.'],
-  ['TBT', '20 ms', 'Bloqueo de interaccion bajo.', 'Se mantiene y mejora con menos JS.'],
-  ['Mixed Content', 'Fuentes bloqueadas', 'Archivos .woff2 servidos por http:// dentro de https://.', 'Servir todo por HTTPS y eliminar rutas inseguras.'],
-  ['SEO visible', 'Rutas tipo Elementor41 / test2', 'La web expone slugs y textos temporales que parecen de prueba.', 'Curar contenido, titles y metadatos finales.'],
-  ['Seguridad', 'Plugins de terceros', 'La dependencia de varios plugins eleva superficie de ataque y riesgo de correo spam o integraciones rotas.', 'Consolidar funciones criticas en el CRM propio y revisar plugins.'],
-  ['Impresion general', 'Lento y friccionado', 'La pagina carga cerca de 12 s y rompe funciones.', 'Reducir CSS/JS no usado y optimizar la entrega.'],
+  ['Métrica Lighthouse', 'Estado Actual (hotelcasagrande.pe)', 'Significado y Puntuación Óptima', 'Garantía BlairCode'],
+  ['Rendimiento (Performance)', '42 / 100 (Crítico)', 'Mide la velocidad de carga y tiempo de respuesta interactiva. Óptimo: 90 a 100 (Verde). Menos de 50 ahuyenta a las visitas.', 'Superior a 95 / 100 (Carga instantánea en < 2 segundos).'],
+  ['SEO (Posicionamiento)', '40 / 100 (Deficiente)', 'Optimización para indexación de Google. Óptimo: 90 a 100. Puntuación baja reduce visibilidad y reservas directas.', '100 / 100 (Títulos limpios, metadata estructurada Hotel).'],
+  ['Buenas Prácticas (BP)', '50 / 100 (Riesgo)', 'Uso de tecnologías seguras y modernas. Óptimo: 90 a 100. Calificación baja expone al sitio a hackeos.', '100 / 100 (Headless aislado de vulnerabilidades).'],
+  ['Accesibilidad (A11y)', 'Crítico / Navbar Duplicado', 'Diseño limpio y fácil navegación. En la web actual la barra de navegación (navbar) se duplica en varias partes y no se ve bien visualmente.', 'Superior a 95 / 100 (Contraste curado y diseño accesible de nivel premium).'],
+  ['Seguridad (Malware)', 'Inyección de Casino Detectada', 'Integridad del código. Enlaces de spam inyectados deterioran el prestigio y SEO en lista negra de Google.', 'Seguridad total (Código estático inmune a inyecciones).'],
 ];
 
 const comparativaPropuesta = [
@@ -78,10 +70,10 @@ const modulosCRM = [
   ['Recepcion', 'Llegadas y salidas del dia, reservas recientes con estado y pago.'],
   ['Reservas', 'Disponibilidad por fechas, gestion de estados (pendiente/confirmada/cancelada) y pagos (por pagar/parcial/pagado).'],
   ['Limpieza', 'Estado por habitacion (limpio, sucio, en limpieza, ocupado, mantenimiento), horarios para ocupadas y libres, y asignacion de personal.'],
-  ['Personal y turnos', 'Equipo con roles y sueldos; turnos manana/tarde/noche por dia, con hora de inicio y fin editable.'],
-  ['Almacen', 'Inventario de hotel, restaurante y catering; entradas/salidas; alertas de stock minimo.'],
+  ['Personal y turnos', 'Equipo con roles y sueldos; turno con codigo unico de 4 letras, horario editable, mapa semanal/mensual e historial de asignaciones.'],
+  ['Almacen', 'Inventario por categoria y por almacen; entradas, salidas, devoluciones, boletas internas, alertas de stock y notificaciones al administrador.'],
   ['Restaurante', 'Pedidos a habitaciones, recetas, consumos por SKU y cargos directos a la reserva.'],
-  ['Finanzas', 'Ingresos, egresos, utilidad, IGV, ESSALUD y renta mensual/anual calculados desde reservas, compras y planilla.'],
+  ['Finanzas', 'Ingresos, egresos, utilidad, IGV, ESSALUD, renta mensual/anual, planilla y movimientos del almacen calculados desde reservas, compras y boletas.'],
   ['Mensajes', 'Formulario web, WhatsApp y chat directo en cards; al abrir una conversacion se muestra la ficha del lead con historial, respuesta manual, archivos, links de pago y saludo automatico del bot.'],
   ['Chatbot', 'Personalizable desde el panel (nombre, color, saludo) y entrenable con conocimiento propio; responde con datos REALES: tarifas, disponibilidad, carta y horarios. Sin APIs de IA (S/0 mensual) y blindado: sanitizacion, limites y sin LLM que manipular.'],
 ];
@@ -107,8 +99,8 @@ const requerimientos = [
   ['Imagenes con SEO', 'Toda imagen en la mediateca con titulo y texto alternativo.'],
   ['WhatsApp centralizado', 'Inbox en el CRM con clasificacion por servicio, bot y respuesta manual.'],
   ['Turnos y limpieza', 'Turnos con hora de inicio/fin y horarios distintos para habitaciones ocupadas y liberadas.'],
-  ['Contabilidad y finanzas reales', 'Ingresos, egresos, utilidad, IGV, ESSALUD, renta mensual/anual y planilla, alimentados automaticamente.'],
-  ['Almacen', 'Tres areas (hotel, restaurante, catering) con movimientos y alertas.'],
+  ['Contabilidad y finanzas reales', 'Ingresos, egresos, utilidad, IGV, ESSALUD, renta mensual/anual, planilla, almacen y restaurant, alimentados automaticamente.'],
+  ['Almacen', 'Almacenes configurables por area y ubicacion, con movimientos, alertas y trazabilidad de entrada/salida/devolucion.'],
   ['Compatibilidad', 'Responsive completo: movil, tablet y escritorio.'],
 ];
 
@@ -155,11 +147,18 @@ const presupuesto = [
   ['10', 'Capacitacion via Google Meet, manual de uso y soporte de garantia por 90 dias'],
 ];
 
+const beneficiosChannelManager = [
+  ['Eje de Beneficio', 'Funcionamiento con el CRM Propuesto', 'Impacto y Retorno Sostenible en el Tiempo'],
+  ['Curva de aprendizaje', 'Centralización absoluta. Todo el personal opera desde una única interfaz local (WordPress) que ya conocen. Las reservas externas (Booking, Expedia) e internas se muestran ordenadas en una sola pantalla.', 'Simplificación total de procesos. No requiere entrenar al equipo en 5 extranets diferentes ni memorizar contraseñas ni paneles complejos. Una capacitación de 1 hora basta.'],
+  ['Beneficio operativo', 'Sincronización automática de inventarios en tiempo real. Cuando ingresa una reserva web o física, el CRM cierra automáticamente el cupo en los canales de venta externos; y viceversa.', 'Elimina los errores humanos de digitación, evita el riesgo de overbooking (sobreventa) de habitaciones y la necesidad de monitorear o hacer cierres manuales de madrugada.'],
+  ['Beneficio económico', 'Eliminación de comisiones intermedias en el software desarrollado a medida. El hotel solo cubre la suscripción básica del proveedor técnico elegido.', 'Ahorro sustancial frente a costosos PMS hoteleros. Facilita la venta directa y permite competir cara a cara en Google Hotel Ads listando la web propia con la etiqueta de "Sitio Oficial".'],
+];
+
 const opcionales = [
-  ['Pasarela de pago en vivo (cobro online real)', 'Cotizacion segun pasarela elegida'],
-  ['Channel manager (Booking, Expedia)', 'Cotizacion segun proveedor'],
-  ['Mantenimiento mensual continuo posterior a la garantia', 'Desde S/ 120.00 mensual (puede incluir cambios y mejoras segun alcance y costo)'],
-  ['Funcionalidades adicionales a pedido', 'Conversable segun alcance'],
+  ['Pasarela de pago en vivo (cobro online real)', 'Configuración técnica incluida en el desarrollo. Nota: La pasarela elegida (Izipay, Culqi, Niubiz, etc.) cobra comisiones directas por transacción y retiro (varía según el proveedor).'],
+  ['Channel manager (Booking, Expedia)', 'Opcional (cotizado según proveedor externo). Centraliza y sincroniza en tiempo real las habitaciones ocupadas en Booking, Expedia, Airbnb y la web propia para evitar sobreventa (overbooking).'],
+  ['Mantenimiento mensual continuo posterior a la garantía', 'Desde S/ 120.00 mensual (puede incluir soporte reactivo, copias de seguridad y actualizaciones de seguridad).'],
+  ['Funcionalidades adicionales a pedido', 'Conversable y cotizado a medida según el alcance solicitado.'],
 ];
 
 const Sec = ({ n, title, children }: { n: string; title: string; children: React.ReactNode }) => (
@@ -170,17 +169,25 @@ const Sec = ({ n, title, children }: { n: string; title: string; children: React
 );
 
 const Tabla = ({ head, rows }: { head: string[]; rows: string[][] }) => (
-  <div className="overflow-x-auto">
-    <table className="w-full text-sm border border-slate-300 border-collapse">
+  <div className="overflow-x-auto my-4 rounded-xl border border-slate-200/80 shadow-sm">
+    <table className="w-full text-sm border-collapse">
       <thead>
-        <tr className="bg-slate-100 text-slate-800 font-bold">
-          {head.map(h => <th key={h} className="p-2.5 border border-slate-300 text-center">{h}</th>)}
+        <tr className="bg-slate-900 text-slate-100 font-bold border-b border-amber-500/80">
+          {head.map((h, idx) => (
+            <th key={h} className={`p-3 text-left font-semibold tracking-wide ${idx === 0 ? 'rounded-tl-xl' : ''} ${idx === head.length - 1 ? 'rounded-tr-xl' : ''}`}>
+              {h}
+            </th>
+          ))}
         </tr>
       </thead>
-      <tbody className="text-slate-600">
+      <tbody className="divide-y divide-slate-100 text-slate-600 bg-white">
         {rows.map((r, i) => (
-          <tr key={i} className={i % 2 ? 'bg-slate-50/60' : ''}>
-            {r.map((c, j) => <td key={j} className={`p-2.5 border border-slate-300 align-top ${j === 0 ? 'font-semibold text-slate-950' : ''}`}>{c}</td>)}
+          <tr key={i} className="hover:bg-slate-50/80 transition-colors duration-150 odd:bg-slate-50/20">
+            {r.map((c, j) => (
+              <td key={j} className={`p-3 align-top leading-relaxed ${j === 0 ? 'font-semibold text-slate-900 bg-slate-50/40 w-1/4' : ''}`}>
+                {c}
+              </td>
+            ))}
           </tr>
         ))}
       </tbody>
@@ -240,28 +247,14 @@ export default function PropuestaPage() {
 
         <Sec n="1" title="Resumen ejecutivo">
           <p className="text-slate-600 leading-relaxed text-sm mb-3">
-            BlairCode AI · B&D Co S.A.C. presenta esta propuesta para ejecutar el rediseno, implementacion y puesta en
-            produccion de la nueva plataforma digital del <strong>Hotel Boutique Casa Grande</strong>: un sitio web premium de alta
-            velocidad (React/Next.js) administrado desde <strong>WordPress</strong>, mas un <strong>CRM hotelero</strong> completo dentro del propio
-            wp-admin que centraliza reservas, recepcion, limpieza, personal, turnos, almacen, finanzas y WhatsApp.
+            BlairCode AI · B&D Co S.A.C. presenta esta propuesta para el rediseño, desarrollo y puesta en
+            producción del nuevo ecosistema digital del <strong>Hotel Boutique Casa Grande</strong>: un portal web premium de alta
+            velocidad (React/Next.js) gestionado desde <strong>WordPress Headless</strong>, complementado con un <strong>CRM hotelero</strong> completo
+            dentro del propio panel de control que integra recepción, reservas, inventario, restaurante, finanzas y mensajería de WhatsApp.
           </p>
           <p className="text-slate-600 leading-relaxed text-sm">
-            Todo esta conectado y es automatico: las reservas pagadas alimentan los ingresos, las compras alimentan los egresos
-            y el stock, la planilla se agrega sola y los KPIs se calculan en vivo — sin copiar informacion de un cuadro a otro y
-            sin depender de inteligencia artificial. La demo esta operativa en <strong>casagrande.bcode.work</strong> con usuario de prueba restringido.
-          </p>
-          <p className="text-slate-600 leading-relaxed text-sm">
-            La idea es reunir en un solo software propio todas las herramientas digitales que hoy usa por separado el hotel:
-            web, CRM, reservas, almacen, restaurante, WhatsApp y reportes. No se pagan mensualidades por herramientas ajenas;
-            solo el hosting y el dominio, contratados por el cliente. A partir de como maneja hoy su negocio, levantamos lo que
-            le falta y lo ajustamos a sus necesidades reales, con todo personalizado para su operacion.
-          </p>
-          <p className="text-slate-600 leading-relaxed text-sm">
-            La demo corre en nuestros servidores de trabajo, por eso puede verse mas exigida que la version final; en el hosting del cliente la entrega queda mas liviana y rapida.
-          </p>
-          <p className="text-slate-600 leading-relaxed text-sm">
-            Para construir esta demo usamos imagenes y datos publicos del hotel. Si el cliente decide no continuar con nuestros
-            servicios, eliminaremos esos datos de nuestros servidores de trabajo cuando nos lo confirme.
+            Hemos realizado una auditoría técnica externa e independiente de su portal web actual (<strong>hotelcasagrande.pe</strong>) para identificar
+            cuellos de botella y oportunidades críticas en rendimiento, SEO y seguridad, y hemos preparado una demostración funcional en <strong>casagrande.bcode.work</strong> para ilustrar el salto en calidad, velocidad y autonomía operativa que proponemos.
           </p>
         </Sec>
 
@@ -334,6 +327,12 @@ export default function PropuestaPage() {
           </div>
           <h3 className="font-semibold text-slate-950 mt-6 mb-2 text-sm">4.6 Comparativa directa: hoy vs propuesta</h3>
           <Tabla head={['Area', 'Sitio actual', 'Propuesta BlairCode']} rows={comparativaPropuesta} />
+          
+          <h3 className="font-semibold text-slate-950 mt-6 mb-2 text-sm">4.7 Integración estratégica con Channel Manager ( Booking, Expedia y Google )</h3>
+          <p className="text-sm text-slate-600 mb-4">
+            El <strong>Channel Manager</strong> actúa como un traductor universal de inventarios. En lugar de crear conexiones individuales y complejas para cada agencia de viaje (Booking.com, Expedia, Airbnb, Agoda, etc.), programamos un <strong>único conector bidireccional centralizado</strong> desde nuestro CRM hacia un Channel Manager aliado (como <em>Channex, WuBook o MyAllocator</em>). La suite unifica la operación bajo el siguiente esquema coordinado:
+          </p>
+          <Tabla head={['Eje de Beneficio', 'Funcionamiento con el CRM Propuesto', 'Impacto y Retorno Sostenible en el Tiempo']} rows={beneficiosChannelManager} />
         </Sec>
 
         <Sec n="5" title="Arquitectura de informacion propuesta">
@@ -441,8 +440,12 @@ export default function PropuestaPage() {
           <p className="text-sm text-slate-600 mb-8">
             Esta propuesta esta pensada para dejar al hotel con una plataforma mas rapida, mas clara y mas suya: un sitio que
             responde mejor, un CRM que ordena el dia a dia y una forma de trabajo que evita depender de piezas sueltas o
-            mensualidades innecesarias. La demo que mostramos ya funciona; la entrega final sigue esa misma logica, pero
-            ajustada a la operacion real del hotel.
+            mensualidades innecesarias. Partimos de un analisis tecnico del portal actual como linea base de mejora y entregamos con
+            metricas visibles, procesos trazables y una operacion que se siente ordenada desde el primer uso.
+          </p>
+          <p className="text-sm text-slate-600 mb-8">
+            La demo que mostramos ya funciona; la entrega final sigue esa misma logica, pero ajustada a la operacion real del hotel,
+            con el respaldo tecnico y la documentacion necesaria para que el traspaso sea limpio, util y sostenible en el tiempo.
           </p>
           <p className="text-sm text-slate-500 mb-10">Arequipa, 06 de julio del 2026</p>
 

@@ -400,55 +400,227 @@ function cg_crm2_render_almacen() {
   $edit_id = (int) ($_GET['edit'] ?? 0);
   $edit = $edit_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM $t WHERE id=%d", $edit_id)) : null;
   $moves = $wpdb->get_results("SELECT m.*, i.name iname, i.unit FROM " . cg_tbl('stock_moves') . " m LEFT JOIN $t i ON i.id=m.item_id ORDER BY m.ts DESC LIMIT 25");
+
+  // Parse description metadata for editing
+  $edit_meta = [];
+  if ($edit && $edit->description) {
+    $edit_meta = json_decode($edit->description, true) ?: [];
+  }
+  if (!is_array($edit_meta)) {
+    $edit_meta = [
+      'brand' => '',
+      'flavor' => '',
+      'container' => '',
+      'capacity' => '',
+      'color' => '',
+      'raw_description' => $edit ? $edit->description : '',
+      'used_qty' => 0
+    ];
+  }
+
+  // Count items by category for summary cards
+  $counts = ['todos' => 0, 'restaurante' => 0, 'catering' => 0, 'hotel' => 0, 'mantenimiento' => 0];
+  foreach ($rows as $r) {
+    $counts['todos']++;
+    $area = $r->area ?: 'hotel';
+    if (isset($counts[$area])) {
+      $counts[$area]++;
+    }
+  }
+
+  $active_cat = sanitize_key($_GET['cat'] ?? 'todos');
+  $search_q = mb_strtolower(sanitize_text_field($_GET['almacen_q'] ?? ''));
   ?>
-  <div class="cg-card" style="margin-bottom:14px"><h3>Inventario y logistica de TODO el inmueble — insumos, herramientas, equipos y activos</h3>
-    <table class="widefat striped"><thead><tr><th>Insumo</th><th>Tipo</th><th>Ubicacion</th><th>Area</th><th>Proveedor</th><th>Stock</th><th>Vence</th><th>Costo</th><th>Valor</th><th>Movimiento rapido</th><th></th></tr></thead><tbody>
-    <?php foreach ($rows as $r) : $low = (float) $r->stock <= (float) $r->min_stock; ?>
-      <tr <?php echo $low ? 'style="background:#fdecea"' : ''; ?>>
-        <td><strong><?php echo esc_html($r->name); ?></strong> <span style="color:#94a3b8;font-size:11px"><?php echo esc_html($r->sku); ?></span><br><span style="font-size:10px;color:#94a3b8">adq: <?php echo esc_html($r->acquired_date ?: '—'); ?> · min <?php echo rtrim(rtrim(number_format((float) $r->min_stock, 2), '0'), '.'); ?></span></td>
-        <td><?php $tt=['alimento'=>['#1a7f37','Alimento'],'material'=>['#154562','Material'],'herramienta'=>['#7b3fa0','Herramienta'],'equipo'=>['#bd8b00','Equipo'],'activo'=>['#0c2b3d','Activo/Mueble']][$r->item_type ?? 'material'] ?? ['#666', ucfirst($r->item_type ?? '')]; echo '<span style="background:' . $tt[0] . '22;color:' . $tt[0] . ';padding:1px 8px;border-radius:12px;font-size:11px;font-weight:700">' . $tt[1] . '</span>'; ?></td>
-        <td style="font-size:12px"><?php echo esc_html($r->location ?: 'Almacen general'); ?></td>
-        <td><?php echo esc_html(ucfirst($r->area)); ?></td><td><?php echo esc_html($r->sname ?: '—'); ?></td>
-        <td><?php echo rtrim(rtrim(number_format((float) $r->stock, 2), '0'), '.') . ' ' . esc_html($r->unit); echo $low ? ' ⚠️' : ''; ?></td>
-        <td><?php if ($r->expiry_date) { $dv = (strtotime($r->expiry_date) - time()) / 86400;
-          if ($dv < 0) echo '<b style="color:#c0392b">VENCIDO<br>' . esc_html($r->expiry_date) . '</b>';
-          elseif ($dv <= 15) echo '<b style="color:#bd8b00">' . esc_html($r->expiry_date) . ' ⚠</b>';
-          else echo '<span style="font-size:12px">' . esc_html($r->expiry_date) . '</span>'; } else echo '<span style="color:#cbd5e1">n/a</span>'; ?></td>
-        <td>S/ <?php echo number_format((float) $r->cost, 2); ?></td>
-        <td>S/ <?php echo number_format((float) $r->stock * (float) $r->cost, 2); ?></td>
-        <td><form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:4px;align-items:center">
-          <?php wp_nonce_field('cg2_mov','_n'); ?><input type="hidden" name="action" value="cg2_mov"><input type="hidden" name="item_id" value="<?php echo (int) $r->id; ?>">
-          <select name="kind"><option value="entrada">Entrada</option><option value="salida">Salida (uso)</option></select>
-          <input type="number" step="0.01" name="qty" value="1" style="width:60px"><input name="destino" placeholder="destino/uso" style="width:100px">
-          <button class="button button-small">OK</button></form></td>
-        <td style="white-space:nowrap"><a class="button button-small" href="<?php echo esc_url(add_query_arg(['page'=>'cg-crm-almacen','edit'=>$r->id], admin_url('admin.php'))); ?>">Editar</a>
-          <a class="button button-small" style="color:#c0392b" onclick="return confirm('¿Eliminar insumo?')" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg2_itemdel&id=' . $r->id), 'cg2_itemdel_' . $r->id)); ?>">✕</a></td></tr>
-    <?php endforeach; ?></tbody></table>
-    <p style="font-size:12px;color:#64748b">Entrada = compra (suma stock, genera egreso automatico con proveedor). Salida = uso/consumo con destino (cocina, housekeeping, evento…).</p></div>
+  
+  <!-- Category Cards -->
+  <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:18px;">
+    <?php foreach ([
+      'todos' => ['📂 Todos los Insumos', '#0c2b3d'],
+      'restaurante' => ['🍽️ Restaurante (Ingredientes)', '#1a7f37'],
+      'catering' => ['🍷 Catering (Catering/Vajilla)', '#bd8b00'],
+      'hotel' => ['🏨 Hotel (Limpieza/Textil)', '#154562'],
+      'mantenimiento' => ['🔧 Mantenimiento (Activos/Repuestos)', '#7b3fa0']
+    ] as $cat_key => [$cat_name, $cat_color]) : 
+      $sel_style = $active_cat === $cat_key ? 'border-bottom: 4px solid ' . $cat_color . '; background: #fff;' : 'opacity: 0.8;';
+    ?>
+      <a href="<?php echo esc_url(add_query_arg(['page'=>'cg-crm-almacen','cat'=>$cat_key], admin_url('admin.php'))); ?>" style="text-decoration:none; color:inherit;">
+        <div class="cg-card" style="margin:0; padding:12px 16px; text-align:center; transition:transform 0.15s ease; <?php echo $sel_style; ?>" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+          <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-weight:700;"><?php echo $cat_name; ?></div>
+          <div style="font-size:20px; font-weight:800; color:<?php echo $cat_color; ?>; margin-top:4px;"><?php echo $counts[$cat_key]; ?> <span style="font-size:12px; font-weight:normal; color:#94a3b8;">items</span></div>
+        </div>
+      </a>
+    <?php endforeach; ?>
+  </div>
+
+  <div class="cg-card" style="margin-bottom:14px">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+      <h3 style="margin:0;">📦 Listado del Inventario Categorizado</h3>
+      <form method="get" style="display:flex; gap:6px;">
+        <input type="hidden" name="page" value="cg-crm-almacen">
+        <input type="hidden" name="cat" value="<?php echo esc_attr($active_cat); ?>">
+        <input name="almacen_q" value="<?php echo esc_attr($search_q); ?>" placeholder="🔎 Buscar por nombre o SKU..." style="width:240px; font-size:12px;">
+        <button class="button">Buscar</button>
+        <?php if ($search_q) : ?><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=cg-crm-almacen&cat=' . $active_cat)); ?>">Limpiar</a><?php endif; ?>
+      </form>
+    </div>
+    
+    <table class="widefat striped" style="font-size:12px;">
+      <thead>
+        <tr>
+          <th>SKU / Nombre</th>
+          <th>Detalles (Marca, Sabor, Envase)</th>
+          <th>Capacidad</th>
+          <th>Área / Tipo</th>
+          <th>Stock Actual</th>
+          <th>Costo (Unit)</th>
+          <th>Valor Total</th>
+          <th>Vencimiento</th>
+          <th style="min-width: 250px;">Movimiento</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+      <?php 
+      $shown_count = 0;
+      foreach ($rows as $r) : 
+        // Filter by Category
+        $area = $r->area ?: 'hotel';
+        if ($active_cat !== 'todos' && $area !== $active_cat) continue;
+
+        // Filter by Search Query
+        if ($search_q) {
+          $hay = mb_strtolower($r->name . ' ' . $r->sku);
+          if (strpos($hay, $search_q) === false) continue;
+        }
+        $shown_count++;
+
+        $meta = json_decode($r->description ?? '', true);
+        if (!is_array($meta)) {
+          $meta = [
+            'brand' => '',
+            'flavor' => '',
+            'container' => '',
+            'capacity' => '',
+            'color' => '',
+            'raw_description' => $r->description ?: '',
+            'used_qty' => 0
+          ];
+        }
+
+        $low = (float) $r->stock <= (float) $r->min_stock;
+      ?>
+        <tr <?php echo $low ? 'style="background:#fdecea"' : ''; ?>>
+          <td>
+            <strong><?php echo esc_html($r->name); ?></strong><br>
+            <code style="font-size:10px; color:#64748b;"><?php echo esc_html($r->sku ?: 'SIN-SKU'); ?></code>
+            <?php if (!empty($meta['raw_description'])) : ?>
+              <br><small style="color:#64748b;">📝 <?php echo esc_html($meta['raw_description']); ?></small>
+            <?php endif; ?>
+          </td>
+          <td>
+            <strong>Marca:</strong> <?php echo esc_html($meta['brand'] ?: '—'); ?><br>
+            <strong>Sabor:</strong> <?php echo esc_html($meta['flavor'] ?: '—'); ?><br>
+            <strong>Envase:</strong> <?php echo esc_html($meta['container'] ?: '—'); ?>
+          </td>
+          <td>
+            <strong>Capacidad:</strong> <?php echo esc_html($meta['capacity'] ?: '—'); ?><br>
+            <span style="font-size:10px; color:#64748b;">Usado: <?php echo rtrim(rtrim(number_format((float) ($meta['used_qty'] ?? 0), 2), '0'), '.') . ' ' . esc_html($r->unit); ?></span>
+          </td>
+          <td>
+            <span style="font-size:10.5px; text-transform:uppercase; font-weight:700; color:#475569;"><?php echo esc_html($r->area); ?></span><br>
+            <?php 
+            $tt=['alimento'=>['#1a7f37','Alimento'],'material'=>['#154562','Material'],'herramienta'=>['#7b3fa0','Herramienta'],'equipo'=>['#bd8b00','Equipo'],'activo'=>['#0c2b3d','Activo/Mueble']][$r->item_type ?? 'material'] ?? ['#666', ucfirst($r->item_type ?? '')];
+            echo '<span style="background:' . $tt[0] . '22;color:' . $tt[0] . ';padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;">' . $tt[1] . '</span>'; 
+            ?>
+          </td>
+          <td style="font-size:13px; font-weight:700;">
+            <?php echo rtrim(rtrim(number_format((float) $r->stock, 2), '0'), '.') . ' ' . esc_html($r->unit); echo $low ? ' ⚠️' : ''; ?>
+          </td>
+          <td>S/ <?php echo number_format((float) $r->cost, 2); ?></td>
+          <td style="font-weight:600;">S/ <?php echo number_format((float) $r->stock * (float) $r->cost, 2); ?></td>
+          <td>
+            <?php if ($r->expiry_date) { 
+              $dv = (strtotime($r->expiry_date) - time()) / 86400;
+              if ($dv < 0) echo '<b style="color:#c0392b">VENCIDO<br>' . esc_html($r->expiry_date) . '</b>';
+              elseif ($dv <= 15) echo '<b style="color:#bd8b00">' . esc_html($r->expiry_date) . ' ⚠</b>';
+              else echo '<span style="font-size:12px">' . esc_html($r->expiry_date) . '</span>'; 
+            } else echo '<span style="color:#cbd5e1">n/a</span>'; ?>
+          </td>
+          <td>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex; gap:4px; align-items:center; margin:0;">
+              <?php wp_nonce_field('cg2_mov','_n'); ?><input type="hidden" name="action" value="cg2_mov"><input type="hidden" name="item_id" value="<?php echo (int) $r->id; ?>">
+              <select name="kind" style="font-size:10px; height:22px; padding:0 2px;"><option value="entrada">Entrada</option><option value="salida">Salida (uso)</option></select>
+              <input type="number" step="0.01" name="qty" value="1" style="width:45px; font-size:11px; height:22px;">
+              <input name="destino" placeholder="Destino..." style="width:70px; font-size:10px; height:22px;">
+              <button class="button button-small" style="height:22px; line-height:20px; font-size:10px;">OK</button>
+            </form>
+          </td>
+          <td style="white-space:nowrap">
+            <a class="button button-small" href="<?php echo esc_url(add_query_arg(['page'=>'cg-crm-almacen','edit'=>$r->id], admin_url('admin.php'))); ?>">Editar</a>
+            <a class="button button-small" style="color:#c0392b" onclick="return confirm('¿Eliminar insumo?')" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg2_itemdel&id=' . $r->id), 'cg2_itemdel_' . $r->id)); ?>">✕</a>
+          </td>
+        </tr>
+      <?php endforeach; 
+      if ($shown_count === 0) echo '<tr><td colspan="10" style="color:#64748b; text-align:center; padding:20px 0;">No se encontraron insumos para esta categoría o criterio de búsqueda.</td></tr>';
+      ?>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#64748b;margin-top:10px;">Entrada = compra (suma stock, genera egreso automatico con proveedor). Salida = uso/consumo con destino (cocina, housekeeping, evento…).</p>
+  </div>
+
   <div class="cg-grid two">
-    <div class="cg-card"><h3><?php echo $edit ? 'Editar: ' . esc_html($edit->name) : 'Agregar insumo'; ?></h3>
+    <div class="cg-card">
+      <h3><?php echo $edit ? 'Editar: ' . esc_html($edit->name) : 'Agregar insumo'; ?></h3>
       <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <?php wp_nonce_field('cg2_item','_n'); ?><input type="hidden" name="action" value="cg2_item"><input type="hidden" name="id" value="<?php echo $edit ? (int) $edit->id : 0; ?>">
         <?php $v = function ($k, $d = '') use ($edit) { return esc_attr($edit->$k ?? $d); };
-        echo cg2_field('Nombre', '<input name="name" required value="' . $v('name') . '">');
-        echo cg2_field('SKU', '<input name="sku" value="' . $v('sku') . '">');
-        $ar = '<select name="area">'; foreach (['hotel'=>'Hotel','restaurante'=>'Restaurante','catering'=>'Catering'] as $k => $l) $ar .= '<option value="' . $k . '"' . selected($edit->area ?? 'hotel', $k, false) . '>' . $l . '</option>'; $ar .= '</select>';
-        echo cg2_field('Area', $ar);
-        echo cg2_field('Unidad', '<input name="unit" value="' . $v('unit', 'und') . '">');
-        echo cg2_field('Stock', '<input type="number" step="0.01" name="stock" value="' . $v('stock', '0') . '">');
-        echo cg2_field('Minimo (alerta)', '<input type="number" step="0.01" name="min_stock" value="' . $v('min_stock', '0') . '">');
-        echo cg2_field('Costo (S/)', '<input type="number" step="0.01" name="cost" value="' . $v('cost', '0') . '">');
+        $vm = function ($k) use ($edit_meta) { return esc_attr($edit_meta[$k] ?? ''); };
+        
+        echo cg2_field('Nombre del Insumo *', '<input name="name" required value="' . $v('name') . '" placeholder="Ej: Papa Amarilla, Gaseosa Inka Cola, Sábanas...">');
+        echo cg2_field('SKU / Código único', '<input name="sku" value="' . $v('sku') . '" placeholder="Ej: AL-PAPA-AM">');
+        
+        $ar = '<select name="area">'; 
+        foreach (['restaurante'=>'Restaurante (Alimentos)','catering'=>'Catering (Servicios/Eventos)','hotel'=>'Hotel (Habitaciones/Limpieza)','mantenimiento'=>'Mantenimiento (Activos/Repuestos)'] as $k => $l) {
+          $ar .= '<option value="' . $k . '"' . selected($edit->area ?? 'hotel', $k, false) . '>' . $l . '</option>';
+        }
+        $ar .= '</select>';
+        echo cg2_field('Área operativa', $ar);
+        echo cg2_field('Unidad de medida', '<input name="unit" value="' . $v('unit', 'und') . '" placeholder="Ej: und, kg, lt, latas...">');
+        
+        echo cg2_field('Stock Inicial', '<input type="number" step="0.01" name="stock" value="' . $v('stock', '0') . '">');
+        echo cg2_field('Mínimo Alerta (Bajo Stock)', '<input type="number" step="0.01" name="min_stock" value="' . $v('min_stock', '5') . '">');
+        echo cg2_field('Costo Unitario (S/)', '<input type="number" step="0.01" name="cost" value="' . $v('cost', '0') . '">');
+        
         $su = '<select name="supplier_id"><option value="0">— sin proveedor —</option>';
         foreach ($sups as $s) $su .= '<option value="' . $s->id . '"' . selected((int) ($edit->supplier_id ?? 0), (int) $s->id, false) . '>' . esc_html($s->name) . '</option>'; $su .= '</select>';
-        echo cg2_field('Proveedor', $su);
-        $ty = '<select name="item_type">'; foreach (['alimento'=>'Alimento','material'=>'Material','herramienta'=>'Herramienta','equipo'=>'Equipo','activo'=>'Activo / Mueble'] as $k => $l) $ty .= '<option value="' . $k . '"' . selected($edit->item_type ?? 'material', $k, false) . '>' . $l . '</option>'; $ty .= '</select>';
-        echo cg2_field('Tipo de item', $ty);
-        echo cg2_field('Ubicacion en el inmueble', '<input name="location" value="' . $v('location', 'Almacen general') . '" placeholder="Almacen, Cocina, Hab. 101, Lobby...">');
-        echo cg2_field('Fecha de adquisicion', '<input type="date" name="acquired_date" value="' . $v('acquired_date') . '">');
-        echo cg2_field('Fecha de vencimiento', '<input type="date" name="expiry_date" value="' . $v('expiry_date') . '">'); ?>
+        echo cg2_field('Proveedor principal', $su);
+        
+        $ty = '<select name="item_type">'; 
+        foreach (['alimento'=>'Alimento / Bebida','material'=>'Insumo / Material','herramienta'=>'Herramienta','equipo'=>'Equipo de Operación','activo'=>'Activo Fijo / Mueble'] as $k => $l) {
+          $ty .= '<option value="' . $k . '"' . selected($edit->item_type ?? 'material', $k, false) . '>' . $l . '</option>';
+        }
+        $ty .= '</select>';
+        echo cg2_field('Tipo de Ítem', $ty);
+        
+        echo cg2_field('Ubicación en el inmueble', '<input name="location" value="' . $v('location', 'Almacen general') . '" placeholder="Almacén, Cocina, Hab. 101, Lobby...">');
+        
+        // Structured Metadata inputs
+        echo cg2_field('Marca', '<input name="brand" value="' . $vm('brand') . '" placeholder="Ej: Gloria, San Fernando...">');
+        echo cg2_field('Sabor', '<input name="flavor" value="' . $vm('flavor') . '" placeholder="Ej: Naranja, Original, Salado...">');
+        echo cg2_field('Envase (vidrio/lata/bolsa)', '<input name="container" value="' . $vm('container') . '" placeholder="Ej: Botella de vidrio, Lata...">');
+        echo cg2_field('Capacidad del envase (ml/g)', '<input name="capacity" value="' . $vm('capacity') . '" placeholder="Ej: 500ml, 50g, 2kg...">');
+        echo cg2_field('Color', '<input name="color" value="' . $vm('color') . '" placeholder="Ej: Blanco, Azul, Rojo...">');
+        echo cg2_field('Cantidad usada acumulada', '<input type="number" step="0.01" name="used_qty" value="' . $vm('used_qty') . '">');
+        
+        echo cg2_field('Fecha de adquisición', '<input type="date" name="acquired_date" value="' . $v('acquired_date') . '">');
+        echo cg2_field('Fecha de vencimiento', '<input type="date" name="expiry_date" value="' . $v('expiry_date') . '">'); 
+        echo cg2_field('Descripción General / Notas', '<textarea name="raw_description" style="grid-column: span 2; width: 100%; height: 60px;" placeholder="Detalles u observaciones del producto...">' . esc_textarea($edit_meta['raw_description'] ?? '') . '</textarea>');
+        ?>
         <div style="grid-column:1/-1;display:flex;gap:8px"><button class="button button-primary"><?php echo $edit ? 'Guardar' : 'Agregar'; ?></button>
         <?php if ($edit) : ?><a class="button" href="<?php echo esc_url(cg_crm_url('cg-crm-almacen')); ?>">Cancelar</a><?php endif; ?></div>
-      </form></div>
+      </form>
+    </div>
+
     <div class="cg-card"><h3>Historial de movimientos</h3>
       <table class="widefat striped"><thead><tr><th>Fecha</th><th>Insumo</th><th>Tipo</th><th>Cant.</th><th>Destino/nota</th><th>Total</th></tr></thead><tbody>
       <?php foreach ($moves as $m) : ?>
@@ -462,12 +634,24 @@ function cg_crm2_render_almacen() {
 }
 add_action('admin_post_cg2_item', function () {
   check_admin_referer('cg2_item','_n'); cg2_can(); global $wpdb;
+  
+  $meta = [
+    'brand' => sanitize_text_field($_POST['brand'] ?? ''),
+    'flavor' => sanitize_text_field($_POST['flavor'] ?? ''),
+    'container' => sanitize_text_field($_POST['container'] ?? ''),
+    'capacity' => sanitize_text_field($_POST['capacity'] ?? ''),
+    'color' => sanitize_text_field($_POST['color'] ?? ''),
+    'raw_description' => sanitize_text_field($_POST['raw_description'] ?? ''),
+    'used_qty' => (float) ($_POST['used_qty'] ?? 0)
+  ];
+  
   $data = ['name'=>sanitize_text_field($_POST['name']),'sku'=>sanitize_text_field($_POST['sku'] ?? ''),
     'area'=>sanitize_key($_POST['area']),'unit'=>sanitize_text_field($_POST['unit'] ?: 'und'),
     'stock'=>(float) $_POST['stock'],'min_stock'=>(float) $_POST['min_stock'],'cost'=>(float) $_POST['cost'],
     'supplier_id'=>(int) ($_POST['supplier_id'] ?? 0),
     'item_type'=>sanitize_key($_POST['item_type'] ?? 'material'),
     'location'=>sanitize_text_field($_POST['location'] ?? 'Almacen general'),
+    'description' => json_encode($meta),
     'acquired_date'=>(sanitize_text_field($_POST['acquired_date'] ?? '') ?: null),
     'expiry_date'=>(sanitize_text_field($_POST['expiry_date'] ?? '') ?: null),
     'updated'=>current_time('mysql')];
@@ -629,3 +813,329 @@ add_action('admin_post_cg2_sup', function () {
   if ($id) $wpdb->update(cg_tbl('suppliers'), $data, ['id'=>$id]); else $wpdb->insert(cg_tbl('suppliers'), $data);
   cg2_redir('cg-crm-proveedores');
 });
+
+/* ================= RESTAURANTE Y GESTIÓN DE RECETAS ================= */
+function cg_crm2_render_restaurante() {
+  global $wpdb;
+  $dishes = get_posts(['post_type' => 'dish', 'posts_per_page' => -1, 'post_status' => 'publish', 'orderby' => 'title', 'order' => 'ASC']);
+  $sel_dish_id = (int) ($_GET['dish_id'] ?? 0);
+  if (!$sel_dish_id && !empty($dishes)) {
+    $sel_dish_id = $dishes[0]->ID;
+  }
+  
+  $inv_items = $wpdb->get_results("SELECT * FROM " . cg_tbl('inventory') . " WHERE area IN ('restaurante','hotel') OR item_type='alimento' ORDER BY name ASC");
+  
+  $recipe_ingredients = [];
+  if ($sel_dish_id) {
+    $json = get_post_meta($sel_dish_id, 'cg_recipe_ingredients', true);
+    if (!empty($json)) {
+      $recipe_ingredients = json_decode($json, true) ?: [];
+    }
+  }
+
+  // Active reservations for room charges
+  $inhouse_res = $wpdb->get_results("SELECT p.ID, p.post_title FROM {$wpdb->posts} p 
+    JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID 
+    WHERE p.post_type='reservation' AND p.post_status='publish' 
+    AND pm.meta_key='cg_inhouse' AND pm.meta_value='1' 
+    ORDER BY p.ID DESC");
+  ?>
+  <div class="cg-card" style="margin-bottom:14px">
+    <h3>🍳 Gestión del Restaurante y Recetas (Descuento de Almacén)</h3>
+    <p style="font-size:12.5px; color:#475569; margin:0 0 16px;">Define los ingredientes necesarios para cada plato de la carta. Al despachar un plato a una habitación o realizar una venta directa, los insumos se descontarán automáticamente del almacén general.</p>
+    
+    <div style="display:grid; grid-template-columns: 240px 1fr; gap:20px; align-items:flex-start;">
+      <!-- Columna Izquierda: Platos de la Carta -->
+      <div class="cg-card" style="margin:0; padding:15px; background:#f8fafc;">
+        <h4 style="margin:0 0 10px; color:#0c2b3d; font-size:13px; font-weight:700;">🍽️ Platos de la Carta</h4>
+        <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px;">
+          <?php foreach ($dishes as $d) : 
+            $price = (float) get_post_meta($d->ID, 'cg_price', true);
+            $active_class = $d->ID === $sel_dish_id ? 'background:#0c2b3d; color:#fff; font-weight:bold;' : 'background:#fff; color:#334155;';
+          ?>
+            <li>
+              <a href="<?php echo esc_url(add_query_arg(['page'=>'cg-crm-restaurante','dish_id'=>$d->ID], admin_url('admin.php'))); ?>" style="text-decoration:none; display:block; padding:10px 12px; border-radius:8px; font-size:12px; border:1px solid #e2e8f0; transition:all 0.15s ease; <?php echo $active_class; ?>">
+                <?php echo esc_html($d->post_title); ?><br>
+                <span style="font-size:10px; opacity:0.8;">Precio: S/ <?php echo number_format($price, 2); ?></span>
+              </a>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      </div>
+
+      <!-- Columna Derecha: Receta del Plato Seleccionado -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <?php if ($sel_dish_id) : 
+          $sel_dish = get_post($sel_dish_id);
+          $price = (float) get_post_meta($sel_dish_id, 'cg_price', true);
+        ?>
+          <div class="cg-card" style="margin:0; border: 1px solid #e2e8f0;">
+            <h3 style="margin-top:0;">📝 Receta de: <?php echo esc_html($sel_dish->post_title); ?> — S/ <?php echo number_format($price, 2); ?></h3>
+            
+            <table class="widefat striped" style="font-size:12px; margin-bottom:15px;">
+              <thead>
+                <tr>
+                  <th>Insumo en Almacén</th>
+                  <th>Cant. Neta (Plato)</th>
+                  <th>Merma (%)</th>
+                  <th>Cant. Bruta (Subtr.)</th>
+                  <th>Unidad</th>
+                  <th>Costo Estimado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php 
+                $cost_total = 0.0;
+                foreach ($recipe_ingredients as $ing) : 
+                  $item_id = (int) $ing['item_id'];
+                  $qty = (float) $ing['qty'];
+                  $merma = (float) ($ing['merma'] ?? 0.0);
+                  $gross_qty = $qty * (1 + ($merma / 100));
+                  $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . cg_tbl('inventory') . " WHERE id=%d", $item_id));
+                  if ($item) {
+                    $item_cost = (float) $item->cost * $gross_qty;
+                    $cost_total += $item_cost;
+                ?>
+                    <tr>
+                      <td><strong><?php echo esc_html($item->name); ?></strong> <span style="color:#94a3b8; font-size:10.5px;">(<?php echo esc_html($item->sku); ?>)</span></td>
+                      <td><?php echo number_format($qty, 3); ?></td>
+                      <td><?php echo number_format($merma, 1); ?>%</td>
+                      <td style="font-weight:600; color:#475569;"><?php echo number_format($gross_qty, 3); ?></td>
+                      <td><?php echo esc_html($item->unit); ?></td>
+                      <td>S/ <?php echo number_format($item_cost, 2); ?></td>
+                      <td>
+                        <a style="color:#c0392b; font-weight:bold; text-decoration:none;" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=cg2_del_recipe_ing&dish_id=' . $sel_dish_id . '&item_id=' . $item_id), 'cg2_del_recipe')); ?>">✕ Quitar</a>
+                      </td>
+                    </tr>
+                <?php 
+                  }
+                endforeach; 
+                if (empty($recipe_ingredients)) :
+                  echo '<tr><td colspan="7" style="color:#64748b; text-align:center; padding:15px 0;">No se han agregado ingredientes a esta receta.</td></tr>';
+                else:
+                ?>
+                  <tr style="background:#f8fafc; font-weight:700; font-size:13px;">
+                    <td colspan="5">COSTO TOTAL DE INGREDIENTES (CON MERMA):</td>
+                    <td colspan="2" style="color:#166534;">S/ <?php echo number_format($cost_total, 2); ?> <span style="font-size:10px; font-weight:normal; color:#64748b;">(Margen: <?php echo $price > 0 ? round((1 - ($cost_total / $price)) * 100) : 0; ?>%)</span></td>
+                  </tr>
+                <?php endif; ?>
+              </tbody>
+            </table>
+
+            <!-- Add ingredient form -->
+            <h4 style="margin:16px 0 8px; color:#0c2b3d; font-size:13px; font-weight:700;">➕ Agregar ingrediente a la receta</h4>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex; gap:10px; align-items:flex-end;">
+              <?php wp_nonce_field('cg2_add_recipe','_n'); ?>
+              <input type="hidden" name="action" value="cg2_add_recipe">
+              <input type="hidden" name="dish_id" value="<?php echo $sel_dish_id; ?>">
+              
+              <label style="font-size:11px; font-weight:600; color:#50575e; flex:1;">Seleccionar Insumo *
+                <select name="item_id" required style="width:100%; margin-top:3px; font-size:12px;">
+                  <option value="">— seleccionar insumo de almacén —</option>
+                  <?php foreach ($inv_items as $item) echo '<option value="' . $item->id . '">' . esc_html($item->name . ' (' . $item->unit . ') - ' . $item->sku) . '</option>'; ?>
+                </select>
+              </label>
+              
+              <label style="font-size:11px; font-weight:600; color:#50575e; width:120px;">Cantidad Neta *
+                <input type="number" step="0.001" min="0.001" name="qty" required value="0.100" style="width:100%; margin-top:3px; font-size:12px;">
+              </label>
+
+              <label style="font-size:11px; font-weight:600; color:#50575e; width:90px;">Merma (%)
+                <input type="number" step="0.1" min="0" max="100" name="merma" value="0.0" style="width:100%; margin-top:3px; font-size:12px;">
+              </label>
+              
+              <button type="submit" class="button button-primary">Agregar ingrediente</button>
+            </form>
+          </div>
+        <?php endif; ?>
+
+        <!-- Despacho / Pedido Rápido de Restaurante -->
+        <div class="cg-card" style="margin:0; border: 1px solid #e2e8f0; background: #fffdf5;">
+          <h3 style="margin-top:0; color:#856404;">🛒 Despacho y Venta de Platos</h3>
+          <p style="font-size:12px; color:#856404; margin-top:0;">Despacha platos directamente. Si se carga a una habitación ocupada, se añade al folio del huésped; de lo contrario se registra como venta en efectivo.</p>
+          <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:grid; grid-template-columns:1.5fr 1fr 1.5fr 1fr; gap:10px; align-items:flex-end;">
+            <?php wp_nonce_field('cg2_order_dish','_n'); ?>
+            <input type="hidden" name="action" value="cg2_order_dish">
+            
+            <label style="font-size:11px; font-weight:600; color:#856404;">Plato a Preparar *
+              <select name="dish_id" required style="width:100%; margin-top:3px;">
+                <option value="">— plato —</option>
+                <?php foreach ($dishes as $d) echo '<option value="' . $d->ID . '">' . esc_html($d->post_title) . '</option>'; ?>
+              </select>
+            </label>
+            
+            <label style="font-size:11px; font-weight:600; color:#856404;">Cantidad *
+              <input type="number" name="qty" value="1" min="1" required style="width:100%; margin-top:3px;">
+            </label>
+            
+            <label style="font-size:11px; font-weight:600; color:#856404;">Cargar a Cuenta
+              <select name="res_id" style="width:100%; margin-top:3px;">
+                <option value="0">💰 Venta en Efectivo (Directa)</option>
+                <?php foreach ($inhouse_res as $r) {
+                  $num = get_post_meta($r->ID, 'cg_room_number', true);
+                  $name = get_post_meta($r->ID, 'cg_name', true) ?: trim(explode('-', $r->post_title)[1] ?? '');
+                  echo '<option value="' . $r->ID . '">Hab. ' . esc_html($num) . ' — ' . esc_html($name) . '</option>';
+                } ?>
+              </select>
+            </label>
+            
+            <button type="submit" class="button button-primary" style="height:32px; background:#856404; border-color:#856404;">🛒 Registrar Pedido</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php
+}
+
+/* ================= ACCIONES POST RESTAURANTE ================= */
+add_action('admin_post_cg2_add_recipe', function () {
+  check_admin_referer('cg2_add_recipe','_n'); cg2_can();
+  $dish_id = (int) $_POST['dish_id'];
+  $item_id = (int) $_POST['item_id'];
+  $qty = (float) $_POST['qty'];
+  $merma = (float) ($_POST['merma'] ?? 0.0);
+  
+  if ($dish_id && $item_id && $qty > 0) {
+    $json = get_post_meta($dish_id, 'cg_recipe_ingredients', true);
+    $ingredients = !empty($json) ? json_decode($json, true) : [];
+    if (!is_array($ingredients)) $ingredients = [];
+    
+    // Remove if exists
+    foreach ($ingredients as $idx => $ing) {
+      if ((int) $ing['item_id'] === $item_id) {
+        unset($ingredients[$idx]);
+      }
+    }
+    
+    $ingredients[] = [
+      'item_id' => $item_id,
+      'qty' => $qty,
+      'merma' => $merma
+    ];
+    
+    update_post_meta($dish_id, 'cg_recipe_ingredients', json_encode(array_values($ingredients)));
+  }
+  wp_safe_redirect(add_query_arg(['page' => 'cg-crm-restaurante', 'dish_id' => $dish_id], admin_url('admin.php'))); exit;
+});
+
+add_action('admin_post_cg2_del_recipe_ing', function () {
+  $dish_id = (int) $_GET['dish_id'];
+  $item_id = (int) $_GET['item_id'];
+  check_admin_referer('cg2_del_recipe'); cg2_can();
+  
+  if ($dish_id && $item_id) {
+    $json = get_post_meta($dish_id, 'cg_recipe_ingredients', true);
+    if (!empty($json)) {
+      $ingredients = json_decode($json, true) ?: [];
+      foreach ($ingredients as $idx => $ing) {
+        if ((int) $ing['item_id'] === $item_id) {
+          unset($ingredients[$idx]);
+        }
+      }
+      update_post_meta($dish_id, 'cg_recipe_ingredients', json_encode(array_values($ingredients)));
+    }
+  }
+  wp_safe_redirect(add_query_arg(['page' => 'cg-crm-restaurante', 'dish_id' => $dish_id], admin_url('admin.php'))); exit;
+});
+
+add_action('admin_post_cg2_order_dish', function () {
+  check_admin_referer('cg2_order_dish','_n'); cg2_can(); global $wpdb;
+  $dish_id = (int) $_POST['dish_id'];
+  $qty = (int) $_POST['qty'];
+  $res_id = (int) $_POST['res_id'];
+  
+  if ($dish_id && $qty > 0) {
+    $dish_title = get_the_title($dish_id);
+    $price = (float) get_post_meta($dish_id, 'cg_price', true);
+    $total = $price * $qty;
+    
+    if ($res_id > 0) {
+      // Charge to room reservation folio (customer only sees final dish concept and total price)
+      $room_num = get_post_meta($res_id, 'cg_room_number', true);
+      $wpdb->insert(cg_tbl('folio'), [
+        'res_id' => $res_id,
+        'concept' => $dish_title,
+        'qty' => $qty,
+        'unit_price' => $price,
+        'total' => $total
+      ]);
+      cg_deduct_recipe_ingredients($dish_id, $qty, "Hab. " . $room_num);
+      if (function_exists('cg_log')) cg_log('cargo_folio', $dish_title . ' x' . $qty . ' res#' . $res_id);
+      wp_safe_redirect(add_query_arg(['page' => 'cg-crm-reservas', 'res' => $res_id], admin_url('admin.php'))); exit;
+    } else {
+      // Direct Cash Sale
+      $wpdb->insert(cg_tbl('ledger'), [
+        'kind' => 'ingreso',
+        'category' => 'Restaurante / Consumos',
+        'concept' => 'Venta Directa: ' . $dish_title . ' x' . $qty,
+        'amount' => $total,
+        'taxable' => 1,
+        'ref_type' => 'dish',
+        'ref_id' => (string) $dish_id
+      ]);
+      cg_deduct_recipe_ingredients($dish_id, $qty, "Venta Directa");
+      if (function_exists('cg_log')) cg_log('ingreso_directo', $dish_title . ' x' . $qty . ' S/' . number_format($total,2));
+      wp_safe_redirect(add_query_arg(['page' => 'cg-crm-restaurante'], admin_url('admin.php'))); exit;
+    }
+  }
+  wp_safe_redirect(add_query_arg(['page' => 'cg-crm-restaurante'], admin_url('admin.php'))); exit;
+});
+
+// Hook to automatically deduct recipe ingredients when charged to room from anywhere else (eg: Recepcion)
+add_action('cg_folio_charge', function($res_id, $concept, $qty) {
+  // Find dish by title
+  $dish = get_page_by_title($concept, OBJECT, 'dish');
+  if ($dish) {
+    $room_num = get_post_meta($res_id, 'cg_room_number', true);
+    cg_deduct_recipe_ingredients($dish->ID, $qty, "Hab. " . $room_num);
+  }
+}, 10, 3);
+
+function cg_deduct_recipe_ingredients($dish_id, $qty = 1, $destino = '') {
+  global $wpdb;
+  $ingredients_json = get_post_meta($dish_id, 'cg_recipe_ingredients', true);
+  if (empty($ingredients_json)) return;
+  $ingredients = json_decode($ingredients_json, true);
+  if (!is_array($ingredients)) return;
+  
+  foreach ($ingredients as $ing) {
+    $item_id = (int) $ing['item_id'];
+    $net_qty = (float) $ing['qty'];
+    $merma = (float) ($ing['merma'] ?? 0.0);
+    
+    // Gross quantity calculated automatically based on shrinkage/merma percentage
+    $gross_unit_qty = $net_qty * (1 + ($merma / 100));
+    $req_qty = $gross_unit_qty * $qty;
+    
+    // Get current inventory item
+    $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . cg_tbl('inventory') . " WHERE id=%d", $item_id));
+    if ($item) {
+      // Deduct inventory
+      $new_stock = max(0, (float) $item->stock - $req_qty);
+      
+      // Update consumed amount in JSON metadata description
+      $meta = json_decode($item->description ?? '', true) ?: [];
+      $meta['used_qty'] = (float) ($meta['used_qty'] ?? 0) + $req_qty;
+      
+      $wpdb->update(cg_tbl('inventory'), [
+        'stock' => $new_stock,
+        'description' => json_encode($meta),
+        'updated' => current_time('mysql')
+      ], ['id' => $item_id]);
+      
+      // Register stock movement for internal inventory control
+      $wpdb->insert(cg_tbl('stock_moves'), [
+        'item_id' => $item_id,
+        'kind' => 'salida',
+        'qty' => $req_qty,
+        'unit_cost' => $item->cost,
+        'total' => $req_qty * (float) $item->cost,
+        'destino' => $destino ?: 'Restaurante',
+        'note' => 'Receta: ' . get_the_title($dish_id) . ($merma > 0 ? ' (incl. ' . $merma . '% merma)' : '')
+      ]);
+    }
+  }
+}
+

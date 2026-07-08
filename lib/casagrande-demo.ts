@@ -1,4 +1,4 @@
-import type { InventoryItem, Reservation, RoomStatus } from '@/lib/supabase';
+import type { InventoryItem, Reservation, RoomStatus, Staff, StaffSchedule } from '@/lib/supabase';
 
 export type RoomLegendStatus = RoomStatus | 'all';
 
@@ -48,6 +48,185 @@ function dateISO(date: Date) {
 
 function currency(n: number) {
   return `S/ ${n.toFixed(2)}`;
+}
+
+const staffPalette = [
+  { bg: 'bg-sky-500', soft: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700' },
+  { bg: 'bg-emerald-500', soft: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700' },
+  { bg: 'bg-amber-500', soft: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
+  { bg: 'bg-rose-500', soft: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700' },
+  { bg: 'bg-violet-500', soft: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700' },
+  { bg: 'bg-cyan-500', soft: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700' },
+  { bg: 'bg-lime-500', soft: 'bg-lime-50', border: 'border-lime-200', text: 'text-lime-700' },
+  { bg: 'bg-fuchsia-500', soft: 'bg-fuchsia-50', border: 'border-fuchsia-200', text: 'text-fuchsia-700' },
+];
+
+export type EmploymentRegime = 'regimen_privado' | 'plazo_fijo' | 'tiempo_parcial' | 'servicios_no_personales';
+
+export interface GratificationEstimate {
+  eligible: boolean;
+  regime: EmploymentRegime;
+  regimeLabel: string;
+  monthsWorked: number;
+  salary: number;
+  formula: string;
+  gross: number;
+  bonus9: number;
+  total: number;
+  note: string;
+}
+
+export interface StaffScheduleSnapshot {
+  date: string;
+  shift: string;
+  start: string;
+  end: string;
+  cadence: string;
+  assignment: string;
+  note: string;
+}
+
+export interface StaffProfile {
+  code: string;
+  color: string;
+  regime: EmploymentRegime;
+  regimeLabel: string;
+  estimatedMonths: number;
+  salary: number;
+  currentShift: string;
+  currentWindow: string;
+  assignmentCadence: string;
+  scheduleHistory: StaffScheduleSnapshot[];
+  gratification: GratificationEstimate;
+}
+
+function staffSeed(staff: Pick<Staff, 'first_name' | 'last_name' | 'department' | 'id'>) {
+  return seedFrom([staff.first_name, staff.last_name, staff.department, staff.id].join('|'));
+}
+
+export function staffCodeFor(staff: Pick<Staff, 'first_name' | 'last_name' | 'department' | 'id'>) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const seed = staffSeed(staff);
+  return Array.from({ length: 4 }, (_, index) => alphabet[(seed + index * 7) % alphabet.length]).join('');
+}
+
+export function staffColorFor(staff: Pick<Staff, 'first_name' | 'last_name' | 'department' | 'id'>) {
+  return staffPalette[staffSeed(staff) % staffPalette.length];
+}
+
+export function calculateGratification(regime: EmploymentRegime, salary: number, monthsWorked: number): GratificationEstimate {
+  const eligible = regime !== 'servicios_no_personales';
+  const normalizedMonths = Math.max(0, Math.min(6, Number.isFinite(monthsWorked) ? monthsWorked : 0));
+  const normalizedSalary = Math.max(0, Number.isFinite(salary) ? salary : 0);
+  const regimeLabel: Record<EmploymentRegime, string> = {
+    regimen_privado: 'Régimen laboral privado',
+    plazo_fijo: 'Contrato a plazo fijo',
+    tiempo_parcial: 'Tiempo parcial',
+    servicios_no_personales: 'Servicios no personales',
+  };
+
+  if (!eligible) {
+    return {
+      eligible: false,
+      regime,
+      regimeLabel: regimeLabel[regime],
+      monthsWorked: normalizedMonths,
+      salary: normalizedSalary,
+      formula: 'No corresponde gratificación laboral por el tipo de vínculo.',
+      gross: 0,
+      bonus9: 0,
+      total: 0,
+      note: 'El sistema lo marca como no elegible para gratificaciones del régimen privado.',
+    };
+  }
+
+  const gross = Number(((normalizedSalary / 6) * normalizedMonths).toFixed(2));
+  const bonus9 = Number((gross * 0.09).toFixed(2));
+  return {
+    eligible: true,
+    regime,
+    regimeLabel: regimeLabel[regime],
+    monthsWorked: normalizedMonths,
+    salary: normalizedSalary,
+    formula: `S/ ${normalizedSalary.toFixed(2)} x ${normalizedMonths} / 6`,
+    gross,
+    bonus9,
+    total: Number((gross + bonus9).toFixed(2)),
+    note: 'Estimado sobre meses completos del semestre y remuneracion computable; el sistema separa la bonificacion extraordinaria.',
+  };
+}
+
+function assignmentCadenceFor(index: number) {
+  return ['Días', 'Semana', 'Quincena', 'Mes', 'Personalizado'][index % 5];
+}
+
+function shiftWindow(shift: string) {
+  if (shift === 'manana') return '06:00 - 14:00';
+  if (shift === 'tarde') return '14:00 - 22:00';
+  if (shift === 'noche') return '22:00 - 06:00';
+  return '08:00 - 20:00';
+}
+
+export function buildStaffProfile(staff: Staff, schedules: StaffSchedule[] = []): StaffProfile {
+  const code = staffCodeFor(staff);
+  const color = staffColorFor(staff);
+  const seed = staffSeed(staff);
+  const salary = Number(staff.salary || 0);
+  const estimatedMonths = Math.max(0, Math.min(6, Math.floor((Date.now() - new Date(staff.hire_date).getTime()) / (1000 * 60 * 60 * 24 * 30))));
+  let regime: EmploymentRegime = seed % 5 === 0
+    ? 'tiempo_parcial'
+    : seed % 7 === 0
+      ? 'servicios_no_personales'
+      : seed % 2 === 0
+        ? 'plazo_fijo'
+        : 'regimen_privado';
+
+  if (staff.notes && staff.notes.includes('[Regimen:')) {
+    const match = staff.notes.match(/\[Regimen:\s*(\w+)\]/);
+    if (match && ['regimen_privado', 'plazo_fijo', 'tiempo_parcial', 'servicios_no_personales'].includes(match[1])) {
+      regime = match[1] as EmploymentRegime;
+    }
+  }
+
+  const gratification = calculateGratification(regime, salary, estimatedMonths);
+  const orderedSchedules = [...schedules].sort((a, b) => b.work_date.localeCompare(a.work_date));
+  const currentSchedule = orderedSchedules[0];
+  const currentShift = currentSchedule?.shift || 'manana';
+  const currentWindow = shiftWindow(currentShift);
+  const scheduleHistory = (orderedSchedules.length > 0 ? orderedSchedules : Array.from({ length: 5 }, (_, index) => ({
+    id: `${staff.id}-${index}`,
+    staff_id: staff.id,
+    work_date: dateISO(addDays(new Date('2026-07-06T00:00:00.000Z'), -(index * 7 + (seed % 3)))),
+    shift: ['manana', 'tarde', 'noche'][index % 3],
+    start_time: null,
+    end_time: null,
+    status: index % 2 === 0 ? 'programado' : 'completado',
+    notes: index % 2 === 0 ? 'Asignacion demo' : 'Historial demo',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as StaffSchedule))).map((schedule, index) => ({
+    date: schedule.work_date,
+    shift: schedule.shift,
+    start: schedule.start_time || shiftWindow(schedule.shift).split(' - ')[0],
+    end: schedule.end_time || shiftWindow(schedule.shift).split(' - ')[1],
+    cadence: assignmentCadenceFor(index),
+    assignment: index === 0 ? 'Asignacion actual' : `Asignacion ${assignmentCadenceFor(index).toLowerCase()}`,
+    note: schedule.notes || 'Sin observaciones',
+  }));
+
+  return {
+    code,
+    color: color.bg,
+    regime,
+    regimeLabel: gratification.regimeLabel,
+    estimatedMonths,
+    salary,
+    currentShift,
+    currentWindow,
+    assignmentCadence: scheduleHistory[0]?.cadence || 'Mes',
+    scheduleHistory,
+    gratification,
+  };
 }
 
 export interface DemoGuest {
@@ -329,6 +508,11 @@ interface WarehouseMeta {
   container: string;
   presentation: string;
   color: string;
+  size?: string;
+  weight?: string;
+  volume?: string;
+  warehouse?: string;
+  frequency?: string;
   quantityLabel: string;
   usedQuantityLabel: string;
   entryDate: string;
@@ -340,6 +524,7 @@ interface WarehouseMeta {
   documents: string[];
   maintenanceHistory: string[];
   damageHistory: string[];
+  movementHistory?: Array<{ date: string; type: string; quantity: string; document: string; reason: string; balance: string; }>;
   state: string;
 }
 
@@ -351,6 +536,45 @@ function warehouseMeta(item: InventoryItem, categoryName?: string): WarehouseMet
   const unitValue = item.unit_cost != null ? currency(Number(item.unit_cost)) : 'S/ 0.00';
   const commonDocs = ['Factura de compra', 'Guia de ingreso'];
   const commonTags = ['Inventario activo', categoryName || 'Sin categoria'];
+  const warehouse = categoryName && /cocina|restaurante|catering/i.test(categoryName)
+    ? 'Almacen de Cocina y Catering'
+    : categoryName && /mantenimiento/i.test(categoryName)
+      ? 'Almacen de Mantenimiento'
+      : categoryName && /limpieza|house/i.test(categoryName)
+        ? 'Almacen de Housekeeping'
+        : categoryName && /emerg/i.test(categoryName)
+          ? 'Almacen de Emergencias'
+          : 'Almacen General del Hotel';
+  const frequency = current <= 5 ? 'Diario' : current <= 20 ? 'Quincenal' : 'Mensual';
+  const size = source.includes('mueble') || source.includes('mesa') ? 'Grande' : source.includes('uniforme') ? 'Mediano' : source.includes('cuchillo') ? 'Pequeño' : 'Variable';
+  const weight = source.includes('papa') ? '2 kg' : source.includes('saco') ? '10 kg' : source.includes('botella') ? '500 g' : 'Variable';
+  const volume = source.includes('gaseosa') || source.includes('agua') ? '500 ml' : source.includes('aceite') ? '1 L' : source.includes('salsa') ? '50 g' : 'Variable';
+  const movementHistory = [
+    {
+      date: item.last_restocked_at ? dateISO(new Date(item.last_restocked_at)) : '2026-07-02',
+      type: 'Entrada',
+      quantity: `${Math.max(1, Math.round(current || 1))} ${item.unit}`,
+      document: 'Factura de compra',
+      reason: 'Ingreso principal al almacén con registro de compra.',
+      balance: `${current.toFixed(2)} ${item.unit}`,
+    },
+    {
+      date: '2026-07-04',
+      type: 'Salida',
+      quantity: `${Math.max(1, Math.round(used || 1))} ${item.unit}`,
+      document: 'Boleta interna de salida',
+      reason: 'Retiro para uso operativo, restaurante o mantenimiento.',
+      balance: `${Math.max(0, current - used).toFixed(2)} ${item.unit}`,
+    },
+    {
+      date: '2026-07-05',
+      type: 'Devolucion',
+      quantity: `${Math.max(0, Math.round(used * 0.2))} ${item.unit}`,
+      document: 'Boleta interna de devolucion',
+      reason: 'Devolucion de sobrantes, herramientas limpias o material no usado.',
+      balance: `${Math.max(0, current - used + Math.round(used * 0.2)).toFixed(2)} ${item.unit}`,
+    },
+  ];
 
   if (source.includes('papa amarilla')) {
     return {
@@ -489,10 +713,74 @@ function warehouseMeta(item: InventoryItem, categoryName?: string): WarehouseMet
   };
 }
 
+function warehouseExtras(item: InventoryItem, categoryName?: string) {
+  const source = normalize([item.name, item.description || '', categoryName || ''].join(' '));
+  const seed = seedFrom(item.name + (item.sku || ''));
+  const current = Number(item.current_stock || 0);
+  const used = Math.max(0, Math.min(current, Number((current * 0.25).toFixed(2))));
+  const warehouse = categoryName && /cocina|restaurante|catering/i.test(categoryName)
+    ? 'Almacen de Cocina y Catering'
+    : categoryName && /mantenimiento/i.test(categoryName)
+      ? 'Almacen de Mantenimiento'
+      : categoryName && /limpieza|house/i.test(categoryName)
+        ? 'Almacen de Housekeeping'
+        : categoryName && /emerg/i.test(categoryName)
+          ? 'Almacen de Emergencias'
+          : 'Almacen General del Hotel';
+  const frequency = current <= 5 ? 'Diario' : current <= 20 ? 'Quincenal' : 'Mensual';
+  const size = source.includes('mueble') || source.includes('mesa') ? 'Grande' : source.includes('uniforme') ? 'Mediano' : source.includes('cuchillo') ? 'Pequeño' : 'Variable';
+  const weight = source.includes('papa') ? '2 kg' : source.includes('saco') ? '10 kg' : source.includes('botella') ? '500 g' : 'Variable';
+  const volume = source.includes('gaseosa') || source.includes('agua') ? '500 ml' : source.includes('aceite') ? '1 L' : source.includes('salsa') ? '50 g' : 'Variable';
+  const movementHistory = [
+    {
+      date: item.last_restocked_at ? dateISO(new Date(item.last_restocked_at)) : '2026-07-02',
+      type: 'Entrada',
+      quantity: `${Math.max(1, Math.round(current || 1))} ${item.unit}`,
+      document: 'Factura de compra',
+      reason: 'Ingreso principal al almacén con registro de compra.',
+      balance: `${current.toFixed(2)} ${item.unit}`,
+    },
+    {
+      date: '2026-07-04',
+      type: 'Salida',
+      quantity: `${Math.max(1, Math.round(used || 1))} ${item.unit}`,
+      document: 'Boleta interna de salida',
+      reason: 'Retiro para uso operativo, restaurante o mantenimiento.',
+      balance: `${Math.max(0, current - used).toFixed(2)} ${item.unit}`,
+    },
+    {
+      date: '2026-07-05',
+      type: 'Devolucion',
+      quantity: `${Math.max(0, Math.round(used * 0.2))} ${item.unit}`,
+      document: 'Boleta interna de devolucion',
+      reason: 'Devolucion de sobrantes, herramientas limpias o material no usado.',
+      balance: `${Math.max(0, current - used + Math.round(used * 0.2)).toFixed(2)} ${item.unit}`,
+    },
+  ];
+
+  return { size, weight, volume, warehouse, frequency, movementHistory };
+}
+
 export function enrichWarehouseItem(item: InventoryItem, categoryName?: string) {
   const meta = warehouseMeta(item, categoryName);
+  let parsedDesc = {} as any;
+  if (item.description && item.description.startsWith('{')) {
+    try {
+      parsedDesc = JSON.parse(item.description);
+    } catch (e) {}
+  }
   return {
     ...meta,
+    ...warehouseExtras(item, categoryName),
+    brand: parsedDesc.brand || meta.brand,
+    color: parsedDesc.color || meta.color,
+    presentation: parsedDesc.presentation || meta.presentation,
+    size: parsedDesc.size || meta.size,
+    weight: parsedDesc.weight || meta.weight,
+    volume: parsedDesc.volume || meta.volume,
+    warehouse: parsedDesc.warehouse || meta.warehouse,
+    frequency: parsedDesc.frequency || meta.frequency,
+    is_essential: parsedDesc.is_essential || false,
     quantityLabel: meta.quantityLabel,
     usedQuantityLabel: meta.usedQuantityLabel,
     currentStock: Number(item.current_stock || 0),
